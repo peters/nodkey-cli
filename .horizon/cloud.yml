@@ -1,0 +1,21 @@
+version: 1
+default: development
+profiles:
+  development:
+    provider: runpod
+    image: ghcr.io/peters/nodkey-cli-worker
+    build:
+      context: .horizon
+      dockerfile: .horizon/Dockerfile
+      platform: linux/amd64
+    min_cpu: 4
+    min_memory_gb: 8
+    gpu: false
+    capabilities:
+      agents: [claude, codex]
+      browsers: []
+      desktop: false
+companions:
+  nodkey:
+    repository: peters/nodkey
+    profile: development
