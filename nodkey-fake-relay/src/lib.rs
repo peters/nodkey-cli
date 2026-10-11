@@ -1,10 +1,14 @@
-//! A tiny in-process relay that also plays the phone: it verifies every signature, claims
+//! A tiny relay for tests that also plays the phone: it verifies every signature, claims
 //! pairings, opens requests and attachments with the phone's key and answers as told.
+//!
+//! Used in-process by the `nodkey` tests and, as the `nodkey-fake-relay` binary, by other agents'
+//! tests (the browser extension). `/_fake/...` routes let such a test steer the phone; see
+//! [`control`]. Never point a real agent at it: it answers with invented secrets.
 
 // Handlers return early with ready-made responses; their size does not matter in a test.
 #![allow(clippy::result_large_err)]
-// Shared by the MCP and the command line tests; each uses only part of it.
-#![allow(dead_code)]
+
+pub mod control;
 
 use std::{
     collections::HashMap,
@@ -84,7 +88,8 @@ pub fn cleanup_matches(filter: &CleanupFilter) -> Vec<AccountEntry> {
 }
 
 /// How the phone answers requests.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Deserialize)]
+#[serde(rename_all = "lowercase")]
 pub enum Mode {
     Approve,
     Deny,
@@ -95,7 +100,7 @@ pub enum Mode {
 }
 
 /// What the phone saw for one request.
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, serde::Serialize)]
 pub struct Seen {
     pub request: Request,
     pub agent_id: String,
@@ -160,6 +165,11 @@ impl Fake {
             .collect()
     }
 
+    /// Whether `agent_id` registered with this relay.
+    pub fn knows(&self, agent_id: &str) -> bool {
+        self.inner.lock().unwrap().agents.contains_key(agent_id)
+    }
+
     /// The check number the phone shows for `agent_id`.
     pub fn check_for(&self, agent_id: &str) -> String {
         let inner = self.inner.lock().unwrap();
@@ -170,7 +180,7 @@ impl Fake {
     }
 }
 
-type Shared = Arc<Fake>;
+pub type Shared = Arc<Fake>;
 
 fn fail(status: StatusCode, code: &str) -> Response {
     (status, Json(json!({"error": code, "message": code}))).into_response()
@@ -559,6 +569,11 @@ async fn wait_answer(
                                    "added_year": 2016, "email": true}]
                 }));
             }
+            Kind::Save => {
+                // Never a lease: the user confirms every save.
+                answer.lease = None;
+                answer.saved = Some(nodkey_proto::Saved::Added);
+            }
             Kind::Cleanup => {
                 // Never a lease: the user confirms every clean-up.
                 answer.lease = None;
@@ -585,6 +600,11 @@ fn seal_answer(fake: &Shared, agent_id: &str, rid: &str, answer: &Answer) -> Res
 
 /// Starts the fake relay on a free loopback port in a background thread.
 pub fn start(claim_on_poll: u32) -> (Shared, SocketAddr) {
+    start_on("127.0.0.1:0", claim_on_poll)
+}
+
+/// Starts the fake relay on `bind` (e.g. `127.0.0.1:8787`) in a background thread.
+pub fn start_on(bind: &str, claim_on_poll: u32) -> (Shared, SocketAddr) {
     let fake = Arc::new(Fake {
         phone_id: nodkey_proto::random_id(),
         phone: KeyPair::generate(),
@@ -605,9 +625,11 @@ pub fn start(claim_on_poll: u32) -> (Shared, SocketAddr) {
         .route("/v1/phones/{phone_id}/requests", post(post_request))
         .route("/v1/requests/{rid}/attachment", put(put_attachment))
         .route("/v1/requests/{rid}", get(wait_answer))
+        .merge(control::routes())
         .layer(axum::extract::DefaultBodyLimit::max(2 * 1024 * 1024))
         .with_state(Arc::clone(&fake));
     let (tx, rx) = std::sync::mpsc::channel();
+    let bind = bind.to_owned();
     std::thread::spawn(move || {
         let rt = tokio::runtime::Builder::new_multi_thread()
             .worker_threads(2)
@@ -615,7 +637,7 @@ pub fn start(claim_on_poll: u32) -> (Shared, SocketAddr) {
             .build()
             .unwrap();
         rt.block_on(async move {
-            let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
+            let listener = tokio::net::TcpListener::bind(&bind).await.unwrap();
             tx.send(listener.local_addr().unwrap()).unwrap();
             axum::serve(listener, app).await.unwrap();
         });

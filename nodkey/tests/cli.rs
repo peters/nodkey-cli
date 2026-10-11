@@ -1,6 +1,6 @@
 //! End to end: the `nodkey` command line against the in-process fake relay.
 
-mod fake_relay;
+use nodkey_fake_relay as fake_relay;
 
 use std::{
     path::PathBuf,

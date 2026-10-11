@@ -1,6 +1,6 @@
 //! End to end: the real `nodkey mcp` over stdio against the in-process fake relay.
 
-mod fake_relay;
+use nodkey_fake_relay as fake_relay;
 
 use std::{
     io::{BufRead, BufReader, Write},

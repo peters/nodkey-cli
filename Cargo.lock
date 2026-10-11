@@ -823,7 +823,7 @@ dependencies = [
 name = "nodkey"
 version = "0.2.0"
 dependencies = [
- "axum",
+ "nodkey-fake-relay",
  "nodkey-proto",
  "reqwest",
  "serde",
@@ -833,15 +833,30 @@ dependencies = [
 ]
 
 [[package]]
+name = "nodkey-fake-relay"
+version = "0.2.0"
+dependencies = [
+ "axum",
+ "nodkey-proto",
+ "reqwest",
+ "serde",
+ "serde_json",
+ "tokio",
+]
+
+[[package]]
 name = "nodkey-proto"
 version = "0.2.0"
 dependencies = [
+ "chacha20poly1305",
  "ed25519-dalek",
  "getrandom 0.4.3",
+ "hkdf",
  "hpke",
  "serde",
  "serde_json",
  "sha2",
+ "x25519-dalek",
  "zeroize",
 ]
 

@@ -1,0 +1,17 @@
+[package]
+name = "nodkey-fake-relay"
+description = "A relay that also plays the phone, for agent tests (never for real use)"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+publish.workspace = true
+
+[dependencies]
+nodkey-proto.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+axum = { version = "0.8", default-features = false, features = ["http1", "tokio", "query", "json"] }
+tokio = { version = "1.47", default-features = false, features = ["rt-multi-thread", "net", "time", "macros"] }
+reqwest = { version = "0.13", default-features = false, features = ["rustls"] }

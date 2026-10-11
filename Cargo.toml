@@ -1,7 +1,6 @@
 [workspace]
 resolver = "3"
-members = ["nodkey-proto", "nodkey"]
-default-members = ["nodkey-proto", "nodkey"]
+members = ["nodkey-proto", "nodkey", "nodkey-fake-relay"]
 
 [workspace.package]
 version = "0.2.0"
@@ -13,6 +12,7 @@ publish = false
 
 [workspace.dependencies]
 nodkey-proto = { path = "nodkey-proto" }
+nodkey-fake-relay = { path = "nodkey-fake-relay" }
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 

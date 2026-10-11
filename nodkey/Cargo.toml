@@ -24,5 +24,5 @@ tokio = { version = "1.47", default-features = false, features = ["rt", "macros"
 reqwest = { version = "0.13", default-features = false, features = ["rustls"] }
 
 [dev-dependencies]
-axum = { version = "0.8", default-features = false, features = ["http1", "tokio", "query", "json"] }
+nodkey-fake-relay.workspace = true
 tokio = { version = "1.47", features = ["rt-multi-thread", "net", "process"] }

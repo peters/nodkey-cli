@@ -6,12 +6,16 @@ mcp`). The iOS app and the relay live in the private repository `peters/nodkey`;
 
 ## Layout
 
-- `nodkey-proto/`: the protocol (messages, HPKE, signed relay calls, check number, pairing codes)
-  and the generator of `vectors/v1.json`.
+- `nodkey-proto/`: the protocol (messages, HPKE, signed relay calls, check number, pairing codes),
+  `client.rs` (the agent's side of requests and pairing, shared with the browser extension in
+  `peters/nodkey-browser`), `dh.rs` (HPKE open when X25519 runs in WebCrypto) and the generator of
+  `vectors/v1.json`. It builds for `wasm32-unknown-unknown`; keep it free of OS-only dependencies.
+- `nodkey-fake-relay/`: a relay that plays the phone, for tests (library and binary with `/_fake/...`
+  control routes). The extension's tests use it too.
 - `nodkey/`: the library (`agent.rs` what the tools do, `relay.rs` relay calls, `store.rs` the agent
   folder and profiles, `profile.rs` which agent is asking), the MCP server (`mcp.rs`, `tools.rs`), the
   command line (`cli.rs`, `commands.rs`) and `setup.rs`. Tests: `tests/e2e.rs` (MCP) and
-  `tests/cli.rs` run the real binary against `tests/fake_relay`, which also plays the phone.
+  `tests/cli.rs` run the real binary against `nodkey-fake-relay`.
 - `skills/nodkey/SKILL.md`: the skill `nodkey setup` installs (compiled into the binary).
 
 ## Rules
@@ -31,7 +35,8 @@ mcp`). The iOS app and the relay live in the private repository `peters/nodkey`;
 ## Protocol changes
 
 The app speaks the same protocol. A change to a message, to sealing or to the relay API needs the
-same change in `peters/nodkey` (app and relay) and new vectors:
+same change in `peters/nodkey` (app and relay), a check of `peters/nodkey-browser` (it depends on
+`nodkey-proto` from this repository by git revision) and new vectors:
 `cargo run -p nodkey-proto --example vectors` rewrites `vectors/v1.json` (a test fails when it is
 stale). The app's tests keep a copy of that file; copy the new one there in the same change.
 

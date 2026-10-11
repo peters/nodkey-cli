@@ -7,7 +7,9 @@
 pub mod auth;
 pub mod b64u;
 pub mod check;
+pub mod client;
 pub mod code;
+pub mod dh;
 pub mod keys;
 pub mod messages;
 pub mod seal;
@@ -39,6 +41,9 @@ pub enum Error {
     Code(&'static str),
     /// A plaintext message is not valid JSON for its type.
     Json(String),
+    /// The pairing grant's check number differs from the one computed from both public keys:
+    /// someone may have swapped keys.
+    CheckMismatch { phone: String, computed: String },
 }
 
 impl std::fmt::Display for Error {
@@ -49,6 +54,10 @@ impl std::fmt::Display for Error {
             Error::BadSignature(m) => write!(f, "signature: {m}"),
             Error::Code(m) => write!(f, "pairing code: {m}"),
             Error::Json(m) => write!(f, "message: {m}"),
+            Error::CheckMismatch { phone, computed } => write!(
+                f,
+                "check numbers differ (phone says {phone}, this side computes {computed})"
+            ),
         }
     }
 }

@@ -96,7 +96,7 @@ Pairing grant (phone → agent):
 Request (agent → phone):
 
 ```json
-{"v":1, "request_id":"…", "kind":"code|login|list|cleanup", "target":"github.com/alex",
+{"v":1, "request_id":"…", "kind":"code|login|list|insights|cleanup|save", "target":"github.com/alex",
  "reason":"Merge PR #42", "agent":"Claude · Horizon", "ts":1791620000}
 ```
 
@@ -199,6 +199,38 @@ version the app speaks; planned, see "Versions"):
 {"v":1, "request_id":"…", "decision":"denied", "error":"empty_filter"}
 {"v":1, "request_id":"…", "decision":"denied", "error":"paused"}
 ```
+
+## Saving a login
+
+`kind: save` asks the phone to keep a login the user just used, for example when they sign in or
+change a password in a browser with the Nodkey extension. `target` is the site (`vg.no`); `save`
+holds the login:
+
+```json
+{"v":1, "request_id":"…", "kind":"save", "target":"vg.no", "reason":"Save the login you just used on vg.no",
+ "agent":"Firefox on Linux", "ts":1791620000,
+ "save":{"url":"https://www.vg.no/login", "username":"alex@example.com", "password":"…", "title":"VG"}}
+```
+
+The phone shows the site and user name (never the password) and asks the user to save it; Face ID
+confirms. A login with the same site and user name gets the new password; otherwise a new login is
+added. A save is **never covered by a lease**. The answer carries `saved`: `added`, `updated` or
+`unchanged`:
+
+```json
+{"v":1, "request_id":"…", "decision":"approved", "saved":"updated"}
+```
+
+An agent must not keep the password after the request: if the user does not answer in time, it may
+keep the request **sealed to the phone** (only the phone can open it) and offer to send it again.
+Vectors: `request_save`, `answer_save`.
+
+## Opening with the X25519 step elsewhere
+
+An agent may keep its X25519 private key where it cannot be read out, for example as a
+non-extractable WebCrypto key in a browser. It then computes `dh = X25519(sk, enc)` there and runs
+the rest of HPKE base mode itself: `nodkey_proto::dh::open_with_dh(info, dh, pkR, enc, aad, ct)`
+gives the same result as an open with the private key. Every HPKE vector checks both ways.
 
 ## Attachments
 

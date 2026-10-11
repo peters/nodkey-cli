@@ -6,9 +6,8 @@
 use std::time::{Duration, Instant};
 
 use nodkey_proto::{
-    AgentInfo, Answer, AttachmentInfo, CleanupFilter, ClientInfo, Kind, PairingGrant, Purpose,
-    Request, RequestEnvelope, VERSION, aad, check, code, parse_plaintext,
-    seal::{self, OsRng},
+    AgentInfo, AttachmentInfo, CleanupFilter, ClientInfo, Kind, Purpose, Request, VERSION, check,
+    client, code,
 };
 use serde::Serialize;
 use serde_json::json;
@@ -206,21 +205,19 @@ impl Agent {
             .open_box(
                 id.keys.kem_secret(),
                 &claimed.sealed(),
-                &aad(&code, &claimed.phone_id),
+                &client::grant_aad(&code, &claimed.phone_id),
             )
             .map_err(|_| {
                 "The pairing grant does not decrypt; the pairing was not saved.".to_owned()
             })?;
-        let grant: PairingGrant = parse_plaintext(&plain).map_err(err)?;
+        let grant = client::read_grant(&plain, &id.keys.public(), &phone_keys).map_err(|e| match e {
+            nodkey_proto::Error::CheckMismatch { .. } => format!(
+                "{e}. Someone may have swapped keys; the pairing was not saved. Tell the user and do not \
+                 retry blindly."
+            ),
+            e => e.to_string(),
+        })?;
         let n = check::check_number(&id.keys.public(), &phone_keys);
-        if grant.check != check::digits(n) {
-            return Err(format!(
-                "Check numbers differ (phone says {}, this computer computes {}). Someone may have swapped \
-                 keys; the pairing was not saved. Tell the user and do not retry blindly.",
-                grant.check,
-                check::display(n)
-            ));
-        }
         let phone = Phone {
             phone_id: claimed.phone_id.clone(),
             name: grant.phone_name.clone(),
@@ -382,21 +379,28 @@ impl Agent {
     ) -> Result<Text, String> {
         let target = target.trim();
         let reason = reason.trim();
-        if matches!(kind, Kind::Code | Kind::Login) && target.is_empty() {
-            return Err(
-                "target is required (a site or issuer, optionally /account, e.g. github.com/alex)"
-                    .into(),
-            );
-        }
-        if kind == Kind::Cleanup && filter.as_ref().is_none_or(CleanupFilter::is_empty) {
-            return Err("filter needs at least one criterion".into());
-        }
-        if reason.is_empty() {
-            return Err("reason is required: say in a short sentence why you need it; the user reads it on their iPhone".into());
-        }
-        if reason.chars().count() > 500 || target.chars().count() > 200 {
-            return Err("target or reason is too long".into());
-        }
+        // Checked before the agent folder is read, so a bad call fails the same everywhere.
+        let mut request = Request {
+            v: VERSION,
+            request_id: nodkey_proto::random_id(),
+            kind,
+            target: target.to_owned(),
+            reason: reason.to_owned(),
+            agent: String::new(),
+            ts: nodkey_proto::unix_now(),
+            attachment: None,
+            filter,
+            save: None,
+            client: Some(
+                ClientInfo {
+                    model: reported.model.map(str::to_owned),
+                    effort: reported.effort.map(str::to_owned),
+                    ..self.client.lock().expect("lock").clone()
+                }
+                .tidy(),
+            ),
+        };
+        client::check_request(&request)?;
         let store = self.store()?;
         let relay = self.relay()?;
         let id = store
@@ -412,46 +416,21 @@ impl Agent {
             None => None,
         };
 
-        let request_id = nodkey_proto::random_id();
-        let request = Request {
-            v: VERSION,
-            request_id: request_id.clone(),
-            kind,
-            target: target.to_owned(),
-            reason: reason.to_owned(),
-            agent: id.name.clone(),
-            ts: nodkey_proto::unix_now(),
-            attachment: image.as_ref().map(|(kind, bytes, caption)| AttachmentInfo {
-                kind: *kind,
-                bytes: bytes.len() as u64,
-                caption: Some(caption.clone()),
-            }),
-            filter,
-            client: Some(
-                ClientInfo {
-                    model: reported.model.map(str::to_owned),
-                    effort: reported.effort.map(str::to_owned),
-                    ..self.client.lock().expect("lock").clone()
-                }
-                .tidy(),
-            ),
-        };
-        let req_aad = aad(&request_id, &id.agent_id);
-        let plain = Zeroizing::new(serde_json::to_vec(&request).expect("serializable"));
-        let sealed = Purpose::Request
-            .seal(&phone_keys.kem, &req_aad, &plain)
-            .map_err(err)?;
-        let envelope = RequestEnvelope {
-            request_id: request_id.clone(),
-            enc: nodkey_proto::b64u::encode(&sealed.enc),
-            ct: nodkey_proto::b64u::encode(&sealed.ct),
-            attachment: image.as_ref().map(|_| true),
-        };
+        let request_id = request.request_id.clone();
+        request.agent = id.name.clone();
+        request.attachment = image.as_ref().map(|(kind, bytes, caption)| AttachmentInfo {
+            kind: *kind,
+            bytes: bytes.len() as u64,
+            caption: Some(caption.clone()),
+        });
+        let envelope =
+            client::seal_request(&request, &id.agent_id, &phone_keys.kem, image.is_some())
+                .map_err(err)?;
         // Seal the picture before posting, so the upload follows the request at once (the relay
         // holds the push for it at most 5 s).
         let attachment_body = match &image {
             Some((_, bytes, _)) => Some(
-                seal::seal_attachment_body(&phone_keys.kem, &req_aad, bytes, &mut OsRng)
+                client::seal_attachment(&request_id, &id.agent_id, &phone_keys.kem, bytes)
                     .map_err(err)?,
             ),
             None => None,
@@ -508,14 +487,12 @@ impl Agent {
             .open_box(
                 id.keys.kem_secret(),
                 &answer_box,
-                &aad(&request_id, &phone.phone_id),
+                &client::answer_aad(&request_id, &phone.phone_id),
             )
             .map_err(|_| "The answer does not decrypt; ignoring it.".to_owned())?;
-        let answer: Answer = parse_plaintext(&plain).map_err(err)?;
+        let answer =
+            client::read_answer(&plain, &request_id).map_err(|e| format!("{e}; ignoring it."))?;
         drop(plain);
-        if answer.request_id != request_id {
-            return Err("The answer belongs to a different request; ignoring it.".into());
-        }
         Ok(text(&Outcome::from_answer(
             &answer,
             kind,

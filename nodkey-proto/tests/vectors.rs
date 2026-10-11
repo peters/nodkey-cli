@@ -89,6 +89,15 @@ fn every_hpke_vector_opens_and_reseals() {
             &pt[..],
             "{name}"
         );
+        // Recipient side with the X25519 step done outside (as in a browser's WebCrypto).
+        let enc32: [u8; 32] = enc.clone().try_into().unwrap();
+        let dh = x25519_dalek::x25519(sk, enc32);
+        assert_eq!(
+            &*nodkey_proto::dh::open_with_dh(purpose.info().as_bytes(), &dh, &pk, &enc, aad, &ct)
+                .unwrap(),
+            &pt[..],
+            "{name}"
+        );
         // Sender side, with the recorded ephemeral input.
         let ikm = b64u::decode(s(h, "ikm_e")).unwrap();
         let again = seal::seal_with_rng(
