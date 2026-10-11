@@ -107,6 +107,8 @@ pub struct Seen {
     /// `attachment` in the posted envelope.
     pub announced: Option<bool>,
     pub attachment: Option<Vec<u8>>,
+    /// The password of a `save` request, opened as the phone would (test data only).
+    pub saved_password: Option<String>,
 }
 
 struct Pairing {
@@ -440,6 +442,12 @@ async fn post_request(
         .expect("request opens with the phone key");
     let request: Request = parse_plaintext(&plain).unwrap();
     assert_eq!(request.request_id, env.request_id);
+    let saved_password = request.save.as_ref().map(|s| {
+        let opened = Purpose::Password
+            .open_box(fake.phone.kem_secret(), &s.password, agent_id.as_bytes())
+            .expect("the save password opens with the phone key");
+        String::from_utf8(opened.to_vec()).expect("utf-8 password")
+    });
     let mut inner = fake.inner.lock().unwrap();
     inner.order.push(env.request_id.clone());
     inner.requests.insert(
@@ -449,6 +457,7 @@ async fn post_request(
             agent_id,
             announced: env.attachment,
             attachment: None,
+            saved_password,
         },
     );
     StatusCode::ACCEPTED.into_response()
