@@ -12,6 +12,15 @@ on:
         type: boolean
         default: true
 jobs:
+  horizon-pins:
+    name: Horizon image pins
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - name: Verify Horizon pins
+        run: python3 .horizon/verify-pins.py
   test:
     name: Test (${{ matrix.os }})
     runs-on: ${{ matrix.os }}

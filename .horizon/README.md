@@ -26,7 +26,15 @@ the stable release found on 2026-10-11. Cargo.lock locks dependency versions.
 | Native compilation | GCC 13, build-essential 12.10ubuntu1, CMake 3.28.3, pkg-config 1.8.1 | Hosted runner; Cargo.lock includes aws-lc-sys | Pinned Ubuntu 24.04 package versions |
 | Tests | Cargo from Rust 1.99.0 | ci.yml | Same toolchain; local fake relay |
 | Shell scripts | Bash 5.2 and POSIX sh | Implicit hosted-runner tools | Ubuntu base |
+| Verify Horizon pins | Python 3.12 | Ubuntu 24.04 base; horizon-pins job | Base Python; Horizon writes verify-pins.py |
 | Local CI | localci v0.1.0, Linux x86_64 musl | Newest published release on 2026-10-11 | SHA256SUMS and pinned asset checksum |
+
+The repository does not name an exact installed toolchain version. Rust 1.85 is
+a minimum supported version, not a pin that Rust 1.99.0 refines. Native build
+tools and localci also have no version source in repository files, so
+`pins.json` declares an empty list. Their versions remain pinned as Dockerfile
+ARGs. The `horizon-pins` CI job checks the manifest using the verifier Horizon
+generates, with checkout credentials disabled.
 
 AGENTS.md also requires nodkey-proto to remain buildable for WebAssembly. The
 image includes Rust 1.99.0's checksum-pinned wasm32-unknown-unknown standard
@@ -46,29 +54,55 @@ The latest published localci v0.1.0 currently leaves this workflow's dynamic
 expression, the intended commands are:
 
 ```sh
-localci run --event push test
-localci run --event push test --fast
+localci run --event push horizon-pins test
+localci run --event push horizon-pins test --fast
 ```
 
-The image proof uses these exact Linux CI commands directly because the job
-cannot be selected by this localci release. No Linux run step is omitted.
-The repeated proof reuses Cargo caches; localci fast mode remains unproven.
+The image proof uses the exact Linux CI commands below, including the
+`horizon-pins` job's pin verification, because localci cannot select the `test`
+job. No Linux run step is omitted or needs credentials or services. Repeated
+command proofs reuse Cargo caches, but do not prove localci fast mode.
 
 The commands are:
 
 ```sh
+python3 .horizon/verify-pins.py
 cargo fmt --check
 cargo clippy --all-targets --locked -- -D warnings
 cargo test --locked
 sh -n install.sh && bash -n scripts/sign-macos.sh
 ```
 
+Horizon proves the committed checkout, which does not contain newly generated
+setup files until they are committed. The image includes only its Dockerfile,
+empty pin manifest and generated verifier under `/opt/nodkey-cli-horizon`.
+Before committing, the proof runs
+`python3 /opt/nodkey-cli-horizon/verify-pins.py` for the pin check. This verifies
+the image's configuration without changing the checkout. Future repository CI
+uses the `.horizon` copy above. No application source or credentials enter the
+image. If repository-backed pins are added later, verify them in the checkout.
+
 Horizon owns image builds and proof execution. The proof status, logs and results
 are machine-local, outside this repository.
 
 Horizon reported a successful proof on 2026-10-11 for
-`horizon-setup-nodkey-cli:candidate`: image build and worker checks in 77 seconds,
-Linux CI checks in 36 seconds, and the fast rerun in 8 seconds.
+`horizon-setup-nodkey-cli:candidate`: image build and worker checks in 3 seconds,
+Linux CI commands in 38 seconds, and the repeated command proof in 9 seconds.
+All 83 tests passed in each run as UID 10001. Format, Clippy, pin verification and
+shell syntax checks also passed. The repeat uses Cargo caches; localci matrix
+selection and its `--fast` behavior remain unproven.
+
+## Changes to the existing setup
+
+- Updated the base digest to the Ubuntu 24.04 worker supplied for this setup.
+- Exposed the existing native build package versions as installation ARGs.
+- Added `pins.json` and the single `horizon-pins` job to the main CI workflow.
+- Included the generated verifier and image configuration for pre-commit proof.
+- Updated this documentation to describe the pin check and current proof scope.
+
+All existing `cloud.yml` choices are preserved, including the default profile,
+provider, image repository, build settings, sizes, GPU flag, capabilities and
+Nodkey companion. No storage or placement setting is added.
 
 ## Companions
 
