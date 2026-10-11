@@ -147,7 +147,8 @@ pub struct SaveLogin {
     /// The page the login was used on, e.g. `https://www.vg.no/login`.
     pub url: String,
     pub username: String,
-    pub password: Secret,
+    /// The password, sealed to the phone on its own (`nodkey/v1/password`, `aad` = `agent_id`).
+    pub password: SealedBox,
     /// A title for a new login, e.g. the page's title.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub title: Option<String>,

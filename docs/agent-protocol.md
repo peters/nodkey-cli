@@ -209,8 +209,15 @@ holds the login:
 ```json
 {"v":1, "request_id":"…", "kind":"save", "target":"vg.no", "reason":"Save the login you just used on vg.no",
  "agent":"Firefox on Linux", "ts":1791620000,
- "save":{"url":"https://www.vg.no/login", "username":"alex@example.com", "password":"…", "title":"VG"}}
+ "save":{"url":"https://www.vg.no/login", "username":"alex@example.com", "title":"VG",
+         "password":{"enc":"…", "ct":"…"}}}
 ```
+
+`password` is sealed to the phone **on its own** with HPKE (`info` = `nodkey/v1/password`, `aad` =
+`agent_id`), inside the sealed request. The agent seals it the moment it reads the password, so it
+never has to keep the password in clear: a save that waits for the user is sent again later as a new
+request (new `request_id`) around the same sealed password. The phone opens the request, then the
+password.
 
 The phone shows the site and user name (never the password) and asks the user to save it; Face ID
 confirms. A login with the same site and user name gets the new password; otherwise a new login is
@@ -221,9 +228,9 @@ added. A save is **never covered by a lease**. The answer carries `saved`: `adde
 {"v":1, "request_id":"…", "decision":"approved", "saved":"updated"}
 ```
 
-An agent must not keep the password after the request: if the user does not answer in time, it may
-keep the request **sealed to the phone** (only the phone can open it) and offer to send it again.
-Vectors: `request_save`, `answer_save`.
+An agent must not keep the password in clear. When the user does not answer in time, it may keep
+the sealed password with the site and user name and offer to send it again. Vectors:
+`save_password`, `request_save`, `answer_save`.
 
 ## Opening with the X25519 step elsewhere
 

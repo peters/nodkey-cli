@@ -34,6 +34,9 @@ pub enum Purpose {
     Pairing,
     /// Image attachment, agent → phone. `aad` = `request_id` ‖ `agent_id`.
     Attachment,
+    /// The password of a `save` request, agent → phone, sealed on its own so the agent never has
+    /// to keep it in clear to send the request again. `aad` = `agent_id`.
+    Password,
 }
 
 impl Purpose {
@@ -44,6 +47,7 @@ impl Purpose {
             Purpose::Answer => "nodkey/v1/answer",
             Purpose::Pairing => "nodkey/v1/pairing",
             Purpose::Attachment => "nodkey/v1/attachment",
+            Purpose::Password => "nodkey/v1/password",
         }
     }
 

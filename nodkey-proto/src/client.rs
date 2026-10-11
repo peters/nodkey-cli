@@ -7,8 +7,8 @@
 use zeroize::Zeroizing;
 
 use crate::{
-    Answer, Error, Kind, PairingGrant, PublicKeys, Purpose, Request, RequestEnvelope, aad, b64u,
-    check, parse_plaintext,
+    Answer, Error, Kind, PairingGrant, PublicKeys, Purpose, Request, RequestEnvelope, SealedBox,
+    aad, b64u, check, parse_plaintext,
     seal::{OsRng, seal_attachment_body},
 };
 
@@ -41,9 +41,7 @@ pub fn check_request(r: &Request) -> Result<(), String> {
             Err("filter needs at least one criterion".into())
         }
         (Kind::Save, _, None) => Err("a save request needs the login to save".into()),
-        (Kind::Save, _, Some(s))
-            if s.username.trim().is_empty() || s.password.expose().is_empty() =>
-        {
+        (Kind::Save, _, Some(s)) if s.username.trim().is_empty() || s.password.ct.is_empty() => {
             Err("a save request needs a user name and a password".into())
         }
         (Kind::Save, _, Some(s)) if s.url.chars().count() > 2000 => {
@@ -69,6 +67,21 @@ pub fn seal_request(
         ct: b64u::encode(&sealed.ct),
         attachment: attachment.then_some(true),
     })
+}
+
+/// Seals the password of a `save` request to the phone on its own. The result can be kept and
+/// sent again in a new request; only the phone can open it.
+pub fn seal_password(
+    agent_id: &str,
+    phone_kem: &[u8; 32],
+    password: &str,
+) -> Result<SealedBox, Error> {
+    if password.is_empty() {
+        return Err(Error::Encoding("empty password"));
+    }
+    Ok(Purpose::Password
+        .seal(phone_kem, agent_id.as_bytes(), password.as_bytes())?
+        .to_box())
 }
 
 /// Seals a picture for `PUT /v1/requests/{request_id}/attachment`.
@@ -123,7 +136,7 @@ pub fn read_grant(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::{CleanupFilter, Decision, KeyPair, SaveLogin, Secret, VERSION};
+    use crate::{CleanupFilter, Decision, KeyPair, SaveLogin, VERSION};
 
     fn request(kind: Kind, target: &str, reason: &str) -> Request {
         Request {
@@ -162,12 +175,27 @@ mod tests {
         s.save = Some(SaveLogin {
             url: "https://vg.no".into(),
             username: "alex".into(),
-            password: Secret::new(""),
+            password: SealedBox {
+                enc: String::new(),
+                ct: String::new(),
+            },
             title: None,
         });
         assert!(check_request(&s).is_err());
-        s.save.as_mut().unwrap().password = Secret::new("pw");
+        let phone = KeyPair::generate();
+        let sealed = seal_password("agent", &phone.public().kem, "pw").unwrap();
+        s.save.as_mut().unwrap().password = sealed.clone();
         assert!(check_request(&s).is_ok());
+        let opened = Purpose::Password
+            .open_box(phone.kem_secret(), &sealed, b"agent")
+            .unwrap();
+        assert_eq!(&opened[..], b"pw");
+        assert!(
+            Purpose::Password
+                .open_box(phone.kem_secret(), &sealed, b"other")
+                .is_err()
+        );
+        assert!(seal_password("agent", &phone.public().kem, "").is_err());
     }
 
     #[test]

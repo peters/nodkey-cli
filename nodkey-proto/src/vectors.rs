@@ -87,7 +87,7 @@ impl Ctx {
         aad_str: String,
         plaintext: &[u8],
         text: bool,
-    ) {
+    ) -> crate::SealedBox {
         let ikm_e: [u8; 32] = self.rng.clone().take();
         let pk = recipient.keys.public().kem;
         let s = seal_with_rng(
@@ -121,6 +121,7 @@ impl Ctx {
             v["body_b64u"] = Value::String(b64u::encode(&body));
         }
         self.hpke.push(v);
+        s.to_box()
     }
 }
 
@@ -374,10 +375,19 @@ pub fn build() -> Value {
         "Save the login you just used on vg.no",
         None,
     );
+    let password_box = ctx.seal(
+        "save_password",
+        Purpose::Password,
+        "agent",
+        &phone,
+        agent.id.clone(),
+        b"correct horse battery staple",
+        false,
+    );
     r_save.save = Some(crate::SaveLogin {
         url: "https://www.vg.no/login".into(),
         username: "alex@example.com".into(),
-        password: Secret::new("correct horse battery staple"),
+        password: password_box,
         title: Some("VG".into()),
     });
     ctx.seal(
