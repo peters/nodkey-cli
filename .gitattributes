@@ -1,0 +1,3 @@
+# LF everywhere: the test vectors are compared byte for byte, and the skill is compiled in.
+* text=auto eol=lf
+*.ps1 text eol=crlf
