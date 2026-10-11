@@ -299,7 +299,9 @@ fn skills(env: &Env, remove: bool) -> Vec<String> {
             if !file.exists() {
                 continue;
             }
-            let ours = std::fs::read_to_string(&file).is_ok_and(|s| s.contains("\nname: nodkey\n"));
+            // Line by line, so a skill written with Windows line endings is recognised too.
+            let ours = std::fs::read_to_string(&file)
+                .is_ok_and(|s| s.lines().any(|l| l.trim_end() == "name: nodkey"));
             if !ours {
                 out.push(format!(
                     "Skill for {who}: {} is not Nodkey's; left it",

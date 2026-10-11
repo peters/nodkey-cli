@@ -122,6 +122,13 @@ fn install_and_remove() {
     assert!(desktop["mcpServers"].get("nodkey").is_none());
     assert_eq!(desktop["mcpServers"]["other"]["command"], "x");
     assert!(!fx.root.join(".claude/skills/nodkey").exists());
+
+    // A skill with Windows line endings is still recognised as Nodkey's.
+    let dir = fx.root.join(".codex/skills/nodkey");
+    std::fs::create_dir_all(&dir).unwrap();
+    std::fs::write(dir.join("SKILL.md"), "---\r\nname: nodkey\r\n---\r\n").unwrap();
+    fx.with(false, remove);
+    assert!(!dir.exists());
 }
 
 #[test]
