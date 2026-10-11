@@ -89,7 +89,14 @@ impl<'a> Outcome<'a> {
             Decision::Approved if kind == Kind::Insights => INSIGHTS,
             Decision::Approved => "The user approved.",
             Decision::Denied if a.error.as_deref() == Some("paused") => PAUSED,
-            Decision::Denied if a.error.as_deref() == Some("unsupported_version") => OLD_PROTOCOL,
+            Decision::Denied
+                if matches!(
+                    a.error.as_deref(),
+                    Some("unsupported_version" | "unsupported_kind")
+                ) =>
+            {
+                OLD_PROTOCOL
+            }
             Decision::Denied => {
                 "The user denied the request. Do not ask again for the same thing unless they say so."
             }
@@ -127,7 +134,7 @@ impl<'a> Outcome<'a> {
                 if moved == 1 { " was" } else { "s were" }
             ),
             Decision::Denied if a.error.as_deref() == Some("paused") => PAUSED.to_owned(),
-            Decision::Denied if a.error.as_deref() == Some("unsupported_version") => {
+            Decision::Denied if matches!(a.error.as_deref(), Some("unsupported_version" | "unsupported_kind")) => {
                 OLD_PROTOCOL.to_owned()
             }
             Decision::Denied if a.error.as_deref() == Some("empty_filter") => {

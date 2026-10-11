@@ -190,8 +190,9 @@ A `cleanup` answer carries `moved` (how many logins went to Recently deleted) an
 the names of the moved logins (`issuer` = the login's title or host, `name` = user name, `site`;
 never a password). A refusal without asking carries `error`: `empty_filter` (a clean-up without a
 criterion), `paused` (the user paused this agent, or all agents, under Agents; any kind of request,
-answered at once and recorded in the history) or `unsupported_version` (the request's `v` is not a
-version the app speaks; planned, see "Versions"):
+answered at once and recorded in the history), `unsupported_version` (the request's `v` is not a
+version the app speaks) or `unsupported_kind` (the app does not know the request's `kind` yet; see
+"Versions"):
 
 ```json
 {"v":1, "request_id":"…", "decision":"approved", "moved":2,
@@ -263,9 +264,10 @@ removes its leases and calls `DELETE …/agents/{agent_id}`.
 
 Every plaintext message carries `v` (now `1`). The agent sends the version it speaks in every request;
 the phone answers a request whose `v` it does not speak with `decision: denied`, `error:
-"unsupported_version"`, without asking the user, and the agent tells the user to update the app or
-`nodkey`. (Planned for the app after 1.0; until then the phone ignores a request it cannot read and the
-agent sees `expired`.) Requests also carry `client.mcp_version`, the version of `nodkey`.
+"unsupported_version"`, and a request of a `kind` it does not know with `error: "unsupported_kind"`,
+without asking the user. The agent tells the user to update the app or the agent. (Apps before this
+change ignore such a request, and the agent sees `expired`.) Requests also carry
+`client.mcp_version`, the version of `nodkey`.
 
 ## Agent side
 
