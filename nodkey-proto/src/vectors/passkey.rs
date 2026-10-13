@@ -146,12 +146,19 @@ fn client_data_cases() -> Vec<(&'static str, PasskeyOp, &'static str, String, bo
     ]
 }
 
-/// Seals the passkey requests and answers into `ctx` and returns the `webauthn` section.
-pub(super) fn add(ctx: &mut Ctx, agent: &Side, phone: &Side) -> Value {
+/// The vectors' passkey for `webauthn.io`: its key, credential id and user handle (fixed test
+/// values; the fake phone holds it too).
+pub fn test_passkey() -> (webauthn::SigningKey, Vec<u8>, Vec<u8>) {
     let key = webauthn::signing_key(&label32("nodkey/v1/vectors/passkey/key")).expect("valid key");
-    let public = key.verifying_key();
     let credential_id = label32("nodkey/v1/vectors/passkey/credential")[..16].to_vec();
     let user_handle = label32("nodkey/v1/vectors/passkey/user")[..16].to_vec();
+    (key, credential_id, user_handle)
+}
+
+/// Seals the passkey requests and answers into `ctx` and returns the `webauthn` section.
+pub(super) fn add(ctx: &mut Ctx, agent: &Side, phone: &Side) -> Value {
+    let (key, credential_id, user_handle) = test_passkey();
+    let public = key.verifying_key();
     let challenge = |op: &str| {
         b64u::encode(&label32(&format!(
             "nodkey/v1/vectors/passkey/challenge/{op}"

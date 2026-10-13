@@ -33,7 +33,7 @@ pub const PNG: [u8; 76] = [
     0x00, 0x00, 0x00, 0x00, 0x49, 0x45, 0x4e, 0x44, 0xae, 0x42, 0x60, 0x82,
 ];
 
-mod passkey;
+pub mod passkey;
 fn label32(label: &str) -> [u8; 32] {
     Sha256::digest(label.as_bytes()).into()
 }

@@ -3,12 +3,18 @@
 use nodkey_fake_relay as fake_relay;
 
 use std::{
+    io::Write,
     path::PathBuf,
-    process::{Command, Output},
+    process::{Command, Output, Stdio},
 };
 
 use fake_relay::Mode;
-use serde_json::Value;
+use nodkey_proto::{
+    PasskeyOp, b64u,
+    passkey::{build_client_data_json, check_client_data},
+    webauthn,
+};
+use serde_json::{Value, json};
 
 struct Cli {
     relay: std::net::SocketAddr,
@@ -22,16 +28,49 @@ impl Cli {
         Cli { relay, dir }
     }
 
-    fn run(&self, args: &[&str]) -> Output {
-        Command::new(env!("CARGO_BIN_EXE_nodkey"))
-            .args(args)
+    fn command(&self, args: &[&str]) -> Command {
+        let mut c = Command::new(env!("CARGO_BIN_EXE_nodkey"));
+        c.args(args)
             .env("NODKEY_AGENT_DIR", &self.dir)
             .env("NODKEY_RELAY", format!("http://{}", self.relay))
             .env("NODKEY_REQUEST_TIMEOUT", "3")
             .env_remove("NODKEY_AGENT")
-            .env("TMPDIR", env!("CARGO_TARGET_TMPDIR"))
-            .output()
-            .expect("run nodkey")
+            .env("TMPDIR", env!("CARGO_TARGET_TMPDIR"));
+        c
+    }
+
+    fn run(&self, args: &[&str]) -> Output {
+        self.command(args).output().expect("run nodkey")
+    }
+
+    /// `nodkey webauthn --agent claude-code` with `input` on stdin: the one JSON line on stdout
+    /// and the exit code.
+    fn webauthn(&self, input: &str) -> (Value, i32) {
+        let mut child = self
+            .command(&["webauthn", "--agent", "claude-code"])
+            .stdin(Stdio::piped())
+            .stdout(Stdio::piped())
+            .stderr(Stdio::piped())
+            .spawn()
+            .expect("run nodkey");
+        child
+            .stdin
+            .take()
+            .unwrap()
+            .write_all(input.as_bytes())
+            .unwrap();
+        let out = child.wait_with_output().unwrap();
+        let text = String::from_utf8_lossy(&out.stdout).into_owned();
+        assert_eq!(
+            text.lines().count(),
+            1,
+            "one JSON line: {text}{}",
+            stderr(&out)
+        );
+        (
+            serde_json::from_str(&text).unwrap(),
+            out.status.code().unwrap(),
+        )
     }
 }
 
@@ -158,12 +197,204 @@ fn bad_arguments_exit_64() {
         &["login", "a", "--reason", "x", "--bogus"],
         &["frobnicate"],
         &["phones", "--agent", "Not Valid"],
+        &["webauthn", "--bogus"],
+        &["webauthn", "extra"],
+        &["webauthn", "--agent", "Not Valid"],
     ] {
         let out = cli.run(args);
         assert_eq!(out.status.code(), Some(64), "{args:?}: {}", stderr(&out));
+        if args[0] == "webauthn" {
+            let v: Value = serde_json::from_slice(&out.stdout).unwrap();
+            assert_eq!(v["status"], "error", "{args:?}");
+        }
     }
     let out = cli.run(&["--version"]);
     assert!(stdout(&out).starts_with("nodkey "));
     let out = cli.run(&["skill"]);
     assert!(stdout(&out).contains("name: nodkey"));
+}
+
+// Passkeys: `nodkey webauthn` against the fake phone, which holds a test passkey for
+// `webauthn.io` and makes new ones. Signatures are checked with real ES256.
+
+const ORIGIN: &str = "https://webauthn.io";
+
+fn bytes(v: &Value, k: &str) -> Vec<u8> {
+    b64u::decode(
+        v[k].as_str()
+            .unwrap_or_else(|| panic!("{k} missing in {v}")),
+    )
+    .unwrap()
+}
+
+fn client_data(op: PasskeyOp, origin: &str) -> String {
+    let mut challenge = [0u8; 32];
+    nodkey_proto::random_bytes(&mut challenge);
+    build_client_data_json(op, &b64u::encode(&challenge), origin)
+}
+
+fn get(rp_id: &str, cd: &str, allow: &[&str]) -> String {
+    json!({
+        "version": 1, "op": "get", "rp_id": rp_id, "origin": ORIGIN,
+        "client_data_json": b64u::encode(cd.as_bytes()), "allow_credentials": allow,
+        "user_verification": "preferred",
+        "reason": "Sign in to webauthn.io in a browser panel",
+        "requester": {"app": "Horizon", "agent": "Claude Code"},
+    })
+    .to_string()
+}
+
+fn create(cd: &str, user_id: &[u8], algorithms: &[i64], exclude: &[&str]) -> String {
+    json!({
+        "version": 1, "op": "create", "rp_id": "webauthn.io", "origin": ORIGIN,
+        "client_data_json": b64u::encode(cd.as_bytes()), "rp_name": "WebAuthn.io",
+        "user": {"id": b64u::encode(user_id), "name": "sam@example.com", "display_name": "Sam"},
+        "algorithms": algorithms, "exclude_credentials": exclude, "resident_key": "required",
+        "user_verification": "required",
+    })
+    .to_string()
+}
+
+#[test]
+fn create_then_sign_in_with_a_passkey() {
+    let (fake, addr) = fake_relay::start(1);
+    let cli = Cli::new(addr);
+    let out = cli
+        .command(&["pair", "--agent", "claude-code"])
+        .output()
+        .unwrap();
+    assert!(out.status.success(), "{}", stderr(&out));
+
+    // A new passkey: the attested authenticator data holds the returned key and credential id.
+    let user_id = [42u8; 16];
+    let cd = client_data(PasskeyOp::Create, ORIGIN);
+    let (made, code) = cli.webauthn(&create(&cd, &user_id, &[-7, -257], &[]));
+    assert_eq!(code, 0, "{made}");
+    assert_eq!(made["status"], "ok");
+    assert_eq!(made["public_key_algorithm"], -7);
+    assert_eq!(made["transports"], json!(["internal", "hybrid"]));
+    let credential = made["credential_id"].as_str().unwrap().to_owned();
+    let public_key = webauthn::key_from_spki(&bytes(&made, "public_key")).unwrap();
+    let auth = bytes(&made, "authenticator_data");
+    assert_eq!(
+        auth,
+        webauthn::authenticator_data(
+            "webauthn.io",
+            Some((&bytes(&made, "credential_id"), &public_key))
+        )
+    );
+    assert_eq!(
+        bytes(&made, "attestation_object"),
+        webauthn::attestation_object(&auth)
+    );
+    let seen = fake.seen();
+    let sent = &seen.last().unwrap().request;
+    assert_eq!(sent.kind, nodkey_proto::Kind::Passkey);
+    assert_eq!(sent.target, "webauthn.io");
+    assert_eq!(sent.reason, "Create a passkey for webauthn.io");
+    assert!(sent.agent.starts_with("Claude Code @ "), "{}", sent.agent);
+
+    // Sign in with it: the signature verifies with the key from create, over this client data.
+    let cd = client_data(PasskeyOp::Get, ORIGIN);
+    let (signed, code) = cli.webauthn(&get("webauthn.io", &cd, &[&credential]));
+    assert_eq!(code, 0, "{signed}");
+    assert_eq!(signed["credential_id"], credential.as_str());
+    assert_eq!(bytes(&signed, "user_handle"), user_id);
+    let auth = bytes(&signed, "authenticator_data");
+    assert_eq!(auth, webauthn::authenticator_data("webauthn.io", None));
+    let signature = bytes(&signed, "signature");
+    webauthn::verify(&public_key, &auth, cd.as_bytes(), &signature).unwrap();
+    assert!(webauthn::verify(&public_key, &auth, b"{}", &signature).is_err());
+    let seen = fake.seen();
+    let sent = &seen.last().unwrap().request;
+    assert_eq!(sent.reason, "Sign in to webauthn.io in a browser panel");
+    let client = sent.client.as_ref().unwrap();
+    assert_eq!(client.app.as_deref(), Some("Horizon (Claude Code)"));
+    let p = sent.passkey.as_ref().unwrap();
+    assert_eq!(
+        check_client_data(
+            PasskeyOp::Get,
+            "webauthn.io",
+            &b64u::decode(p.client_data_json()).unwrap()
+        )
+        .unwrap()
+        .origin,
+        ORIGIN
+    );
+
+    // The phone's test passkey (the vectors' key) signs too.
+    let test = fake
+        .passkeys()
+        .into_iter()
+        .find(|p| p.user_name == fake_relay::passkeys::USER_NAME)
+        .unwrap();
+    let cd = client_data(PasskeyOp::Get, ORIGIN);
+    let (signed, code) = cli.webauthn(&get("webauthn.io", &cd, &[&test.credential_id]));
+    assert_eq!(code, 0, "{signed}");
+    let key = webauthn::key_from_spki(&b64u::decode(&test.public_key).unwrap()).unwrap();
+    webauthn::verify(
+        &key,
+        &bytes(&signed, "authenticator_data"),
+        cd.as_bytes(),
+        &bytes(&signed, "signature"),
+    )
+    .unwrap();
+
+    // Refusals.
+    let cd = client_data(PasskeyOp::Get, "https://example.com");
+    let none = json!({
+        "version": 1, "op": "get", "rp_id": "example.com", "origin": "https://example.com",
+        "client_data_json": b64u::encode(cd.as_bytes()),
+    });
+    let (v, code) = cli.webauthn(&none.to_string());
+    assert_eq!((v["status"].as_str(), code), (Some("not_found"), 2), "{v}");
+    let cd = client_data(PasskeyOp::Create, ORIGIN);
+    let (v, code) = cli.webauthn(&create(&cd, &user_id, &[-7], &[&credential]));
+    assert_eq!((v["status"].as_str(), code), (Some("excluded"), 2), "{v}");
+    let (v, code) = cli.webauthn(&create(&cd, &user_id, &[-257], &[]));
+    assert_eq!((v["status"].as_str(), code), (Some("denied"), 2), "{v}");
+    assert_eq!(v["error"], "unsupported_algorithm");
+
+    fake.set_mode(Mode::Deny);
+    let cd = client_data(PasskeyOp::Get, ORIGIN);
+    let (v, code) = cli.webauthn(&get("webauthn.io", &cd, &[]));
+    assert_eq!((v["status"].as_str(), code), (Some("denied"), 2), "{v}");
+    fake.set_mode(Mode::Silent);
+    let (v, code) = cli.webauthn(&get("webauthn.io", &cd, &[]));
+    assert_eq!((v["status"].as_str(), code), (Some("expired"), 3), "{v}");
+
+    // Bad input never reaches the phone.
+    let before = fake.seen().len();
+    let other = client_data(PasskeyOp::Get, "https://www.webauthn.io");
+    let mut mismatch: Value = serde_json::from_str(&get("webauthn.io", &other, &[])).unwrap();
+    mismatch["origin"] = json!(ORIGIN);
+    for input in [
+        mismatch.to_string(),
+        get(
+            "webauthn.io",
+            &client_data(PasskeyOp::Get, "http://webauthn.io"),
+            &[],
+        ),
+        get("webauthn.io", &client_data(PasskeyOp::Create, ORIGIN), &[]),
+        "not json".to_owned(),
+        json!({"version": 2}).to_string(),
+    ] {
+        let (v, code) = cli.webauthn(&input);
+        assert_eq!(
+            (v["status"].as_str(), code),
+            (Some("error"), 64),
+            "{input}: {v}"
+        );
+    }
+    assert_eq!(fake.seen().len(), before);
+}
+
+#[test]
+fn not_paired_is_an_error() {
+    let (_fake, addr) = fake_relay::start(1);
+    let cli = Cli::new(addr);
+    let cd = client_data(PasskeyOp::Get, ORIGIN);
+    let (v, code) = cli.webauthn(&get("webauthn.io", &cd, &[]));
+    assert_eq!((v["status"].as_str(), code), (Some("error"), 1), "{v}");
+    assert!(v["message"].as_str().unwrap().contains("not paired"), "{v}");
 }

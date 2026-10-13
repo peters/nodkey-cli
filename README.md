@@ -92,6 +92,9 @@ nodkey agents
 - `cleanup` only proposes. Your iPhone shows the matching logins and you confirm with Face ID. They go
   to Recently deleted, where you can get them back for 30 days.
 - Exit codes: 0 approved, 1 error, 2 denied, 3 no answer in time, 64 bad arguments.
+- `nodkey webauthn` is for browser hosts such as Horizon: it reads one passkey request (sign in or
+  create) as JSON on stdin and writes the result as JSON on stdout. Your iPhone shows the site and
+  signs with a passkey that never leaves it. See `docs/agent-protocol.md`.
 
 `nodkey --help` lists every option.
 

@@ -6,8 +6,8 @@
 use std::time::{Duration, Instant};
 
 use nodkey_proto::{
-    AgentInfo, AttachmentInfo, CleanupFilter, ClientInfo, Kind, Purpose, Request, VERSION, check,
-    client, code,
+    AgentInfo, Answer, AttachmentInfo, CleanupFilter, ClientInfo, Kind, Purpose, Request, VERSION,
+    check, client, code,
 };
 use serde::Serialize;
 use serde_json::json;
@@ -377,30 +377,39 @@ impl Agent {
         reported: Reported<'_>,
         progress: Progress<'_>,
     ) -> Result<Text, String> {
-        let target = target.trim();
-        let reason = reason.trim();
-        // Checked before the agent folder is read, so a bad call fails the same everywhere.
-        let mut request = Request {
-            v: VERSION,
-            request_id: nodkey_proto::random_id(),
-            kind,
-            target: target.to_owned(),
-            reason: reason.to_owned(),
-            agent: String::new(),
-            ts: nodkey_proto::unix_now(),
-            attachment: None,
-            filter,
-            save: None,
-            passkey: None,
-            client: Some(
-                ClientInfo {
-                    model: reported.model.map(str::to_owned),
-                    effort: reported.effort.map(str::to_owned),
-                    ..self.client.lock().expect("lock").clone()
-                }
-                .tidy(),
-            ),
+        let client = ClientInfo {
+            model: reported.model.map(str::to_owned),
+            effort: reported.effort.map(str::to_owned),
+            ..self.client.lock().expect("lock").clone()
         };
+        let mut request = new_request(kind, target, reason, client);
+        request.filter = filter;
+        let ex = self
+            .exchange(request, image_path, phone_selector, progress)
+            .await?;
+        Ok(text(&match &ex.answer {
+            Some(answer) => {
+                Outcome::from_answer(answer, kind, &ex.phone, ex.attachment_warning.clone())
+            }
+            None => Outcome::expired(
+                &ex.request_id,
+                &ex.phone,
+                self.timing.request,
+                ex.attachment_warning.clone(),
+            ),
+        }))
+    }
+
+    /// Seals and posts a request, uploads its picture and waits for the answer (`None` when
+    /// none came in time). The request is checked before the agent folder is read, so a bad call
+    /// fails the same everywhere.
+    pub async fn exchange(
+        &self,
+        mut request: Request,
+        image_path: Option<&str>,
+        phone_selector: Option<&str>,
+        progress: Progress<'_>,
+    ) -> Result<Exchanged, String> {
         client::check_request(&request)?;
         let store = self.store()?;
         let relay = self.relay()?;
@@ -476,30 +485,54 @@ impl Agent {
         )
         .await?;
 
+        let mut ex = Exchanged {
+            answer: None,
+            request_id,
+            phone: phone.name.clone(),
+            attachment_warning,
+        };
         let Some(answer_box) = answer_box else {
-            return Ok(text(&Outcome::expired(
-                &request_id,
-                &phone.name,
-                self.timing.request,
-                attachment_warning,
-            )));
+            return Ok(ex);
         };
         let plain = Purpose::Answer
             .open_box(
                 id.keys.kem_secret(),
                 &answer_box,
-                &client::answer_aad(&request_id, &phone.phone_id),
+                &client::answer_aad(&ex.request_id, &phone.phone_id),
             )
             .map_err(|_| "The answer does not decrypt; ignoring it.".to_owned())?;
-        let answer =
-            client::read_answer(&plain, &request_id).map_err(|e| format!("{e}; ignoring it."))?;
+        let answer = client::read_answer(&plain, &ex.request_id)
+            .map_err(|e| format!("{e}; ignoring it."))?;
         drop(plain);
-        Ok(text(&Outcome::from_answer(
-            &answer,
-            kind,
-            &phone.name,
-            attachment_warning,
-        )))
+        ex.answer = Some(answer);
+        Ok(ex)
+    }
+}
+
+/// A request that went to the phone: its answer, if one came in time.
+pub struct Exchanged {
+    pub answer: Option<Answer>,
+    pub request_id: String,
+    /// The phone's name.
+    pub phone: String,
+    pub attachment_warning: Option<String>,
+}
+
+/// A new request of `kind` with a fresh id; `agent` is filled in when it is sent.
+pub fn new_request(kind: Kind, target: &str, reason: &str, client: ClientInfo) -> Request {
+    Request {
+        v: VERSION,
+        request_id: nodkey_proto::random_id(),
+        kind,
+        target: target.trim().to_owned(),
+        reason: reason.trim().to_owned(),
+        agent: String::new(),
+        ts: nodkey_proto::unix_now(),
+        attachment: None,
+        filter: None,
+        save: None,
+        passkey: None,
+        client: Some(client.tidy()),
     }
 }
 

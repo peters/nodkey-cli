@@ -26,6 +26,8 @@ Usage:
   nodkey phones                            the phones this agent is paired with
   nodkey unpair PHONE                      leave a phone (phone name or id)
   nodkey agents                            the agents paired on this computer
+  nodkey webauthn [--phone PHONE]          sign in with a passkey or make one: one JSON request
+                                           on stdin, one JSON result on stdout (for browser hosts)
   nodkey mcp                               run the MCP server on stdio
   nodkey setup [--remove] [--dry-run]      add (or remove) the MCP server and skill in your agents
   nodkey skill                             print the agent skill
@@ -130,7 +132,7 @@ impl Args {
     }
 
     /// Fails on options that `command` does not take.
-    fn only(&self, command: &str, allowed: &[&str]) -> Result<(), String> {
+    pub(crate) fn only(&self, command: &str, allowed: &[&str]) -> Result<(), String> {
         let global = ["agent", "relay", "json"];
         for name in self.values.keys().chain(&self.flags) {
             if !allowed.contains(&name.as_str()) && !global.contains(&name.as_str()) {
@@ -171,6 +173,7 @@ pub fn main(raw: Vec<String>) -> ExitCode {
     }
     let args = match Args::parse(rest) {
         Ok(a) => a,
+        Err(e) if command == "webauthn" => return crate::webauthn::bad_input(&e),
         Err(e) => return usage_error(&e),
     };
     if std::env::var_os("NODKEY_DEBUG").is_none() && command != "mcp" {
@@ -188,6 +191,7 @@ pub fn main(raw: Vec<String>) -> ExitCode {
             print!("{}", crate::SKILL);
             return ExitCode::SUCCESS;
         }
+        "webauthn" => return crate::webauthn::main(&args, agent(&args, profile::TERMINAL)),
         "pair" | "code" | "login" | "accounts" | "insights" | "cleanup" | "phones" | "unpair"
         | "agents" => check(command, &args),
         other => Err(format!("unknown command {other:?}; see nodkey --help")),

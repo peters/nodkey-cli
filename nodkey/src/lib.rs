@@ -14,6 +14,7 @@ pub mod relay;
 pub mod setup;
 pub mod store;
 pub mod tools;
+pub mod webauthn;
 
 /// The agent skill, installed by `nodkey setup`.
 pub const SKILL: &str = include_str!("../../skills/nodkey/SKILL.md");

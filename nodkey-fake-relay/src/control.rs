@@ -5,6 +5,8 @@
 //! - `GET /_fake/seen`: every request the phone opened, oldest first (with any password in it:
 //!   test data only).
 //! - `GET /_fake/check/{agent_id}`: the check number the phone shows for a paired agent.
+//! - `GET /_fake/passkeys`: the phone's passkeys, `[{rp_id, credential_id, user_handle, user_name,
+//!   public_key}]` (b64u; `public_key` is SPKI DER, to check signatures with).
 
 use std::sync::Arc;
 
@@ -25,6 +27,7 @@ pub(crate) fn routes() -> Router<Shared> {
         .route("/_fake/mode", axum::routing::put(set_mode))
         .route("/_fake/seen", get(seen))
         .route("/_fake/check/{agent_id}", get(check))
+        .route("/_fake/passkeys", get(passkeys))
 }
 
 async fn phone(State(fake): State<Shared>) -> Response {
@@ -38,6 +41,10 @@ async fn set_mode(State(fake): State<Shared>, Json(mode): Json<Mode>) -> StatusC
 
 async fn seen(State(fake): State<Shared>) -> Response {
     Json(fake.seen()).into_response()
+}
+
+async fn passkeys(State(fake): State<Shared>) -> Response {
+    Json(fake.passkeys()).into_response()
 }
 
 async fn check(State(fake): State<Shared>, Path(agent_id): Path<String>) -> Response {
