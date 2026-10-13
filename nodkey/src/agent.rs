@@ -532,6 +532,7 @@ pub fn new_request(kind: Kind, target: &str, reason: &str, client: ClientInfo) -
         filter: None,
         save: None,
         passkey: None,
+        bundle: None,
         client: Some(client.tidy()),
     }
 }

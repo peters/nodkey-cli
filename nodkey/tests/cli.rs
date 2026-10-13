@@ -154,6 +154,25 @@ fn pair_then_ask_from_the_terminal() {
         stdout(&out)
     );
 
+    // Several items at once.
+    let out = cli.run(&[
+        "credentials",
+        "login:chatgpt.com",
+        "code:deny.example",
+        "--reason",
+        "Two sign-ins",
+        "--follow-up",
+        "300",
+    ]);
+    assert!(out.status.success(), "{}", stderr(&out));
+    let v: Value = serde_json::from_slice(&out.stdout).unwrap();
+    assert_eq!(
+        (v["approved"].as_u64(), v["of"].as_u64()),
+        (Some(1), Some(2))
+    );
+    assert_eq!(v["items"][0]["password"], fake_relay::PASSWORD);
+    assert_eq!(v["items"][1]["decision"], "denied");
+
     let out = cli.run(&["cleanup", "--ip-only", "--reason", "Old routers"]);
     assert!(out.status.success(), "{}", stderr(&out));
     let text = stdout(&out);
@@ -194,6 +213,8 @@ fn bad_arguments_exit_64() {
         &["code"][..],
         &["code", "github.com"],
         &["cleanup", "--reason", "x"],
+        &["credentials", "--reason", "x"],
+        &["credentials", "vg.no", "--reason", "x"],
         &["login", "a", "--reason", "x", "--bogus"],
         &["frobnicate"],
         &["phones", "--agent", "Not Valid"],

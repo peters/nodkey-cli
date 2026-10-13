@@ -5,7 +5,7 @@ use serde_json::{Value, json};
 
 use crate::{
     agent::{Agent, Reported},
-    cli::{Args, DENIED, EXPIRED, cleanup_filter},
+    cli::{Args, DENIED, EXPIRED, cleanup_filter, credential_items},
 };
 
 /// Prints `note` on stderr the first time a wait reports progress.
@@ -83,6 +83,30 @@ pub async fn run(command: &str, a: &Args, agent: &Agent) -> Result<u8, String> {
                 Some(_) => {}
                 None => println!("{}", text.as_str()),
             }
+            Ok(code)
+        }
+        "credentials" => {
+            let (wanted, follow_up) = credential_items(a)?;
+            let text = agent
+                .credentials(
+                    wanted,
+                    a.value("reason").unwrap_or_default(),
+                    follow_up,
+                    a.value("image"),
+                    a.value("phone"),
+                    reported,
+                    &wait_note(),
+                )
+                .await?;
+            let v = parse(&text)?;
+            let code = exit_for(&v);
+            if code != 0 {
+                eprintln!(
+                    "nodkey: {}",
+                    v["message"].as_str().unwrap_or("not approved")
+                );
+            }
+            println!("{}", text.as_str());
             Ok(code)
         }
         "accounts" | "insights" => {

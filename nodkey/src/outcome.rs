@@ -65,7 +65,7 @@ const INSIGHTS: &str = "The user approved. These are counts and anonymous groups
     addresses or test hosts) and wait for them to choose. To act on a group, call cleanup_logins with \
     {\"group\": \"<id>\"}; the phone shows them the real site or user name before anything moves.";
 
-const OLD_PROTOCOL: &str = "The phone could not read this request: Nodkey on the iPhone and this nodkey \
+pub(crate) const OLD_PROTOCOL: &str = "The phone could not read this request: Nodkey on the iPhone and this nodkey \
     speak different protocol versions. Update both (the app from the App Store, nodkey with its installer) \
     and try again.";
 
@@ -73,7 +73,7 @@ const OLD_PROTOCOL: &str = "The phone could not read this request: Nodkey on the
 const CHOSEN: &str = " No saved account matched the site you asked for, so the user picked this one by hand \
     (account.site may differ). Use it for this sign-in only.";
 
-const PAUSED: &str = "The user has paused this agent in Nodkey, so the phone refused without asking. \
+pub(crate) const PAUSED: &str = "The user has paused this agent in Nodkey, so the phone refused without asking. \
     Do not retry; tell them, and they can resume it under Agents.";
 
 impl<'a> Outcome<'a> {

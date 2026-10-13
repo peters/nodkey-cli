@@ -543,3 +543,47 @@ fn cleanup_logins_moves_the_matches_and_refuses_an_empty_filter() {
     );
     assert!(r["message"].as_str().unwrap().contains("Nothing was moved"));
 }
+
+#[test]
+fn request_credentials_answers_item_by_item() {
+    let (fake, addr) = fake_relay::start(1);
+    let mut c = Client::start(addr, &[]);
+    c.pair(&fake);
+    let items = json!([
+        {"kind": "login", "target": "chatgpt.com"},
+        {"kind": "code", "target": "github.com/alex"},
+        {"kind": "code", "target": "deny.example"}
+    ]);
+    let (r, err) = c.tool(
+        "request_credentials",
+        json!({"items": items, "reason": "Sign in to ChatGPT and GitHub", "follow_up_seconds": 300}),
+    );
+    assert!(!err, "{r}");
+    assert_eq!(r["decision"], "approved");
+    assert_eq!(
+        (r["approved"].as_u64(), r["of"].as_u64()),
+        (Some(2), Some(3))
+    );
+    assert_eq!(r["items"][0]["target"], "chatgpt.com");
+    assert_eq!(r["items"][0]["password"], fake_relay::PASSWORD);
+    assert_eq!(r["items"][1]["code"], fake_relay::CODE);
+    assert_eq!(r["items"][2]["decision"], "denied");
+    assert!(r["items"][2].get("code").is_none());
+    let seen = fake.seen();
+    let bundle = seen[0]
+        .request
+        .bundle
+        .clone()
+        .expect("the items reached the phone");
+    assert_eq!(seen[0].request.kind, nodkey_proto::Kind::Bundle);
+    assert_eq!(seen[0].request.target, "");
+    assert_eq!(bundle.follow_up, Some(300));
+    assert_eq!(
+        bundle
+            .items
+            .iter()
+            .map(|i| i.id.as_str())
+            .collect::<Vec<_>>(),
+        ["1", "2", "3"]
+    );
+}

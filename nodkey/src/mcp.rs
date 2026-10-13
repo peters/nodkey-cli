@@ -334,6 +334,19 @@ impl Server {
                 )
                 .await
             }
+            "request_credentials" => {
+                let (wanted, follow_up) = crate::bundle::from_args(args)?;
+                a.credentials(
+                    wanted,
+                    req_str(args, "reason")?,
+                    follow_up,
+                    opt_str(args, "image_path")?,
+                    opt_str(args, "phone")?,
+                    reported(args)?,
+                    &progress,
+                )
+                .await
+            }
             "cleanup_logins" => {
                 let filter = cleanup_filter(args)?;
                 a.cleanup(
@@ -475,6 +488,7 @@ mod tests {
             [
                 "request_code",
                 "request_login",
+                "request_credentials",
                 "cleanup_insights",
                 "list_accounts",
                 "cleanup_logins",

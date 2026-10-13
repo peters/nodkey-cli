@@ -20,6 +20,8 @@ Usage:
   nodkey pair [--name NAME]                pair this agent with your iPhone (once)
   nodkey code TARGET --reason TEXT         one one-time code
   nodkey login TARGET --reason TEXT        user name and password (and a code if it has one)
+  nodkey credentials ITEM... --reason TEXT up to 6 logins and codes in one request (JSON);
+                                           ITEM is login:TARGET or code:TARGET
   nodkey accounts [--reason TEXT]          the accounts this agent may ask for (no secrets)
   nodkey insights [--reason TEXT]          anonymous clean-up numbers (JSON)
   nodkey cleanup FILTER... --reason TEXT   propose moving old saved logins to Recently deleted
@@ -40,6 +42,9 @@ Options for code and login:
   --field NAME     print only this field (code, username, password, seconds_left, ...)
   --phone PHONE    which phone, when this agent is paired with more than one
   --model NAME     --effort LEVEL   shown in the history on the phone
+
+Options for credentials: --reason, --image, --phone, --model, --effort as above, and
+  --follow-up SECS  how long a fresh code for an approved item follows without asking (120-600)
 
 Clean-up filter (every one you give must hold; at least one):
   --ip-only  --never-used  --query PATTERN  --username NAME  --domain DOMAIN  --group ID
@@ -62,8 +67,9 @@ pub(crate) const DENIED: u8 = 2;
 pub(crate) const EXPIRED: u8 = 3;
 const BAD_ARGS: u8 = 64;
 
-const VALUE_FLAGS: [&str; 16] = [
+const VALUE_FLAGS: [&str; 17] = [
     "agent",
+    "follow-up",
     "relay",
     "name",
     "reason",
@@ -192,8 +198,8 @@ pub fn main(raw: Vec<String>) -> ExitCode {
             return ExitCode::SUCCESS;
         }
         "webauthn" => return crate::webauthn::main(&args, agent(&args, profile::TERMINAL)),
-        "pair" | "code" | "login" | "accounts" | "insights" | "cleanup" | "phones" | "unpair"
-        | "agents" => check(command, &args),
+        "pair" | "code" | "login" | "credentials" | "accounts" | "insights" | "cleanup"
+        | "phones" | "unpair" | "agents" => check(command, &args),
         other => Err(format!("unknown command {other:?}; see nodkey --help")),
     };
     if let Err(e) = result {
@@ -254,6 +260,22 @@ fn check(command: &str, a: &Args) -> Result<(), String> {
             a.value("reason")
                 .map(|_| ())
                 .ok_or_else(|| format!("nodkey {command} needs --reason: say in one sentence why"))
+        }
+        "credentials" => {
+            a.only(
+                command,
+                &["reason", "image", "phone", "model", "effort", "follow-up"],
+            )?;
+            if a.positional.is_empty() {
+                return Err(
+                    "nodkey credentials takes one or more ITEMs, e.g. login:chatgpt.com code:github.com/alex"
+                        .into(),
+                );
+            }
+            credential_items(a)?;
+            a.value("reason").map(|_| ()).ok_or_else(|| {
+                "nodkey credentials needs --reason: say in one sentence why".to_owned()
+            })
         }
         "accounts" | "insights" => a
             .only(command, &["reason", "phone", "model", "effort"])
@@ -329,6 +351,26 @@ fn mcp(a: &Args) -> ExitCode {
     ExitCode::SUCCESS
 }
 
+/// The items and follow-up window of `nodkey credentials`, checked by the same rules as the tool.
+pub(crate) fn credential_items(
+    a: &Args,
+) -> Result<(Vec<crate::bundle::Wanted>, Option<u32>), String> {
+    let wanted = a
+        .positional
+        .iter()
+        .map(|p| crate::bundle::Wanted::parse(p))
+        .collect::<Result<Vec<_>, _>>()?;
+    let follow_up = a
+        .value("follow-up")
+        .map(|v| {
+            v.trim()
+                .parse::<u32>()
+                .map_err(|_| "--follow-up takes whole seconds (120-600)".to_owned())
+        })
+        .transpose()?;
+    Ok((wanted, follow_up))
+}
+
 /// The clean-up filter from the command line, checked by the same rules as the MCP tool.
 pub(crate) fn cleanup_filter(a: &Args) -> Result<nodkey_proto::CleanupFilter, String> {
     let mut filter = Map::new();
@@ -399,6 +441,31 @@ mod tests {
         );
         assert!(ok("code", &["a", "b", "--reason", "x"]).is_err());
         assert!(ok("login", &["vg.no", "--reason", "x", "--ip-only"]).is_err());
+        assert!(
+            ok(
+                "credentials",
+                &["login:vg.no", "code:github.com", "--reason", "x"]
+            )
+            .is_ok()
+        );
+        assert!(
+            ok("credentials", &["--reason", "x"])
+                .unwrap_err()
+                .contains("ITEM")
+        );
+        assert!(ok("credentials", &["vg.no", "--reason", "x"]).is_err());
+        assert!(
+            ok("credentials", &["login:vg.no"])
+                .unwrap_err()
+                .contains("--reason")
+        );
+        assert!(
+            ok(
+                "credentials",
+                &["login:vg.no", "--reason", "x", "--follow-up", "soon"]
+            )
+            .is_err()
+        );
         assert!(ok("phones", &["--json"]).is_ok());
         assert!(ok("unpair", &[]).is_err());
         assert!(

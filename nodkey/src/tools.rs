@@ -2,12 +2,13 @@
 
 use serde_json::{Value, json};
 
-pub const TOOL_NAMES: [&str; 8] = [
+pub const TOOL_NAMES: [&str; 9] = [
     "pair",
     "list_phones",
     "unpair",
     "request_code",
     "request_login",
+    "request_credentials",
     "list_accounts",
     "cleanup_insights",
     "cleanup_logins",
@@ -77,6 +78,54 @@ pub fn tools() -> Value {
                 "type": "object",
                 "properties": { "target": target, "reason": reason, "image_path": image, "phone": phone, "model": model, "effort": effort },
                 "required": ["target", "reason"],
+                "additionalProperties": false
+            },
+            "annotations": { "readOnlyHint": true, "openWorldHint": true }
+        },
+        {
+            "name": "request_credentials",
+            "title": "Ask the user's iPhone for several logins and codes at once",
+            "description": format!("Ask Nodkey on the user's iPhone for up to 6 logins and one-time codes in one request, \
+                when one task needs several (a login on one site and a code on another). The user sees every item, can \
+                leave some out or pick another account, and approves once with Face ID. {APPROVAL} Always explain the \
+                reason. Returns JSON with decision (approved when at least one item was approved), approved and of \
+                (counts), and items: one per item in your order with id, kind, target, decision and, when approved, \
+                username and password (logins), code and seconds_left (codes), account and match. Use each item only \
+                for its own sign-in; never store, log or repeat the secrets. For a single login or code use \
+                request_login or request_code."),
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "items": {
+                        "type": "array",
+                        "minItems": 1,
+                        "maxItems": 6,
+                        "description": "What you need, in order.",
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "kind": { "type": "string", "enum": ["login", "code"], "description": "login: user name and password (and a code when it has one); code: one one-time code." },
+                                "target": target
+                            },
+                            "required": ["kind", "target"],
+                            "additionalProperties": false
+                        }
+                    },
+                    "reason": reason,
+                    "follow_up_seconds": {
+                        "type": "integer",
+                        "minimum": 120,
+                        "maximum": 600,
+                        "description": "Optional: for how many seconds after the approval a fresh code for an approved item \
+                                        may be fetched with request_code without asking again (default 120). Ask for more only \
+                                        when the task really takes longer."
+                    },
+                    "image_path": image,
+                    "phone": phone,
+                    "model": model,
+                    "effort": effort
+                },
+                "required": ["items", "reason"],
                 "additionalProperties": false
             },
             "annotations": { "readOnlyHint": true, "openWorldHint": true }
