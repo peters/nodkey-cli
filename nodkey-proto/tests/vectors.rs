@@ -210,3 +210,89 @@ fn pairing_code_vectors() {
         assert!(code::normalize(bad.as_str().unwrap()).is_err());
     }
 }
+
+#[test]
+fn webauthn_vector() {
+    use nodkey_proto::{
+        PasskeyOp, PasskeyRequest,
+        passkey::{check_client_data, client_data_hash},
+        webauthn,
+    };
+    let v = load();
+    let w = &v["webauthn"];
+    let d = |x: &Value, k: &str| b64u::decode(s(x, k)).unwrap();
+    let key = webauthn::signing_key(&arr32(w, "private_key")).unwrap();
+    let public = key.verifying_key();
+    assert_eq!(webauthn::spki_der(public), d(w, "public_key_spki"));
+    assert_eq!(webauthn::cose_key(public), d(w, "cose_key"));
+    assert_eq!(&d(w, "aaguid_b64u")[..], &webauthn::AAGUID);
+    let rp_id = s(w, "rp_id");
+    let pk = webauthn::key_from_spki(&d(w, "public_key_spki")).unwrap();
+
+    let (get, create) = (&w["get"], &w["create"]);
+    for (op, c) in [(PasskeyOp::Get, get), (PasskeyOp::Create, create)] {
+        let text = s(c, "client_data_json").as_bytes();
+        assert_eq!(d(c, "client_data_json_b64u"), text);
+        assert_eq!(&d(c, "client_data_hash")[..], &client_data_hash(text));
+        assert_eq!(
+            check_client_data(op, rp_id, text).unwrap().origin,
+            s(w, "origin")
+        );
+    }
+    let auth_get = d(get, "authenticator_data");
+    assert_eq!(webauthn::authenticator_data(rp_id, None), auth_get);
+    let cd_get = s(get, "client_data_json").as_bytes();
+    assert_eq!(
+        webauthn::signed_data(&auth_get, cd_get),
+        d(get, "signed_data")
+    );
+    webauthn::verify(&pk, &auth_get, cd_get, &d(get, "signature")).unwrap();
+    assert!(webauthn::verify(&pk, &auth_get, b"{}", &d(get, "signature")).is_err());
+    let cred = d(w, "credential_id");
+    let auth_create = webauthn::authenticator_data(rp_id, Some((&cred, &pk)));
+    assert_eq!(auth_create, d(create, "authenticator_data"));
+    assert_eq!(
+        webauthn::attestation_object(&auth_create),
+        d(create, "attestation_object")
+    );
+
+    for case in w["client_data_checks"].as_array().unwrap() {
+        let op = if s(case, "op") == "get" {
+            PasskeyOp::Get
+        } else {
+            PasskeyOp::Create
+        };
+        let text = s(case, "client_data_json").as_bytes();
+        let ok = check_client_data(op, s(case, "rp_id"), text).is_ok();
+        assert_eq!(ok, case["ok"].as_bool().unwrap(), "{}", s(case, "name"));
+    }
+
+    // The sealed requests carry this client data, and the answers this passkey.
+    let plaintext = |name: &str| -> Value {
+        let h = v["hpke"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .find(|h| h["name"] == name)
+            .unwrap();
+        serde_json::from_str(s(h, "plaintext")).unwrap()
+    };
+    for (name, op, c) in [
+        ("request_passkey_get", "get", get),
+        ("request_passkey_create", "create", create),
+    ] {
+        let r = plaintext(name);
+        assert_eq!(r["kind"], "passkey");
+        assert_eq!(r["target"], rp_id);
+        assert_eq!(r["passkey"]["op"], op);
+        assert_eq!(r["passkey"]["client_data_json"], c["client_data_json_b64u"]);
+        let p: PasskeyRequest = serde_json::from_value(r["passkey"].clone()).unwrap();
+        p.check(rp_id).unwrap();
+    }
+    let a = plaintext("answer_passkey_get");
+    assert_eq!(a["passkey"]["signature"], get["signature"]);
+    assert_eq!(a["passkey"]["user_handle"], w["user_handle"]);
+    let a = plaintext("answer_passkey_create");
+    assert_eq!(a["passkey"]["public_key"], w["public_key_spki"]);
+    assert_eq!(a["passkey"]["public_key_algorithm"], -7);
+}

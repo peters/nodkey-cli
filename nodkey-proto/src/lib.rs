@@ -12,14 +12,19 @@ pub mod code;
 pub mod dh;
 pub mod keys;
 pub mod messages;
+pub mod passkey;
 pub mod seal;
 #[doc(hidden)]
 pub mod testing;
 #[doc(hidden)]
 pub mod vectors;
+pub mod webauthn;
 
 pub use keys::{KeyPair, PublicKeys};
 pub use messages::*;
+pub use passkey::{
+    PasskeyAnswer, PasskeyCreate, PasskeyGet, PasskeyOp, PasskeyRequest, PasskeyUser, Requirement,
+};
 pub use seal::{Purpose, Sealed};
 
 /// Protocol version carried in every plaintext message (`"v": 1`).

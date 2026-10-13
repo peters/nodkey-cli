@@ -16,6 +16,8 @@ sha2 = { version = "0.11", default-features = false }
 hkdf = { version = "0.13", default-features = false }
 chacha20poly1305 = { version = "0.11", default-features = false }
 getrandom = "0.4"
+# ES256 for passkeys: the authenticator data, signatures and keys the phone makes (webauthn.rs).
+p256 = { version = "0.14", default-features = false, features = ["ecdsa"] }
 zeroize = "1"
 serde.workspace = true
 serde_json.workspace = true

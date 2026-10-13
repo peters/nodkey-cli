@@ -391,6 +391,7 @@ impl Agent {
             attachment: None,
             filter,
             save: None,
+            passkey: None,
             client: Some(
                 ClientInfo {
                     model: reported.model.map(str::to_owned),

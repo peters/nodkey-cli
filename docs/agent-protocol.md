@@ -96,7 +96,7 @@ Pairing grant (phone → agent):
 Request (agent → phone):
 
 ```json
-{"v":1, "request_id":"…", "kind":"code|login|list|insights|cleanup|save", "target":"github.com/alex",
+{"v":1, "request_id":"…", "kind":"code|login|list|insights|cleanup|save|passkey", "target":"github.com/alex",
  "reason":"Merge PR #42", "agent":"Claude · Horizon", "ts":1791620000}
 ```
 
@@ -192,7 +192,7 @@ never a password). A refusal without asking carries `error`: `empty_filter` (a c
 criterion), `paused` (the user paused this agent, or all agents, under Agents; any kind of request,
 answered at once and recorded in the history), `unsupported_version` (the request's `v` is not a
 version the app speaks) or `unsupported_kind` (the app does not know the request's `kind` yet; see
-"Versions"):
+"Versions"). Passkey refusals are listed under "Passkeys":
 
 ```json
 {"v":1, "request_id":"…", "decision":"approved", "moved":2,
@@ -233,6 +233,117 @@ An agent must not keep the password in clear. When the user does not answer in t
 the sealed password with the site and user name and offer to send it again. Vectors:
 `save_password`, `request_save`, `answer_save`.
 
+## Passkeys
+
+`kind: passkey` lets an agent sign in to a site with a passkey that Nodkey holds, or make a new
+passkey there. The phone signs; the private key never leaves it. There is no Bluetooth or hybrid
+transport: the request goes through the relay like every other request. `target` is the `rp_id`;
+`passkey` holds the WebAuthn data. Sign in (`op: get`):
+
+```json
+{"v":1, "request_id":"…", "kind":"passkey", "target":"webauthn.io", "reason":"Sign in to webauthn.io",
+ "agent":"Claude Code @ my-laptop", "ts":1791620000,
+ "passkey":{"op":"get", "rp_id":"webauthn.io", "client_data_json":"<b64u>",
+            "allow_credentials":["<b64u>"], "user_verification":"required"}}
+```
+
+A new passkey (`op: create`):
+
+```json
+"passkey":{"op":"create", "rp_id":"webauthn.io", "rp_name":"WebAuthn.io", "client_data_json":"<b64u>",
+           "user":{"id":"<b64u>", "name":"alex", "display_name":"Alex"},
+           "algorithms":[-7, -257], "exclude_credentials":["<b64u>"],
+           "resident_key":"required", "user_verification":"required"}
+```
+
+| Field | Meaning |
+| --- | --- |
+| `op` | `get` or `create` |
+| `rp_id` | the relying party id, the same as `target` |
+| `client_data_json` | the whole `clientDataJSON` (b64u of its bytes), not only its hash, so the phone can check it |
+| `allow_credentials` | get, optional: credential ids (b64u) the site accepts; empty or absent means any passkey for `rp_id` |
+| `rp_name` | create: the site's name |
+| `user` | create: `id` (the user handle, b64u, 1 to 64 bytes), `name`, `display_name` |
+| `algorithms` | create: COSE algorithm ids the site accepts, in its order |
+| `exclude_credentials` | create, optional: credential ids (b64u) the site already has for this user |
+| `resident_key`, `user_verification` | `required`, `preferred` or `discouraged`; absent means `preferred`. The phone always makes a discoverable passkey and always asks for Face ID, so these change nothing it does. |
+
+The host that talks to the page (Horizon, the browser extension) makes `client_data_json` itself
+from the origin of the calling frame, never from the page or the model:
+`{"type":"webauthn.get","challenge":"<b64u>","origin":"https://webauthn.io","crossOrigin":false}`
+(`nodkey_proto::passkey::build_client_data_json` makes exactly these bytes).
+
+### The client data check
+
+Before it asks the user, the phone checks `client_data_json` (the agent tools run the same check,
+`nodkey_proto::passkey::check_client_data`, before they send):
+
+- it is a JSON object; `type` is `webauthn.get` for get and `webauthn.create` for create;
+- `challenge` is a non-empty b64u string;
+- `crossOrigin` is absent or `false`;
+- `origin` is `https://<host>` or `https://<host>:<port>`, where `host` is `rp_id` or ends with
+  `"." + rp_id` (compared without regard to case); or `http://localhost` or
+  `http://localhost:<port>` with `rp_id` `localhost`. No path, user name or other scheme;
+- `rp_id` is a domain name with a dot (not an IP address), or `localhost`.
+
+If any rule fails, the phone answers `denied` with `error: "bad_client_data"` at once. The vector
+section `webauthn.client_data_checks` lists cases that pass and fail.
+
+The phone shows the user the **origin from `client_data_json`**, the reason, and the user name of
+the passkey (get) or of the new passkey (create).
+
+### What the phone makes
+
+Nodkey is a software authenticator: ES256 (ECDSA P-256 with SHA-256), sign count always 0,
+`none` attestation, AAGUID `97531e9d-ff39-4e63-aaec-b1d68400c3c9`, a credential id of 16 random
+bytes.
+
+- `authenticator_data` = SHA-256(`rp_id`) ‖ flags (1 byte) ‖ sign count (4 bytes, 0). Flags are
+  UP, UV, BE and BS (`0x1d`) on every answer, also under a lease: iOS needs BE and BS to stay the
+  same, and UV is set because the user approved with Face ID when the lease was made.
+- create adds the attested credential data: AAGUID ‖ u16 big-endian length of the credential id ‖
+  credential id ‖ COSE key, and the AT flag (`0x5d`). The COSE key is the CBOR map
+  `{1: 2, 3: -7, -1: 1, -2: x, -3: y}` in this order; `attestation_object` is the CBOR map
+  `{"fmt": "none", "attStmt": {}, "authData": authenticator_data}` in this order.
+- `signature` (get) is DER ECDSA over `authenticator_data ‖ SHA-256(client_data_json bytes)`.
+- `public_key` (create) is the SubjectPublicKeyInfo DER of the new key (WebAuthn's
+  `getPublicKey()`), `public_key_algorithm` is `-7`.
+
+### Answers
+
+```json
+{"v":1, "request_id":"…", "decision":"approved",
+ "passkey":{"credential_id":"<b64u>", "authenticator_data":"<b64u>", "signature":"<b64u DER>",
+            "user_handle":"<b64u>", "user_name":"alex"}}
+{"v":1, "request_id":"…", "decision":"approved",
+ "passkey":{"credential_id":"<b64u>", "attestation_object":"<b64u>", "authenticator_data":"<b64u>",
+            "public_key":"<b64u SPKI DER>", "public_key_algorithm":-7}}
+```
+
+A get answer may carry `lease` as a login answer does. Refusals are `decision: denied` with
+`error`:
+
+| `error` | When |
+| --- | --- |
+| `bad_client_data` | `client_data_json` fails the check above; at once |
+| `no_passkey` | no passkey for `rp_id`, or none of those in a non-empty `allow_credentials`; at once |
+| `unsupported_algorithm` | create without `-7` in `algorithms`; at once |
+| `excluded` | create when the phone holds a passkey in `exclude_credentials`; answered **after** the user approved, as WebAuthn asks, so a site cannot probe for passkeys without the user |
+| `paused`, `unsupported_kind`, `unsupported_version` | as for every kind; an older app answers `unsupported_kind` |
+
+Leases: a get may be covered by a lease of kind `passkey`, `(agent_id, passkey_id, passkey,
+until)`, once, 1 day, 7 days or always, as for logins. **A create is never covered by a lease**:
+Face ID every time. A get under a lease is answered by the notification service extension with a
+quiet notification ("Claude Code signed in to webauthn.io with a passkey"), and the history marks
+it as a lease answer. Scopes: allowed for `selected`, `logins` and `all`, refused for `codes`.
+
+Vectors: `request_passkey_get`, `request_passkey_create`, `answer_passkey_get`,
+`answer_passkey_create`, and the `webauthn` section: a fixed P-256 test key (`private_key`,
+`public_key_x963`, `public_key_spki`, `cose_key`), the credential id and user handle, and for get
+and create the `client_data_json` (text and b64u), its hash, the expected `authenticator_data`,
+the `attestation_object` (create), and `signed_data` and a `signature` that verifies with the public
+key (get; RFC 6979 nonces, so the file stays the same).
+
 ## Opening with the X25519 step elsewhere
 
 An agent may keep its X25519 private key where it cannot be read out, for example as a
@@ -254,7 +365,7 @@ long as the request (120 s). Without a picture everything works the same.
 
 ## Leases
 
-A lease is `(agent_id, account_id, kind: code|login, until)`, kept only on the phone (keychain-backed
+A lease is `(agent_id, account_id, kind: code|login, until)` (for passkeys see "Passkeys"), kept only on the phone (keychain-backed
 store shared with the notification extensions). While a matching lease is valid the phone answers by
 itself and shows a quiet notification ("Claude got the password for vg.no"). Durations: once (no lease),
 1 day, 7 days, always (until revoked). The user sees and revokes leases under Agents; removing an agent
@@ -295,3 +406,42 @@ change ignore such a request, and the agent sees `expired`.) Requests also carry
 - The command line does the same in one process: `nodkey pair` shows the code and then the check
   number; `nodkey code`, `login`, `accounts`, `insights`, `cleanup`, `phones`, `unpair`. Exit codes:
   0 approved, 1 error, 2 denied, 3 expired, 64 bad arguments.
+- `nodkey webauthn --agent <profile> [--phone PHONE]` is the authenticator a browser host (Horizon)
+  calls; see below.
+
+## The authenticator command
+
+`nodkey webauthn --agent <profile>` reads one JSON object on stdin and writes one JSON object on
+stdout, also when it fails (waiting notes go to stderr). Sign in:
+
+```json
+{"version":1, "op":"get", "rp_id":"webauthn.io", "origin":"https://webauthn.io",
+ "client_data_json":"<b64u>", "allow_credentials":["<b64u>"], "user_verification":"preferred",
+ "reason":"Sign in to webauthn.io in a browser panel", "requester":{"app":"Horizon", "agent":"Claude Code"}}
+```
+
+`op: create` adds `rp_name`, `user`, `algorithms`, `exclude_credentials` and `resident_key`, as in
+the request. `reason` is optional ("Sign in to webauthn.io with a passkey" or "Create a passkey for
+webauthn.io"); `requester` is optional and self-reported, and goes to the phone's history as
+`client.app` ("Horizon (Claude Code)"). Before it sends anything the command checks that `origin` is
+the origin inside `client_data_json` and runs the client data check. Results:
+
+```json
+{"version":1, "status":"ok", "credential_id":"…", "authenticator_data":"…", "signature":"…", "user_handle":"…"}
+{"version":1, "status":"ok", "credential_id":"…", "attestation_object":"…", "authenticator_data":"…",
+ "public_key":"…", "public_key_algorithm":-7, "transports":["internal","hybrid"]}
+{"version":1, "status":"denied|expired|not_found|excluded|error", "message":"…"}
+```
+
+| `status` | Exit | When |
+| --- | --- | --- |
+| `ok` | 0 | the phone signed (get) or made a passkey (create) |
+| `denied` | 2 | the user said no, the agent is paused, or the phone refused the client data or the algorithms |
+| `not_found` | 2 | the phone has no matching passkey (`no_passkey`) |
+| `excluded` | 2 | the phone already holds a passkey in `exclude_credentials` |
+| `expired` | 3 | no answer in time |
+| `error` | 1 | not paired, relay trouble, an app that is too old, or an answer that fails the agent's check |
+| `error` | 64 | the input is not a valid request, or `origin` does not match `client_data_json` |
+
+A failure from the phone also carries the phone's `error` code. A bridge turns `excluded` into
+`InvalidStateError` and every other failure into `NotAllowedError`.

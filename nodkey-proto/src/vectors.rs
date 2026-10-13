@@ -33,6 +33,7 @@ pub const PNG: [u8; 76] = [
     0x00, 0x00, 0x00, 0x00, 0x49, 0x45, 0x4e, 0x44, 0xae, 0x42, 0x60, 0x82,
 ];
 
+mod passkey;
 fn label32(label: &str) -> [u8; 32] {
     Sha256::digest(label.as_bytes()).into()
 }
@@ -189,6 +190,7 @@ pub fn build() -> Value {
         attachment,
         filter: None,
         save: None,
+        passkey: None,
         client: None,
     };
     let r_code = request(
@@ -411,6 +413,8 @@ pub fn build() -> Value {
         true,
     );
 
+    let webauthn = passkey::add(&mut ctx, &agent, &phone); // After the others: their bytes stay.
+
     // Signed relay calls.
     let agent_info = crate::AgentInfo {
         agent_id: agent.id.clone(),
@@ -590,5 +594,6 @@ pub fn build() -> Value {
         },
         "hpke": ctx.hpke,
         "auth": auth,
+        "webauthn": webauthn,
     })
 }

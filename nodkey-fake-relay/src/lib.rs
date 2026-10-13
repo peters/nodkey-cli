@@ -583,6 +583,11 @@ async fn wait_answer(
                 answer.lease = None;
                 answer.saved = Some(nodkey_proto::Saved::Added);
             }
+            Kind::Passkey => {
+                // This phone does not hold passkeys yet: it answers like an older app.
+                answer = Answer::decision(&rid, Decision::Denied);
+                answer.error = Some("unsupported_kind".into());
+            }
             Kind::Cleanup => {
                 // Never a lease: the user confirms every clean-up.
                 answer.lease = None;

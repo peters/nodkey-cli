@@ -19,7 +19,10 @@ pub const MAX_TARGET: usize = 200;
 /// Checks a request before it is sealed: what each kind needs, and the length limits. The text
 /// is meant for the person or model that made the request.
 pub fn check_request(r: &Request) -> Result<(), String> {
-    let needs_target = matches!(r.kind, Kind::Code | Kind::Login | Kind::Save);
+    let needs_target = matches!(
+        r.kind,
+        Kind::Code | Kind::Login | Kind::Save | Kind::Passkey
+    );
     if needs_target && r.target.trim().is_empty() {
         return Err(
             "target is required (a site or issuer, optionally /account, e.g. github.com/alex)"
@@ -35,7 +38,7 @@ pub fn check_request(r: &Request) -> Result<(), String> {
     if r.reason.chars().count() > MAX_REASON || r.target.chars().count() > MAX_TARGET {
         return Err("target or reason is too long".into());
     }
-    match (r.kind, &r.filter, &r.save) {
+    let checked: Result<(), String> = match (r.kind, &r.filter, &r.save) {
         (Kind::Cleanup, None, _) => Err("filter needs at least one criterion".into()),
         (Kind::Cleanup, Some(f), _) if f.is_empty() => {
             Err("filter needs at least one criterion".into())
@@ -47,6 +50,13 @@ pub fn check_request(r: &Request) -> Result<(), String> {
         (Kind::Save, _, Some(s)) if s.url.chars().count() > 2000 => {
             Err("the page address is too long".into())
         }
+        _ => Ok(()),
+    };
+    checked?;
+    match (r.kind, &r.passkey) {
+        (Kind::Passkey, None) => Err("a passkey request needs the passkey data".into()),
+        (Kind::Passkey, Some(p)) => p.check(&r.target).map(|_| ()),
+        (_, Some(_)) => Err("only a passkey request carries passkey data".into()),
         _ => Ok(()),
     }
 }
@@ -150,6 +160,7 @@ mod tests {
             attachment: None,
             filter: None,
             save: None,
+            passkey: None,
             client: None,
         }
     }
@@ -196,6 +207,25 @@ mod tests {
                 .is_err()
         );
         assert!(seal_password("agent", &phone.public().kem, "").is_err());
+
+        let mut p = request(Kind::Passkey, "webauthn.io", "Sign in");
+        assert!(check_request(&p).is_err());
+        let cd = crate::passkey::build_client_data_json(
+            crate::PasskeyOp::Get,
+            "AAEC",
+            "https://webauthn.io",
+        );
+        p.passkey = Some(crate::PasskeyRequest::Get(crate::PasskeyGet {
+            rp_id: "webauthn.io".into(),
+            client_data_json: b64u::encode(cd.as_bytes()),
+            allow_credentials: vec![],
+            user_verification: crate::Requirement::Preferred,
+        }));
+        assert!(check_request(&p).is_ok());
+        p.target = "evil.example".into();
+        assert!(check_request(&p).is_err());
+        p.kind = Kind::Code;
+        assert!(check_request(&p).is_err());
     }
 
     #[test]
