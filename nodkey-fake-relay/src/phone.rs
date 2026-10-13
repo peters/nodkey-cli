@@ -51,6 +51,7 @@ pub fn cleanup_matches(filter: &CleanupFilter) -> Vec<AccountEntry> {
             site: Some((*site).into()),
             has_code: false,
             has_password: true,
+            sites: None,
         })
         .collect()
 }
@@ -67,6 +68,7 @@ pub(crate) fn approve(fake: &Fake, answer: &mut Answer, request: &Request) {
                 issuer: "GitHub".into(),
                 name: "alex".into(),
                 site: Some("github.com".into()),
+                sites: None,
             });
             answer.code = Some(Secret::new(CODE));
             answer.seconds_left = Some(17);
@@ -76,6 +78,7 @@ pub(crate) fn approve(fake: &Fake, answer: &mut Answer, request: &Request) {
                 issuer: "VG".into(),
                 name: USERNAME.into(),
                 site: Some("vg.no".into()),
+                sites: None,
             });
             answer.username = Some(USERNAME.into());
             answer.password = Some(Secret::new(PASSWORD));
@@ -87,6 +90,7 @@ pub(crate) fn approve(fake: &Fake, answer: &mut Answer, request: &Request) {
                 site: Some("github.com".into()),
                 has_code: true,
                 has_password: false,
+                sites: None,
             }]);
         }
         Kind::Insights => {

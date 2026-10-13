@@ -16,6 +16,10 @@ pub const TOOL_NAMES: [&str; 8] = [
 const APPROVAL: &str = "The user approves or denies every request on their iPhone, so this call can wait up to \
 2 minutes for them.";
 
+const MATCH: &str = "account.sites lists more websites the account is used on; match says how the phone found \
+it: direct (its name or site), alias (one of its extra websites) or chosen (nothing matched and the user picked it \
+by hand).";
+
 /// The tool definitions.
 pub fn tools() -> Value {
     let phone = json!({
@@ -53,7 +57,7 @@ pub fn tools() -> Value {
             "title": "Ask the user's iPhone for a one-time code",
             "description": format!("Ask Nodkey on the user's iPhone for one current one-time code (TOTP) for an account. \
                 {APPROVAL} Always explain the reason. Returns JSON with decision (approved, denied or expired) and, \
-                when approved, code and seconds_left. Use the code at once; never store or log it."),
+                when approved, code and seconds_left. Use the code at once; never store or log it. {MATCH}"),
             "inputSchema": {
                 "type": "object",
                 "properties": { "target": target, "reason": reason, "image_path": image, "phone": phone, "model": model, "effort": effort },
@@ -68,7 +72,7 @@ pub fn tools() -> Value {
             "description": format!("Ask Nodkey on the user's iPhone for the user name and password of an account (and a \
                 one-time code when the login has one). {APPROVAL} Always explain the reason. Returns JSON with decision \
                 and, when approved, username, password and possibly code. Use them only for this sign-in; never store, \
-                log or repeat the password."),
+                log or repeat the password. {MATCH}"),
             "inputSchema": {
                 "type": "object",
                 "properties": { "target": target, "reason": reason, "image_path": image, "phone": phone, "model": model, "effort": effort },

@@ -111,6 +111,13 @@ Request (agent → phone):
   `/account` (`vg.no`, `github.com/alex`, `GitHub`). The phone asks the user when several match. A
   named account that is not there matches nothing (no other account on the site is offered); after a
   scheme (`https://vg.no/login`) the tail is a path, not an account.
+  An account may have extra websites ("Also used on" in the app, for example chatgpt.com on a login
+  saved for openai.com). They match strictly by registrable domain: `chatgpt.com` and
+  `auth.chatgpt.com` match the extra website `chatgpt.com`, `chatgpt.ru` and `chatgpt.com.evil.io`
+  do not. Own names and sites rank before extra websites. When nothing matches, the user may pick
+  another account by hand in the app (and may let the phone remember the requested site as an extra
+  website of that account); the answer then says `match: "chosen"`, and a fresh `code` for the same
+  site in the follow-up window is answered with that account.
   Empty (`""`) for `list` and `cleanup`.
 - `kind: insights` asks for clean-up help **without identifying data**. The user approves it like a
   list (no lease). The answer's `insights` holds counts and anonymous groups, never a site, user name
@@ -185,6 +192,18 @@ Answer (phone → agent):
 ```
 
 Only the fields that apply are present. `until` is absent for `once` and `always`.
+
+A `code` or `login` answer also carries `match`: `direct` (the account's name or site matched the
+target), `alias` (one of its extra websites matched) or `chosen` (nothing matched and the user picked
+it by hand). `account.sites` and the `sites` of each `accounts` entry list the account's extra
+websites, absent when it has none. Older apps send neither. Vectors: `request_login_chosen`,
+`answer_login_chosen`, `answer_list_with_sites`.
+
+```json
+{"v":1, "request_id":"…", "decision":"approved", "match":"chosen",
+ "account":{"issuer":"OpenAI", "name":"alex@example.com", "site":"openai.com", "sites":["chatgpt.com"]},
+ "username":"alex@example.com", "password":"…"}
+```
 
 A `cleanup` answer carries `moved` (how many logins went to Recently deleted) and `accounts` with
 the names of the moved logins (`issuer` = the login's title or host, `name` = user name, `site`;
