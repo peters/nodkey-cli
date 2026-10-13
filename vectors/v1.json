@@ -476,6 +476,34 @@
       "recipient_kem_pk": "fE5zmodqNC-MJSk500yxJtz4i2vlbx3Hpg2qO712pTQ",
       "recipient_kem_sk": "WVg29q7eTJuYsXMJkPAqAx2veoBDBCceAKKxCEs90KU",
       "sender": "phone"
+    },
+    {
+      "aad": "lAyoFTN7Zweriki4_6IQWgIdQP77UDyu6DAF-4aCs1-Q",
+      "ct": "Vkwf6Yaa0guT70LwzmOS0OUB_5pAu-16OwuKIuEcEhxmpYsKk_E5DL9TJdn5E_CLaJHEuaFiAof9PMXisFiFF6cZfugIigcAGfNNwaOLoMi3mgJzOJJSeVcJLUP-k5YwPlV53iLx_PxQ49FPB8Cvl0hXA5Jp25-E3JBiezMOf3eVF0chkpXMkojm86hf_22WOrxpo-L0Zy19d6IJj5GodpaeOli6S9krEbCLD38qtgOXubDiYueQKrMEkyJvD8zLMJ7pTY4h5EZzjJR2cmFIitG89Tgn5uuDmpRSQb_IX4jlAdEbOvSZQ28e7vRgplZH6FJLpCgB0NknIhzGzO4B64bmeYiMWyOZvB70PLtdgcDzdJCsFlU-g7TNSb2Sx8sg8QPyLgK8JURdVj26izUz0iPHFoDg3JXmFxm92_7D5eNSeBUiGMKaHKE6rxU",
+      "enc": "x3VmR87dtcwll91GGg21aSBYKBfPLESTp5rubTfwsS4",
+      "ikm_e": "ZavUa_8c6WG1udaMzThBqA7LGGTFwM1yn9nElV36MLo",
+      "info": "nodkey/v1/request",
+      "name": "request_bundle",
+      "plaintext": "{\"v\":1,\"request_id\":\"lAyoFTN7Zweriki4_6IQWg\",\"kind\":\"bundle\",\"target\":\"\",\"reason\":\"Sign in to ChatGPT and GitHub to compare the notes\",\"agent\":\"Agent · Horizon\",\"ts\":1791620000,\"bundle\":{\"items\":[{\"id\":\"1\",\"kind\":\"login\",\"target\":\"chatgpt.com\"},{\"id\":\"2\",\"kind\":\"code\",\"target\":\"github.com/alex\"}],\"follow_up\":300}}",
+      "plaintext_b64u": "eyJ2IjoxLCJyZXF1ZXN0X2lkIjoibEF5b0ZUTjdad2VyaWtpNF82SVFXZyIsImtpbmQiOiJidW5kbGUiLCJ0YXJnZXQiOiIiLCJyZWFzb24iOiJTaWduIGluIHRvIENoYXRHUFQgYW5kIEdpdEh1YiB0byBjb21wYXJlIHRoZSBub3RlcyIsImFnZW50IjoiQWdlbnQgwrcgSG9yaXpvbiIsInRzIjoxNzkxNjIwMDAwLCJidW5kbGUiOnsiaXRlbXMiOlt7ImlkIjoiMSIsImtpbmQiOiJsb2dpbiIsInRhcmdldCI6ImNoYXRncHQuY29tIn0seyJpZCI6IjIiLCJraW5kIjoiY29kZSIsInRhcmdldCI6ImdpdGh1Yi5jb20vYWxleCJ9XSwiZm9sbG93X3VwIjozMDB9fQ",
+      "purpose": "request",
+      "recipient_kem_pk": "Td-3-HXWLqROvCB5uulMNssHXo3O2K_LQIby38T-z28",
+      "recipient_kem_sk": "vazvVwr6Ybz3fJM8Ey3EblV_Ow4P6yCovbNOvWY7IiI",
+      "sender": "agent"
+    },
+    {
+      "aad": "lAyoFTN7Zweriki4_6IQWg0g0Bt23Hxsm5z-wpZp2lpA",
+      "ct": "2kYEXmpyAfppOHM-U3lA1ULOq9UZZodJW8mC2-OeKpxXSt_z3kaTQapaviPXhYsfpWYa2d9AZrhZkvQsOSPXE8oAOb15l26Mh31mEVjGkdT8YdKB2OTpW4iIEpd8vmNsr0gxeX-7LfXiJ5djIqGzAKjAnVW9HKzC7SygyrkEL-Qm4dbupiXaM6T89pWgKMist2B74iHniyWbFg-1rmfuxiEVIhbC0xtT6o9vYYGbSZOvguhl5jFoEwG0jdHIVrERUHAAQPfFHkUQS-MB54TFDTQrCPmQ1tij7WLDoj2GYuQ-KJVumUqbGAxxp0kZ-GdKpKEqeYehFq4V9KU4H8iggG_8Xzl_vBHkBkLttc4XNJESEJdqn2zgJggoHoynTKPITj9kF7pnCMEANZ3LjBaIDrVK9h9n1f1KYFFoqmZ59M_9BcpZj30hfKwe3Wn2dVLWVyqIC10MGJrrfxSh93bB7fbvN4sIjHIlkVBqIMOjes1v",
+      "enc": "r9dSzDRSAHMTVqUsTg6nXsGKAlpAjJFroOaQtqoSGEs",
+      "ikm_e": "347BqgdGyZ00lHDslH8sHFogctzJIRQ7VP5e0pD2hPA",
+      "info": "nodkey/v1/answer",
+      "name": "answer_bundle",
+      "plaintext": "{\"v\":1,\"request_id\":\"lAyoFTN7Zweriki4_6IQWg\",\"decision\":\"approved\",\"items\":[{\"id\":\"1\",\"decision\":\"approved\",\"account\":{\"issuer\":\"OpenAI\",\"name\":\"alex@example.com\",\"site\":\"openai.com\",\"sites\":[\"chatgpt.com\"]},\"match\":\"alias\",\"username\":\"alex@example.com\",\"password\":\"correct horse battery staple\",\"lease\":{\"kind\":\"once\"}},{\"id\":\"2\",\"decision\":\"denied\"}]}",
+      "plaintext_b64u": "eyJ2IjoxLCJyZXF1ZXN0X2lkIjoibEF5b0ZUTjdad2VyaWtpNF82SVFXZyIsImRlY2lzaW9uIjoiYXBwcm92ZWQiLCJpdGVtcyI6W3siaWQiOiIxIiwiZGVjaXNpb24iOiJhcHByb3ZlZCIsImFjY291bnQiOnsiaXNzdWVyIjoiT3BlbkFJIiwibmFtZSI6ImFsZXhAZXhhbXBsZS5jb20iLCJzaXRlIjoib3BlbmFpLmNvbSIsInNpdGVzIjpbImNoYXRncHQuY29tIl19LCJtYXRjaCI6ImFsaWFzIiwidXNlcm5hbWUiOiJhbGV4QGV4YW1wbGUuY29tIiwicGFzc3dvcmQiOiJjb3JyZWN0IGhvcnNlIGJhdHRlcnkgc3RhcGxlIiwibGVhc2UiOnsia2luZCI6Im9uY2UifX0seyJpZCI6IjIiLCJkZWNpc2lvbiI6ImRlbmllZCJ9XX0",
+      "purpose": "answer",
+      "recipient_kem_pk": "fE5zmodqNC-MJSk500yxJtz4i2vlbx3Hpg2qO712pTQ",
+      "recipient_kem_sk": "WVg29q7eTJuYsXMJkPAqAx2veoBDBCceAKKxCEs90KU",
+      "sender": "phone"
     }
   ],
   "keys": {

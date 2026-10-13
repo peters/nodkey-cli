@@ -142,6 +142,8 @@ pub enum Kind {
     /// Sign in with a passkey, or make a new one: the phone signs with a key that never leaves it.
     /// `target` is the `rp_id`; the request carries a [`crate::PasskeyRequest`].
     Passkey,
+    /// Several codes and logins in one request ([`crate::BundleRequest`]); `target` is empty.
+    Bundle,
 }
 
 /// The login a `save` request asks the phone to keep.
@@ -289,6 +291,9 @@ pub struct Request {
     /// What a `passkey` request asks for; absent for the other kinds.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub passkey: Option<crate::PasskeyRequest>,
+    /// The items of a `bundle` request; absent for the other kinds.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub bundle: Option<crate::BundleRequest>,
     /// Who is asking, as the agent reports it (shown in the phone's history; self-reported).
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub client: Option<ClientInfo>,
@@ -476,6 +481,9 @@ pub struct Answer {
     /// What an approved `passkey` request made or signed.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub passkey: Option<crate::PasskeyAnswer>,
+    /// `bundle`: one answer per item, in the request's order.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub items: Option<Vec<crate::BundleItemAnswer>>,
     /// Why the phone refused without asking the user: `empty_filter`, `paused`, `unknown_group`,
     /// `unsupported_version`, `unsupported_kind`, and for passkeys `bad_client_data`,
     /// `no_passkey`, `unsupported_algorithm` or `excluded` (see [`crate::passkey::errors`]).
@@ -504,6 +512,7 @@ impl Answer {
             moved: None,
             saved: None,
             passkey: None,
+            items: None,
             error: None,
             insights: None,
         }

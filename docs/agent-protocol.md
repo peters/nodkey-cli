@@ -96,7 +96,7 @@ Pairing grant (phone → agent):
 Request (agent → phone):
 
 ```json
-{"v":1, "request_id":"…", "kind":"code|login|list|insights|cleanup|save|passkey", "target":"github.com/alex",
+{"v":1, "request_id":"…", "kind":"code|login|list|insights|cleanup|save|passkey|bundle", "target":"github.com/alex",
  "reason":"Merge PR #42", "agent":"Claude · Horizon", "ts":1791620000}
 ```
 
@@ -219,6 +219,49 @@ version the app speaks) or `unsupported_kind` (the app does not know the request
 {"v":1, "request_id":"…", "decision":"denied", "error":"empty_filter"}
 {"v":1, "request_id":"…", "decision":"denied", "error":"paused"}
 ```
+
+## Bundles
+
+`kind: bundle` asks for several codes and logins in one request, when one task needs a login on
+one site and a code on another. `target` is empty; `bundle` holds the items:
+
+```json
+{"v":1, "request_id":"…", "kind":"bundle", "target":"", "reason":"Sign in to ChatGPT and GitHub",
+ "agent":"Claude Code @ my-laptop", "ts":1791620000,
+ "bundle":{"items":[{"id":"1", "kind":"login", "target":"chatgpt.com"},
+                    {"id":"2", "kind":"code", "target":"github.com/alex"}],
+           "follow_up":300}}
+```
+
+- 1 to 6 items, each `code` or `login` with a `target` as in a single request and an `id` (1 to 16
+  characters, unique in the bundle; `nodkey` numbers them `"1"`, `"2"`, …).
+- `follow_up` (optional, 120 to 600 seconds, default 120): for how long after the approval a fresh
+  `code` request from the same agent for an approved item is answered without asking.
+- Both sides check these rules; the agent tools also refuse a request whose sealed `ct` would be
+  longer than the relay's 3400 characters (`REQUEST_CT_MAX`, so the push stays under 4 KB).
+
+The phone matches each item on its own and shows one sheet: every item with its site, the matching
+account or a picker (as for a single request with no match), the mismatch and look-alike warnings,
+"Remember this site", and a check box per item; "Approve N of M" asks for Face ID once. A bundle is
+covered by leases only when every item is (then the phone answers by itself). The notification
+(category `AGENT_REQUEST_BUNDLE`) lists the items and offers Open and Deny. The history records one
+line per item. Scopes: a `codes` agent gets its login items refused (`error: "not_allowed"` on the
+item).
+
+The answer is `approved` when at least one item was approved, else `denied` (or `expired`), with one
+answer per item in the request's order, carrying the same fields as a single answer:
+
+```json
+{"v":1, "request_id":"…", "decision":"approved",
+ "items":[{"id":"1", "decision":"approved", "match":"alias", "lease":{"kind":"once"},
+           "account":{"issuer":"OpenAI", "name":"alex@example.com", "site":"openai.com", "sites":["chatgpt.com"]},
+           "username":"alex@example.com", "password":"…"},
+          {"id":"2", "decision":"denied"}]}
+```
+
+An older app answers `unsupported_kind`. The MCP tool is `request_credentials(items, reason,
+follow_up_seconds?, image_path?)`; the command line is `nodkey credentials login:chatgpt.com
+code:github.com/alex --reason TEXT [--follow-up SECS]`. Vectors: `request_bundle`, `answer_bundle`.
 
 ## Saving a login
 
@@ -418,12 +461,13 @@ change ignore such a request, and the agent sees `expired`.) Requests also carry
   to 5 minutes for the claim and returns the phone name and the check number, which the model shows
   the user to compare. Other tools: `list_phones()`, `unpair(phone)` (calls the agent-side `DELETE`
   and forgets the phone), `request_code(target, reason, image_path?)`,
-  `request_login(target, reason, image_path?)`, `list_accounts()`, `cleanup_insights()`,
+  `request_login(target, reason, image_path?)`, `request_credentials(items, reason, follow_up_seconds?,
+  image_path?)`, `list_accounts()`, `cleanup_insights()`,
   `cleanup_logins(filter, reason)` (dates as Unix seconds or `YYYY-MM-DD`; an unknown filter key is an
   error, so a typo cannot widen the filter). `image_path` is an optional PNG/JPEG/GIF file (for example
   a browser screenshot) sent as the attachment. Results go to the model; the server keeps nothing.
 - The command line does the same in one process: `nodkey pair` shows the code and then the check
-  number; `nodkey code`, `login`, `accounts`, `insights`, `cleanup`, `phones`, `unpair`. Exit codes:
+  number; `nodkey code`, `login`, `credentials`, `accounts`, `insights`, `cleanup`, `phones`, `unpair`. Exit codes:
   0 approved, 1 error, 2 denied, 3 expired, 64 bad arguments.
 - `nodkey webauthn --agent <profile> [--phone PHONE]` is the authenticator a browser host (Horizon)
   calls; see below.

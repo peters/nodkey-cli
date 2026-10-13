@@ -1,6 +1,6 @@
 ---
 name: nodkey
-description: Use the user's logins, one-time codes and saved passwords from Nodkey on their iPhone, each request approved by them with Face ID; sign in to websites, fetch a two-step code, see which accounts exist, and tidy up old saved logins. Use when a task needs a login or a two-step code, when asked to sign in to a site (for example in a Horizon browser panel), when the user asks which accounts they have, or when they ask to clean up, review or remove stale or old saved passwords. Uses the nodkey MCP server (request_login, request_code, cleanup_insights, list_accounts, cleanup_logins, pair, list_phones, unpair) or the nodkey command.
+description: Use the user's logins, one-time codes and saved passwords from Nodkey on their iPhone, each request approved by them with Face ID; sign in to websites, fetch a two-step code, see which accounts exist, and tidy up old saved logins. Use when a task needs a login or a two-step code, when asked to sign in to a site (for example in a Horizon browser panel), when the user asks which accounts they have, or when they ask to clean up, review or remove stale or old saved passwords. Uses the nodkey MCP server (request_login, request_code, request_credentials, cleanup_insights, list_accounts, cleanup_logins, pair, list_phones, unpair) or the nodkey command.
 ---
 
 # Nodkey
@@ -44,6 +44,16 @@ When the answer says `match: "chosen"`, no saved account matched the site and th
 one by hand (a login saved for openai.com used on chatgpt.com); use it for this site as given.
 `account.sites` lists more websites the account is used on. Two-step pages may split the code into one box per digit: fill them one by one. When a site offers an
 app prompt instead of a code (Google, Microsoft), choose "another way" and the authenticator code.
+
+## Several sign-ins at once
+
+When one task needs more than one login or code (a login on chatgpt.com and a code for
+github.com), ask once with `request_credentials(items, reason)`, items like
+`[{"kind": "login", "target": "chatgpt.com"}, {"kind": "code", "target": "github.com/alex"}]`
+(at most 6). The user approves the items they want with one Face ID; each item in the answer has its
+own `decision`. Use only the approved ones, each for its own site; do not ask again for the denied
+ones. Pass `follow_up_seconds` (up to 600) only when the work really takes longer than two minutes
+and you will need fresh codes.
 
 ## A two-step code only
 
@@ -101,6 +111,7 @@ When the MCP tools are not available but the `nodkey` command is, use it the sam
 ```sh
 nodkey code github.com/alex --reason "Merge PR #42" --field code      # prints only the code
 nodkey login vg.no --reason "Check the subscription page"              # JSON with username, password
+nodkey credentials login:chatgpt.com code:github.com/alex --reason "Compare the notes"   # several at once
 nodkey accounts --reason "See which accounts I may ask for"
 nodkey insights
 nodkey cleanup --ip-only --reason "Remove logins for old router addresses"
