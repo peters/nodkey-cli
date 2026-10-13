@@ -2,7 +2,7 @@
 
 use std::time::Duration;
 
-use nodkey_proto::{Account, AccountEntry, Answer, Decision, Kind, Lease};
+use nodkey_proto::{Account, AccountEntry, Answer, Decision, Kind, Lease, MatchKind};
 use serde::Serialize;
 
 /// What a request tool returns.
@@ -13,6 +13,9 @@ pub struct Outcome<'a> {
     phone: &'a str,
     #[serde(skip_serializing_if = "Option::is_none")]
     account: Option<&'a Account>,
+    /// How the phone found the account: `direct`, `alias` (an extra website) or `chosen` (by hand).
+    #[serde(rename = "match", skip_serializing_if = "Option::is_none")]
+    match_kind: Option<MatchKind>,
     #[serde(skip_serializing_if = "Option::is_none")]
     code: Option<&'a str>,
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -66,6 +69,10 @@ const OLD_PROTOCOL: &str = "The phone could not read this request: Nodkey on the
     speak different protocol versions. Update both (the app from the App Store, nodkey with its installer) \
     and try again.";
 
+/// Added to the message when the user picked the account by hand.
+const CHOSEN: &str = " No saved account matched the site you asked for, so the user picked this one by hand \
+    (account.site may differ). Use it for this sign-in only.";
+
 const PAUSED: &str = "The user has paused this agent in Nodkey, so the phone refused without asking. \
     Do not retry; tell them, and they can resume it under Agents.";
 
@@ -79,7 +86,7 @@ impl<'a> Outcome<'a> {
         if kind == Kind::Cleanup {
             return Self::from_cleanup(a, phone);
         }
-        let message = match a.decision {
+        let mut message = match a.decision {
             Decision::Approved if a.password.is_some() => {
                 "The user approved. Use these credentials for this sign-in only; do not store, log or repeat them."
             }
@@ -101,12 +108,17 @@ impl<'a> Outcome<'a> {
                 "The user denied the request. Do not ask again for the same thing unless they say so."
             }
             Decision::Expired => "The request expired on the phone without an answer.",
-        };
+        }
+        .to_owned();
+        if a.decision == Decision::Approved && a.match_kind == Some(MatchKind::Chosen) {
+            message.push_str(CHOSEN);
+        }
         Outcome {
             decision: a.decision,
             request_id: &a.request_id,
             phone,
             account: a.account.as_ref(),
+            match_kind: a.match_kind,
             code: a.code.as_ref().map(|c| c.expose()),
             seconds_left: a.seconds_left,
             username: a.username.as_deref(),
@@ -117,7 +129,7 @@ impl<'a> Outcome<'a> {
             attachment_warning,
             insights: a.insights.as_ref().filter(|_| kind == Kind::Insights),
             error: a.error.as_deref(),
-            message: message.to_owned(),
+            message,
         }
     }
 
@@ -169,6 +181,7 @@ impl<'a> Outcome<'a> {
             request_id: &a.request_id,
             phone,
             account: None,
+            match_kind: None,
             code: None,
             seconds_left: None,
             username: None,
@@ -194,6 +207,7 @@ impl<'a> Outcome<'a> {
             request_id,
             phone,
             account: None,
+            match_kind: None,
             code: None,
             seconds_left: None,
             username: None,
@@ -239,6 +253,35 @@ mod tests {
     }
 
     #[test]
+    fn chosen_account_and_extra_websites() {
+        let mut a = Answer::decision("rid", Decision::Approved);
+        a.username = Some("alex@example.com".into());
+        a.password = Some(nodkey_proto::Secret::new("pw"));
+        a.account = Some(Account {
+            issuer: "OpenAI".into(),
+            name: "alex@example.com".into(),
+            site: Some("openai.com".into()),
+            sites: Some(vec!["chatgpt.com".into()]),
+        });
+        a.match_kind = Some(MatchKind::Chosen);
+        let v: serde_json::Value =
+            serde_json::from_str(&text(&Outcome::from_answer(&a, Kind::Login, "P", None))).unwrap();
+        assert_eq!(v["match"], "chosen");
+        assert_eq!(v["account"]["sites"], json!(["chatgpt.com"]));
+        assert!(
+            v["message"]
+                .as_str()
+                .unwrap()
+                .contains("picked this one by hand")
+        );
+        a.match_kind = Some(MatchKind::Alias);
+        let v: serde_json::Value =
+            serde_json::from_str(&text(&Outcome::from_answer(&a, Kind::Login, "P", None))).unwrap();
+        assert_eq!(v["match"], "alias");
+        assert!(!v["message"].as_str().unwrap().contains("by hand"));
+    }
+
+    #[test]
     fn cleanup_outcomes() {
         let mut a = Answer::decision("rid", Decision::Approved);
         a.moved = Some(2);
@@ -249,6 +292,7 @@ mod tests {
                 site: Some("192.168.1.1".into()),
                 has_code: false,
                 has_password: true,
+                sites: None,
             },
             AccountEntry {
                 issuer: "Printer".into(),
@@ -256,6 +300,7 @@ mod tests {
                 site: None,
                 has_code: false,
                 has_password: true,
+                sites: None,
             },
         ]);
         let v: serde_json::Value =

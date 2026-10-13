@@ -380,6 +380,21 @@ pub struct Account {
     pub name: String,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub site: Option<String>,
+    /// More websites the account is used on ("Also used on" in the app); absent when none.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub sites: Option<Vec<String>>,
+}
+
+/// How the phone found the account of a `code` or `login` answer.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "lowercase")]
+pub enum MatchKind {
+    /// Its name or its own site matches the target.
+    Direct,
+    /// One of its extra websites matches the target.
+    Alias,
+    /// Nothing matched; the user picked this account by hand.
+    Chosen,
 }
 
 /// One account in a `list` answer.
@@ -393,6 +408,9 @@ pub struct AccountEntry {
     pub has_code: bool,
     #[serde(default)]
     pub has_password: bool,
+    /// More websites the account is used on; absent when none.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub sites: Option<Vec<String>>,
 }
 
 /// A secret string from the phone (a code or a password). Its `Debug` output is redacted and its
@@ -435,6 +453,9 @@ pub struct Answer {
     pub lease: Option<Lease>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub account: Option<Account>,
+    /// `code`/`login`: how the account was found (absent in answers from older apps).
+    #[serde(default, rename = "match", skip_serializing_if = "Option::is_none")]
+    pub match_kind: Option<MatchKind>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub code: Option<Secret>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -474,6 +495,7 @@ impl Answer {
             decision,
             lease: None,
             account: None,
+            match_kind: None,
             code: None,
             seconds_left: None,
             username: None,

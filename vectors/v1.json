@@ -434,6 +434,48 @@
       "recipient_kem_pk": "fE5zmodqNC-MJSk500yxJtz4i2vlbx3Hpg2qO712pTQ",
       "recipient_kem_sk": "WVg29q7eTJuYsXMJkPAqAx2veoBDBCceAKKxCEs90KU",
       "sender": "phone"
+    },
+    {
+      "aad": "N2rh3I0xbnRRCT2ElvRV1QIdQP77UDyu6DAF-4aCs1-Q",
+      "ct": "HFSa7q2eFymhTcp2fU3tEG3ME9a2eTE_S3Pzru1MQ5Ishw2-mSAkPAhLyRJUeyyDdj349K95ZoJTR9guBlUk2t5NjIZNAyIfUgnKMPKZlLJQPTnyVZUtxfTDt3V7eSzPs1x3BKFpgSmSDOR5OAQKJQiL_oj-fqDeVn5pHiHLBj_DbnE-EtUgJHwRaHNOchMgehTIHBqvoENvcg8LynPmYgJJGlUJNbp_fXb5JvoyjjRuy3N-29TUxAiJFzYOmIfOYCO4o-Pl5EE",
+      "enc": "l5wh3LC40pbJffWoBT2k4pm81JMz87pVIcdummtGuBI",
+      "ikm_e": "Q8cQrRoOnUdLEWinnwX3WqOoydf7zbm-VW7E7j9cKXs",
+      "info": "nodkey/v1/request",
+      "name": "request_login_chosen",
+      "plaintext": "{\"v\":1,\"request_id\":\"N2rh3I0xbnRRCT2ElvRV1Q\",\"kind\":\"login\",\"target\":\"chatgpt.com\",\"reason\":\"Sign in to ChatGPT to export the project notes\",\"agent\":\"Agent · Horizon\",\"ts\":1791620000}",
+      "plaintext_b64u": "eyJ2IjoxLCJyZXF1ZXN0X2lkIjoiTjJyaDNJMHhiblJSQ1QyRWx2UlYxUSIsImtpbmQiOiJsb2dpbiIsInRhcmdldCI6ImNoYXRncHQuY29tIiwicmVhc29uIjoiU2lnbiBpbiB0byBDaGF0R1BUIHRvIGV4cG9ydCB0aGUgcHJvamVjdCBub3RlcyIsImFnZW50IjoiQWdlbnQgwrcgSG9yaXpvbiIsInRzIjoxNzkxNjIwMDAwfQ",
+      "purpose": "request",
+      "recipient_kem_pk": "Td-3-HXWLqROvCB5uulMNssHXo3O2K_LQIby38T-z28",
+      "recipient_kem_sk": "vazvVwr6Ybz3fJM8Ey3EblV_Ow4P6yCovbNOvWY7IiI",
+      "sender": "agent"
+    },
+    {
+      "aad": "N2rh3I0xbnRRCT2ElvRV1Q0g0Bt23Hxsm5z-wpZp2lpA",
+      "ct": "BxVuGNW5SNPKClEWxmkWG2SmZliDvNppLw9_NhtQTdFkYbfhHa2EgO_QEifRYh0xy4ooGryzRiBZ9P6M6aqAdB4qMErRwGkVRauuh5voDmmfXH93pwxhECEOVRkZwMAgaKC9Nb3wqD4fGVPDse5_hD2we1r7G4afPK5O0kihnzI8jjgRrIjclPwcDWb0AGnIz4lOT9-g-0SGnTv8z2ridiOf-psxtspILOoWhS4KABxmdwiNB3vQ1WTb2U070Twz7w-hBDkY_dMKeB1_49Wh9MAbF_cCsPUgeBzMV_ahtf4Fy-4dtLHMKoc5ZD7c1xBLQ19eGtCkaZoikJNKggPYnYI1bMUhg1hjTYGOLk3AP4fhUh0z51DGf3RLwKYFZKzqUhQ2o9zVsZI",
+      "enc": "bScKGkbjvJBoI9m8iJqZsB522-YOEVCeXma9fPNFHCI",
+      "ikm_e": "j_J-KGtejzLpJwflJwF3_H3AheyP4gFMlRjBn9AiXXQ",
+      "info": "nodkey/v1/answer",
+      "name": "answer_login_chosen",
+      "plaintext": "{\"v\":1,\"request_id\":\"N2rh3I0xbnRRCT2ElvRV1Q\",\"decision\":\"approved\",\"lease\":{\"kind\":\"once\"},\"account\":{\"issuer\":\"OpenAI\",\"name\":\"alex@example.com\",\"site\":\"openai.com\",\"sites\":[\"chatgpt.com\"]},\"match\":\"chosen\",\"username\":\"alex@example.com\",\"password\":\"correct horse battery staple\"}",
+      "plaintext_b64u": "eyJ2IjoxLCJyZXF1ZXN0X2lkIjoiTjJyaDNJMHhiblJSQ1QyRWx2UlYxUSIsImRlY2lzaW9uIjoiYXBwcm92ZWQiLCJsZWFzZSI6eyJraW5kIjoib25jZSJ9LCJhY2NvdW50Ijp7Imlzc3VlciI6Ik9wZW5BSSIsIm5hbWUiOiJhbGV4QGV4YW1wbGUuY29tIiwic2l0ZSI6Im9wZW5haS5jb20iLCJzaXRlcyI6WyJjaGF0Z3B0LmNvbSJdfSwibWF0Y2giOiJjaG9zZW4iLCJ1c2VybmFtZSI6ImFsZXhAZXhhbXBsZS5jb20iLCJwYXNzd29yZCI6ImNvcnJlY3QgaG9yc2UgYmF0dGVyeSBzdGFwbGUifQ",
+      "purpose": "answer",
+      "recipient_kem_pk": "fE5zmodqNC-MJSk500yxJtz4i2vlbx3Hpg2qO712pTQ",
+      "recipient_kem_sk": "WVg29q7eTJuYsXMJkPAqAx2veoBDBCceAKKxCEs90KU",
+      "sender": "phone"
+    },
+    {
+      "aad": "V3YOytacJmkm-z-oepnkNw0g0Bt23Hxsm5z-wpZp2lpA",
+      "ct": "zNstUvp4Qq4_03cfBjoH4cOq0sLax9MRAwYGMWSPdmP_MsMQB2JMeecvSBAzL_-NCEoynfwCj90pE93GYNmBvF6drHfIsKXJH96YH0hWVM7VVGl3CtSeRzMutGUlov4yiWYPb_R549sVY6VmbIvcMSAkplmY8y5PZJYKbHX0S5TTuCux-kS5FzjyiP7sGcrxVMzsAgx090vfXndSPgNbhi9-y5fCbYxFPYmFpJpbgXVFb2ULXpTS2o5n75ddFyPQe5dUZSLb7i61dwGZC_vYH-K3lBuPJ8V8et5jExanzyY3WTxZOwpKTZXG",
+      "enc": "894ZCCkXVw4lLkPtWPy-z26u3QM9sok-QndKWIBmehs",
+      "ikm_e": "jvGdVzndIpAX84_nfbr5zXsDnVp4MoZaANwDIPhB0o0",
+      "info": "nodkey/v1/answer",
+      "name": "answer_list_with_sites",
+      "plaintext": "{\"v\":1,\"request_id\":\"V3YOytacJmkm-z-oepnkNw\",\"decision\":\"approved\",\"accounts\":[{\"issuer\":\"OpenAI\",\"name\":\"alex@example.com\",\"site\":\"openai.com\",\"has_code\":false,\"has_password\":true,\"sites\":[\"chatgpt.com\",\"sora.com\"]}]}",
+      "plaintext_b64u": "eyJ2IjoxLCJyZXF1ZXN0X2lkIjoiVjNZT3l0YWNKbWttLXotb2VwbmtOdyIsImRlY2lzaW9uIjoiYXBwcm92ZWQiLCJhY2NvdW50cyI6W3siaXNzdWVyIjoiT3BlbkFJIiwibmFtZSI6ImFsZXhAZXhhbXBsZS5jb20iLCJzaXRlIjoib3BlbmFpLmNvbSIsImhhc19jb2RlIjpmYWxzZSwiaGFzX3Bhc3N3b3JkIjp0cnVlLCJzaXRlcyI6WyJjaGF0Z3B0LmNvbSIsInNvcmEuY29tIl19XX0",
+      "purpose": "answer",
+      "recipient_kem_pk": "fE5zmodqNC-MJSk500yxJtz4i2vlbx3Hpg2qO712pTQ",
+      "recipient_kem_sk": "WVg29q7eTJuYsXMJkPAqAx2veoBDBCceAKKxCEs90KU",
+      "sender": "phone"
     }
   ],
   "keys": {

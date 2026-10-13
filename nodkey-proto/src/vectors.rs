@@ -33,7 +33,9 @@ pub const PNG: [u8; 76] = [
     0x00, 0x00, 0x00, 0x00, 0x49, 0x45, 0x4e, 0x44, 0xae, 0x42, 0x60, 0x82,
 ];
 
+mod matching;
 pub mod passkey;
+mod save;
 fn label32(label: &str) -> [u8; 32] {
     Sha256::digest(label.as_bytes()).into()
 }
@@ -146,6 +148,30 @@ fn to_json<T: serde::Serialize>(v: &T) -> Vec<u8> {
 }
 
 /// Builds the whole vector document.
+/// A request as the vectors' agent sends it.
+fn request(
+    rid: &str,
+    kind: Kind,
+    target: &str,
+    reason: &str,
+    attachment: Option<AttachmentInfo>,
+) -> Request {
+    Request {
+        v: VERSION,
+        request_id: rid.to_owned(),
+        kind,
+        target: target.into(),
+        reason: reason.into(),
+        agent: "Agent \u{b7} Horizon".into(),
+        ts: TS,
+        attachment,
+        filter: None,
+        save: None,
+        passkey: None,
+        client: None,
+    }
+}
+
 pub fn build() -> Value {
     let agent = Side::fixed("agent");
     let phone = Side::fixed("phone");
@@ -179,20 +205,6 @@ pub fn build() -> Value {
     let rid_code = label_id("nodkey/v1/vectors/request/code");
     let rid_login = label_id("nodkey/v1/vectors/request/login");
     let rid_list = label_id("nodkey/v1/vectors/request/list");
-    let request = |rid: &str, kind, target: &str, reason: &str, attachment| Request {
-        v: VERSION,
-        request_id: rid.to_owned(),
-        kind,
-        target: target.into(),
-        reason: reason.into(),
-        agent: "Agent \u{b7} Horizon".into(),
-        ts: TS,
-        attachment,
-        filter: None,
-        save: None,
-        passkey: None,
-        client: None,
-    };
     let r_code = request(
         &rid_code,
         Kind::Code,
@@ -248,6 +260,7 @@ pub fn build() -> Value {
         issuer: "GitHub".into(),
         name: "alex".into(),
         site: Some("github.com".into()),
+        sites: None,
     };
     let mut a_code = Answer::decision(&rid_code, Decision::Approved);
     a_code.lease = Some(Lease {
@@ -267,6 +280,7 @@ pub fn build() -> Value {
         issuer: "VG".into(),
         name: "alex@example.com".into(),
         site: Some("vg.no".into()),
+        sites: None,
     });
     a_login.username = Some("alex@example.com".into());
     a_login.password = Some(Secret::new("correct horse battery staple"));
@@ -286,6 +300,7 @@ pub fn build() -> Value {
             site: Some("github.com".into()),
             has_code: true,
             has_password: true,
+            sites: None,
         },
         AccountEntry {
             issuer: "VG".into(),
@@ -293,6 +308,7 @@ pub fn build() -> Value {
             site: Some("vg.no".into()),
             has_code: false,
             has_password: true,
+            sites: None,
         },
     ]);
     for (name, a) in [
@@ -343,6 +359,7 @@ pub fn build() -> Value {
         site: Some(site.into()),
         has_code: false,
         has_password: true,
+        sites: None,
     };
     let mut a_cleanup = Answer::decision(&rid_cleanup, Decision::Approved);
     a_cleanup.moved = Some(2);
@@ -367,53 +384,9 @@ pub fn build() -> Value {
         );
     }
 
-    // Save: a browser asks the phone to keep a login, and the phone's answer. Sealed after the
-    // others so their bytes stay the same.
-    let rid_save = label_id("nodkey/v1/vectors/request/save");
-    let mut r_save = request(
-        &rid_save,
-        Kind::Save,
-        "vg.no",
-        "Save the login you just used on vg.no",
-        None,
-    );
-    let password_box = ctx.seal(
-        "save_password",
-        Purpose::Password,
-        "agent",
-        &phone,
-        agent.id.clone(),
-        b"correct horse battery staple",
-        false,
-    );
-    r_save.save = Some(crate::SaveLogin {
-        url: "https://www.vg.no/login".into(),
-        username: "alex@example.com".into(),
-        password: password_box,
-        title: Some("VG".into()),
-    });
-    ctx.seal(
-        "request_save",
-        Purpose::Request,
-        "agent",
-        &phone,
-        format!("{rid_save}{}", agent.id),
-        &to_json(&r_save),
-        true,
-    );
-    let mut a_save = Answer::decision(&rid_save, Decision::Approved);
-    a_save.saved = Some(crate::Saved::Updated);
-    ctx.seal(
-        "answer_save",
-        Purpose::Answer,
-        "phone",
-        &agent,
-        format!("{rid_save}{}", phone.id),
-        &to_json(&a_save),
-        true,
-    );
-
+    save::add(&mut ctx, &agent, &phone);
     let webauthn = passkey::add(&mut ctx, &agent, &phone); // After the others: their bytes stay.
+    matching::add(&mut ctx, &agent, &phone);
 
     // Signed relay calls.
     let agent_info = crate::AgentInfo {

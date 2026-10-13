@@ -40,7 +40,9 @@ for 1 day / 7 days / always"); then the phone answers by itself. You never keep 
 
 Tips from real sign-ins: when the answer's `account.site` names a different host than the page you
 opened (payment.schibsted.no, not login.schibsted.com), sign in there; the saved login belongs to it.
-Two-step pages may split the code into one box per digit: fill them one by one. When a site offers an
+When the answer says `match: "chosen"`, no saved account matched the site and the user picked
+one by hand (a login saved for openai.com used on chatgpt.com); use it for this site as given.
+`account.sites` lists more websites the account is used on. Two-step pages may split the code into one box per digit: fill them one by one. When a site offers an
 app prompt instead of a code (Google, Microsoft), choose "another way" and the authenticator code.
 
 ## A two-step code only
