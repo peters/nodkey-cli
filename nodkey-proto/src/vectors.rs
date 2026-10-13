@@ -33,6 +33,7 @@ pub const PNG: [u8; 76] = [
     0x00, 0x00, 0x00, 0x00, 0x49, 0x45, 0x4e, 0x44, 0xae, 0x42, 0x60, 0x82,
 ];
 
+mod bundle;
 mod matching;
 pub mod passkey;
 mod save;
@@ -168,6 +169,7 @@ fn request(
         filter: None,
         save: None,
         passkey: None,
+        bundle: None,
         client: None,
     }
 }
@@ -387,6 +389,7 @@ pub fn build() -> Value {
     save::add(&mut ctx, &agent, &phone);
     let webauthn = passkey::add(&mut ctx, &agent, &phone); // After the others: their bytes stay.
     matching::add(&mut ctx, &agent, &phone);
+    bundle::add(&mut ctx, &agent, &phone);
 
     // Signed relay calls.
     let agent_info = crate::AgentInfo {

@@ -15,6 +15,15 @@ use crate::{
 /// Longest `reason` and `target` the agent sends, in characters.
 pub const MAX_REASON: usize = 500;
 pub const MAX_TARGET: usize = 200;
+/// Longest `ct` (b64u characters) of a sealed request the relay takes, so the push stays under
+/// APNs' 4 KB (relay `REQUEST_CT_MAX`).
+pub const REQUEST_CT_MAX: usize = 3400;
+
+/// The length of `ct` once `r` is sealed: the JSON plus the 16-byte tag, in b64u characters.
+pub fn sealed_ct_len(r: &Request) -> usize {
+    let sealed = serde_json::to_vec(r).map_or(usize::MAX / 8, |v| v.len()) + 16;
+    (4 * sealed).div_ceil(3)
+}
 
 /// Checks a request before it is sealed: what each kind needs, and the length limits. The text
 /// is meant for the person or model that made the request.
@@ -58,7 +67,23 @@ pub fn check_request(r: &Request) -> Result<(), String> {
         (Kind::Passkey, Some(p)) => p.check(&r.target).map(|_| ()),
         (_, Some(_)) => Err("only a passkey request carries passkey data".into()),
         _ => Ok(()),
+    }?;
+    match (r.kind, &r.bundle) {
+        (Kind::Bundle, None) => Err("a bundle request needs its items".into()),
+        (Kind::Bundle, Some(_)) if !r.target.is_empty() => {
+            Err("a bundle has no target of its own; give each item its target".into())
+        }
+        (Kind::Bundle, Some(b)) => b.check(),
+        (_, Some(_)) => Err("only a bundle request carries items".into()),
+        _ => Ok(()),
+    }?;
+    if sealed_ct_len(r) > REQUEST_CT_MAX {
+        return Err(
+            "the request is too large to send to the phone; ask for fewer items or shorten the reason"
+                .into(),
+        );
     }
+    Ok(())
 }
 
 /// Seals a checked request to the phone: the envelope to `POST /v1/phones/{phone_id}/requests`.
@@ -161,8 +186,57 @@ mod tests {
             filter: None,
             save: None,
             passkey: None,
+            bundle: None,
             client: None,
         }
+    }
+
+    #[test]
+    fn bundle_checks_and_the_sealed_size() {
+        let item = |id: &str, target: &str| crate::BundleItem {
+            id: id.into(),
+            kind: Kind::Login,
+            target: target.into(),
+        };
+        let mut b = request(Kind::Bundle, "", "Sign in to two sites");
+        assert!(check_request(&b).unwrap_err().contains("items"));
+        b.bundle = Some(crate::BundleRequest {
+            items: vec![item("1", "chatgpt.com"), item("2", "github.com")],
+            follow_up: None,
+        });
+        assert!(check_request(&b).is_ok());
+        b.target = "chatgpt.com".into();
+        assert!(check_request(&b).unwrap_err().contains("no target"));
+        let mut c = request(Kind::Code, "github.com", "Merge");
+        c.bundle = b.bundle.clone();
+        assert!(check_request(&c).unwrap_err().contains("only a bundle"));
+
+        // Six long targets, a long reason and every client field at its longest do not fit in a push.
+        b.target = String::new();
+        b.reason = "r".repeat(500);
+        let long = || Some("c".repeat(80));
+        b.client = Some(crate::ClientInfo {
+            app: long(),
+            app_version: long(),
+            model: long(),
+            effort: long(),
+            os: long(),
+            host: long(),
+            workdir: long(),
+            mcp_version: long(),
+        });
+        b.bundle = Some(crate::BundleRequest {
+            items: (1..=6)
+                .map(|i| item(&i.to_string(), &"t".repeat(200)))
+                .collect(),
+            follow_up: Some(600),
+        });
+        assert!(sealed_ct_len(&b) > REQUEST_CT_MAX);
+        assert!(check_request(&b).unwrap_err().contains("too large"));
+        // The length is the b64u length of the JSON and the tag.
+        let small = request(Kind::List, "", "See");
+        let n = serde_json::to_vec(&small).unwrap().len() + 16;
+        assert_eq!(sealed_ct_len(&small), b64u::encode(&vec![0u8; n]).len());
     }
 
     #[test]

@@ -8,6 +8,7 @@
 // Handlers return early with ready-made responses; their size does not matter in a test.
 #![allow(clippy::result_large_err)]
 
+mod bundle;
 pub mod control;
 pub mod passkeys;
 mod phone;

@@ -2,6 +2,7 @@
 //! (`nodkey code`, `nodkey login`, ...) or as an MCP server (`nodkey mcp`). See the README.
 
 pub mod agent;
+pub mod bundle;
 pub mod cli;
 pub mod commands;
 pub mod filter;
