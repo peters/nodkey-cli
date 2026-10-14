@@ -1,4 +1,23 @@
-# nodkey
+<p align="center">
+  <img src="docs/logo.svg" width="96" height="96" alt="Nodkey logo">
+</p>
+
+<h1 align="center">nodkey</h1>
+
+<p align="center">
+  Let your coding agents ask your iPhone for a login or a two-step code.<br>
+  You approve every request with Face ID.
+</p>
+
+<p align="center">
+  <a href="https://github.com/peters/nodkey-cli/actions/workflows/ci.yml"><img src="https://github.com/peters/nodkey-cli/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
+  <a href="https://github.com/peters/nodkey-cli/releases"><img src="https://img.shields.io/github/v/release/peters/nodkey-cli?include_prereleases&label=release" alt="Latest release"></a>
+  <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue" alt="MIT license"></a>
+</p>
+
+<p align="center">
+  <a href="https://apps.apple.com/app/id6820952672"><img src="https://toolbox.marketingtools.apple.com/api/v2/badges/download-on-the-app-store/black/en-us?size=250x83" height="44" alt="Download Nodkey on the App Store"></a>
+</p>
 
 `nodkey` lets you and your coding agents ask [Nodkey](https://kh-labs.dev/nodkey/) on your iPhone
 for **one** one-time code or **one** login at a time. Every request shows up on your phone, and
@@ -15,6 +34,29 @@ Each agent pairs with its own name ("Claude Code @ my-laptop", "Codex @ my-lapto
 "Terminal @ my-laptop"). In Nodkey you see who asked for what, and you can pause or remove one agent
 without touching the others.
 
+## How it works
+
+```mermaid
+sequenceDiagram
+    participant A as Agent (nodkey)
+    participant R as Relay
+    participant P as Nodkey on your iPhone
+    A->>R: Request, encrypted for your iPhone
+    R->>P: Notification
+    P->>P: You approve with Face ID
+    P->>R: Answer, encrypted for the agent
+    R->>A: Answer
+```
+
+The relay forwards sealed messages and sends the notification. It cannot read a code, a password,
+an account name or the reason.
+
+## What you need
+
+- An iPhone with iOS 18 or later and [Nodkey](https://apps.apple.com/app/id6820952672) from the
+  App Store (free).
+- Linux, macOS or Windows for `nodkey`.
+
 ## Install
 
 ```sh
@@ -25,12 +67,6 @@ On Windows (PowerShell):
 
 ```powershell
 irm https://raw.githubusercontent.com/peters/nodkey-cli/main/install.ps1 | iex
-```
-
-While the repository is private, the scripts download through the GitHub CLI (`gh`, logged in):
-
-```sh
-gh api repos/peters/nodkey-cli/contents/install.sh -H 'Accept: application/vnd.github.raw' | sh
 ```
 
 Or build it with Rust 1.85 or newer:
@@ -132,8 +168,15 @@ The agent folder (only you can open it) holds one folder per agent under `agents
   approve, but keep the folder private. To cut an agent off, remove it under Agents in Nodkey.
 - A tool result goes to the model. The skill tells agents to use a secret only for the task at hand.
 
-The protocol is in [docs/agent-protocol.md](docs/agent-protocol.md).
+The protocol is in [docs/agent-protocol.md](docs/agent-protocol.md). To report a security problem,
+see [SECURITY.md](SECURITY.md).
+
+## Related
+
+- [Nodkey for Firefox and Chromium](https://github.com/peters/nodkey-browser): the browser
+  extension. It uses the same protocol code, compiled to WebAssembly.
+- [kh-labs.dev/nodkey](https://kh-labs.dev/nodkey/): the app's website.
 
 ## License
 
-MIT
+[MIT](LICENSE)

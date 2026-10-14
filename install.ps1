@@ -1,7 +1,5 @@
 # Install nodkey from the latest GitHub release.
 #   irm https://raw.githubusercontent.com/peters/nodkey-cli/main/install.ps1 | iex
-# While the repository is private, use the GitHub CLI (it must be logged in):
-#   gh api repos/peters/nodkey-cli/contents/install.ps1 -H 'Accept: application/vnd.github.raw' | iex
 # $env:NODKEY_INSTALL_DIR picks the folder. $env:NODKEY_VERSION picks a tag.
 $ErrorActionPreference = 'Stop'
 $repo = 'peters/nodkey-cli'
@@ -9,7 +7,7 @@ $dir = if ($env:NODKEY_INSTALL_DIR) { $env:NODKEY_INSTALL_DIR } else { Join-Path
 $version = if ($env:NODKEY_VERSION) { $env:NODKEY_VERSION } else { 'latest' }
 $asset = 'nodkey-x86_64-pc-windows-msvc.zip'
 
-# The GitHub CLI can read private repositories; plain web requests only public ones.
+# A logged-in GitHub CLI avoids the API's limit on anonymous calls; plain web requests work too.
 $useGh = $false
 if (Get-Command gh -ErrorAction SilentlyContinue) {
     gh auth token *> $null

@@ -1,16 +1,9 @@
 name: CI
-# The repository is private, so pushes run Linux only (macOS and Windows minutes cost more).
-# Run the workflow by hand for all three systems before a release.
 on:
   push:
     branches: [main]
   pull_request:
   workflow_dispatch:
-    inputs:
-      all_systems:
-        description: Also test on macOS and Windows
-        type: boolean
-        default: true
 jobs:
   horizon-pins:
     name: Horizon image pins
@@ -27,7 +20,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: ${{ fromJSON(github.event_name == 'workflow_dispatch' && inputs.all_systems && '["ubuntu-latest","macos-latest","windows-latest"]' || '["ubuntu-latest"]') }}
+        os: [ubuntu-latest, macos-latest, windows-latest]
     steps:
       - uses: actions/checkout@v7
       - name: Format
