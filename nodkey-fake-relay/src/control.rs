@@ -7,6 +7,8 @@
 //! - `GET /_fake/check/{agent_id}`: the check number the phone shows for a paired agent.
 //! - `GET /_fake/passkeys`: the phone's passkeys, `[{rp_id, credential_id, user_handle, user_name,
 //!   public_key}]` (b64u; `public_key` is SPKI DER, to check signatures with).
+//! - `PUT /_fake/cards` with `{"enabled": bool, "reveal": bool, "limit": {"value", "currency"} | null}`:
+//!   what the user allowed for cards (default: on, full numbers on, 1000.00 NOK per purchase).
 
 use std::sync::Arc;
 
@@ -28,6 +30,15 @@ pub(crate) fn routes() -> Router<Shared> {
         .route("/_fake/seen", get(seen))
         .route("/_fake/check/{agent_id}", get(check))
         .route("/_fake/passkeys", get(passkeys))
+        .route("/_fake/cards", axum::routing::put(set_cards))
+}
+
+async fn set_cards(
+    State(fake): State<Shared>,
+    Json(cards): Json<crate::cards::FakeCards>,
+) -> StatusCode {
+    *fake.cards.lock().unwrap() = cards;
+    StatusCode::NO_CONTENT
 }
 
 async fn phone(State(fake): State<Shared>) -> Response {

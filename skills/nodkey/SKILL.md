@@ -1,6 +1,6 @@
 ---
 name: nodkey
-description: Use the user's logins, one-time codes and saved passwords from Nodkey on their iPhone, each request approved by them with Face ID; sign in to websites, fetch a two-step code, see which accounts exist, and tidy up old saved logins. Use when a task needs a login or a two-step code, when asked to sign in to a site (for example in a Horizon browser panel), when the user asks which accounts they have, or when they ask to clean up, review or remove stale or old saved passwords. Uses the nodkey MCP server (request_login, request_code, request_credentials, cleanup_insights, list_accounts, cleanup_logins, pair, list_phones, unpair) or the nodkey command.
+description: Use the user's logins, one-time codes and saved passwords from Nodkey on their iPhone, each request approved by them with Face ID; sign in to websites, fetch a two-step code, see which accounts exist, tidy up old saved logins, and pay a purchase the user asked for with their card. Use when a task needs a login or a two-step code, when asked to sign in to a site (for example in a Horizon browser panel), when the user asks which accounts they have, or when they ask to clean up, review or remove stale or old saved passwords, or when they ask you to buy something. Uses the nodkey MCP server (request_login, request_code, request_credentials, request_payment, cleanup_insights, list_accounts, cleanup_logins, pair, list_phones, unpair) or the nodkey command.
 ---
 
 # Nodkey
@@ -54,6 +54,22 @@ github.com), ask once with `request_credentials(items, reason)`, items like
 own `decision`. Use only the approved ones, each for its own site; do not ask again for the denied
 ones. Pass `follow_up_seconds` (up to 600) only when the work really takes longer than two minutes
 and you will need fresh codes.
+
+## Pay for something (spends the user's money)
+
+Only when the user asked you to buy this exact thing. Every payment shows the shop and the amount on
+their iPhone and needs Face ID; there is no "always allow" for cards.
+
+- In a browser host that fills cards (Horizon, or the Nodkey browser extension), let it fill the
+  checkout form: the card number never enters the conversation, and the host checks the total on
+  the page. You get only `filled: Visa ····4242 ..., at most 499.00 NOK`.
+- Otherwise `request_payment(merchant, amount, currency, reason, image_path)`: `amount` is the exact
+  total the checkout page shows (with a screenshot of it as `image_path`). The answer has the full
+  `card`; fill it straight into the payment form and never repeat it. It works only when the user
+  turned full card numbers on for you; `reveal_off` means it is off: tell them, do not retry.
+- `over_limit`: the amount is above the user's limit for you. Stop and tell them. **Never split a
+  purchase into smaller ones** to get under a limit, and never pay more than the approved amount.
+- One approval pays one purchase. For the next one, ask again.
 
 ## A two-step code only
 
@@ -116,10 +132,12 @@ nodkey accounts --reason "See which accounts I may ask for"
 nodkey insights
 nodkey cleanup --ip-only --reason "Remove logins for old router addresses"
 nodkey cleanup --query '*.old-company.example' --last-used-before 2022-01-01 --reason "Old employer"
+nodkey pay shop.example.com 499 NOK --reveal --reason "Buy the cable you asked for"   # full card (JSON)
 nodkey phones; nodkey unpair PHONE
 ```
 
-Exit codes: 0 approved, 2 denied, 3 expired, 1 error, 64 bad arguments. Waiting notes go to stderr.
+Exit codes: 0 approved, 2 denied, 3 expired, 1 error, 64 bad arguments; for `pay` also 5 over the
+user's limit, 6 full card numbers off, 7 cards off or no card. Waiting notes go to stderr.
 Never put a password on a command line, in a file or in a pipe you log; read it from the JSON and fill
 it straight into the field that needs it. `--image FILE`, `--model` and `--effort` work as in the tools.
 

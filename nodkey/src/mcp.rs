@@ -40,7 +40,9 @@ the phone for one code or one login at a time; the user approves or denies every
 lease they set answers for them), so a call can wait up to 2 minutes. Always pass a short, honest reason that \
 explains what you are about to do. Use what you get only for that task and never store or repeat secrets. \
 cleanup_logins proposes moving old saved logins to Recently deleted; the user sees the list and confirms, and \
-nothing is deleted for good. If no phone is paired, use the pair tool first.";
+nothing is deleted for good. request_payment spends the user's money: use it only for a purchase the user asked \
+for, with the exact amount, and never split a purchase to get under their limit. If no phone is paired, use the \
+pair tool first.";
 
 /// Shared server state.
 pub struct Server {
@@ -347,6 +349,19 @@ impl Server {
                 )
                 .await
             }
+            "request_payment" => {
+                let (merchant, amount) = crate::card::from_args(args)?;
+                a.pay(
+                    &merchant,
+                    amount,
+                    req_str(args, "reason")?,
+                    opt_str(args, "image_path")?,
+                    opt_str(args, "phone")?,
+                    reported(args)?,
+                    &progress,
+                )
+                .await
+            }
             "cleanup_logins" => {
                 let filter = cleanup_filter(args)?;
                 a.cleanup(
@@ -489,6 +504,7 @@ mod tests {
                 "request_code",
                 "request_login",
                 "request_credentials",
+                "request_payment",
                 "cleanup_insights",
                 "list_accounts",
                 "cleanup_logins",

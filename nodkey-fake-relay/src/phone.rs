@@ -84,6 +84,13 @@ pub(crate) fn approve(fake: &Fake, answer: &mut Answer, request: &Request) {
             answer.password = Some(Secret::new(PASSWORD));
         }
         Kind::List => {
+            answer.cards = fake.cards.lock().unwrap().enabled.then(|| {
+                vec![nodkey_proto::CardEntry {
+                    title: "Test Visa".into(),
+                    brand: "visa".into(),
+                    last4: "4242".into(),
+                }]
+            });
             answer.accounts = Some(vec![AccountEntry {
                 issuer: "GitHub".into(),
                 name: "alex".into(),
@@ -109,6 +116,7 @@ pub(crate) fn approve(fake: &Fake, answer: &mut Answer, request: &Request) {
             answer.lease = None;
             answer.saved = Some(nodkey_proto::Saved::Added);
         }
+        Kind::Card => crate::cards::approve(answer, request),
         Kind::Passkey => {
             let passkey = request.passkey.as_ref().expect("checked before asking");
             crate::passkeys::approve(fake, answer, passkey);

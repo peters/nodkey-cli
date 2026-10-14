@@ -9,6 +9,7 @@
 #![allow(clippy::result_large_err)]
 
 mod bundle;
+pub mod cards;
 pub mod control;
 pub mod passkeys;
 mod phone;
@@ -65,6 +66,8 @@ pub struct Seen {
     pub attachment: Option<Vec<u8>>,
     /// The password of a `save` request, opened as the phone would (test data only).
     pub saved_password: Option<String>,
+    /// The card number of a card `save` request, opened likewise (test numbers only).
+    pub saved_card: Option<String>,
 }
 
 struct Pairing {
@@ -95,6 +98,8 @@ pub struct Fake {
     pub claim_on_poll: u32,
     /// The phone's passkeys, oldest first (the test passkey for `webauthn.io` to begin with).
     pub passkeys: Mutex<Vec<passkeys::FakePasskey>>,
+    /// What the user allowed for cards.
+    pub cards: Mutex<cards::FakeCards>,
     /// Where this relay listens; the phone calls it for the pairing lookup.
     addr: std::sync::OnceLock<SocketAddr>,
     inner: Mutex<Inner>,
@@ -416,6 +421,7 @@ async fn post_request(
             .expect("the save password opens with the phone key");
         String::from_utf8(opened.to_vec()).expect("utf-8 password")
     });
+    let saved_card = cards::saved_number(&fake, &request, &agent_id);
     let mut inner = fake.inner.lock().unwrap();
     inner.order.push(env.request_id.clone());
     inner.requests.insert(
@@ -426,6 +432,7 @@ async fn post_request(
             announced: env.attachment,
             attachment: None,
             saved_password,
+            saved_card,
         },
     );
     StatusCode::ACCEPTED.into_response()
@@ -501,6 +508,9 @@ async fn wait_answer(
     {
         return seal_answer(&fake, &agent_id, &rid, &refused);
     }
+    if let Some(refused) = cards::refuse(&fake, &rid, &request) {
+        return seal_answer(&fake, &agent_id, &rid, &refused);
+    }
     let mut answer = match mode {
         Mode::Silent => {
             tokio::time::sleep(Duration::from_secs(q.wait.unwrap_or(1).min(60))).await;
@@ -542,6 +552,7 @@ pub fn start_on(bind: &str, claim_on_poll: u32) -> (Shared, SocketAddr) {
         attachment_limit: Mutex::new(1024 * 1024),
         claim_on_poll,
         passkeys: Mutex::new(vec![passkeys::FakePasskey::test()]),
+        cards: Mutex::new(cards::FakeCards::default()),
         addr: std::sync::OnceLock::new(),
         inner: Mutex::new(Inner::default()),
     });

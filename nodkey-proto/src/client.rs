@@ -30,7 +30,7 @@ pub fn sealed_ct_len(r: &Request) -> usize {
 pub fn check_request(r: &Request) -> Result<(), String> {
     let needs_target = matches!(
         r.kind,
-        Kind::Code | Kind::Login | Kind::Save | Kind::Passkey
+        Kind::Code | Kind::Login | Kind::Save | Kind::Passkey | Kind::Card
     );
     if needs_target && r.target.trim().is_empty() {
         return Err(
@@ -52,13 +52,20 @@ pub fn check_request(r: &Request) -> Result<(), String> {
         (Kind::Cleanup, Some(f), _) if f.is_empty() => {
             Err("filter needs at least one criterion".into())
         }
-        (Kind::Save, _, None) => Err("a save request needs the login to save".into()),
+        (Kind::Save, _, Some(_)) if r.save_card.is_some() => {
+            Err("a save request carries a login or a card, not both".into())
+        }
+        (Kind::Save, _, None) => match &r.save_card {
+            Some(c) => c.check(),
+            None => Err("a save request needs the login or card to save".into()),
+        },
         (Kind::Save, _, Some(s)) if s.username.trim().is_empty() || s.password.ct.is_empty() => {
             Err("a save request needs a user name and a password".into())
         }
         (Kind::Save, _, Some(s)) if s.url.chars().count() > 2000 => {
             Err("the page address is too long".into())
         }
+        _ if r.save_card.is_some() => Err("only a save request carries a card to save".into()),
         _ => Ok(()),
     };
     checked?;
@@ -75,6 +82,12 @@ pub fn check_request(r: &Request) -> Result<(), String> {
         }
         (Kind::Bundle, Some(b)) => b.check(),
         (_, Some(_)) => Err("only a bundle request carries items".into()),
+        _ => Ok(()),
+    }?;
+    match (r.kind, &r.card) {
+        (Kind::Card, None) => Err("a card request needs the merchant and the amount".into()),
+        (Kind::Card, Some(c)) => c.check(&r.target).map_err(|(_, e)| e),
+        (_, Some(_)) => Err("only a card request carries card data".into()),
         _ => Ok(()),
     }?;
     if sealed_ct_len(r) > REQUEST_CT_MAX {
@@ -116,6 +129,20 @@ pub fn seal_password(
     }
     Ok(Purpose::Password
         .seal(phone_kem, agent_id.as_bytes(), password.as_bytes())?
+        .to_box())
+}
+
+/// Seals a card number or CVC for a `save` request to the phone on its own, like a password.
+pub fn seal_card_secret(
+    agent_id: &str,
+    phone_kem: &[u8; 32],
+    secret: &str,
+) -> Result<SealedBox, Error> {
+    if secret.trim().is_empty() {
+        return Err(Error::Encoding("empty card value"));
+    }
+    Ok(Purpose::Card
+        .seal(phone_kem, agent_id.as_bytes(), secret.as_bytes())?
         .to_box())
 }
 
@@ -187,6 +214,8 @@ mod tests {
             save: None,
             passkey: None,
             bundle: None,
+            card: None,
+            save_card: None,
             client: None,
         }
     }
@@ -300,6 +329,73 @@ mod tests {
         assert!(check_request(&p).is_err());
         p.kind = Kind::Code;
         assert!(check_request(&p).is_err());
+    }
+
+    #[test]
+    fn card_checks() {
+        let money = |v: &str| crate::Money::parse(v, "NOK").unwrap();
+        let mut c = request(
+            Kind::Card,
+            "shop.example.com",
+            "Buy the cable you asked for",
+        );
+        assert!(
+            check_request(&c)
+                .unwrap_err()
+                .contains("merchant and the amount")
+        );
+        c.card = Some(crate::CardRequest {
+            mode: crate::CardMode::Reveal,
+            merchant: "shop.example.com".into(),
+            amount: Some(money("499")),
+            origin: None,
+            page_total: None,
+            total_source: None,
+        });
+        assert!(check_request(&c).is_ok());
+        c.card.as_mut().unwrap().amount = None;
+        assert!(check_request(&c).unwrap_err().contains("amount"));
+        let mut code = request(Kind::Code, "github.com", "Merge");
+        code.card = c.card.clone();
+        assert!(check_request(&code).unwrap_err().contains("only a card"));
+
+        let phone = KeyPair::generate();
+        let number = seal_card_secret("agent", &phone.public().kem, "4242424242424242").unwrap();
+        let opened = Purpose::Card
+            .open_box(phone.kem_secret(), &number, b"agent")
+            .unwrap();
+        assert_eq!(&opened[..], b"4242424242424242");
+        assert!(
+            Purpose::Password
+                .open_box(phone.kem_secret(), &number, b"agent")
+                .is_err()
+        );
+        assert!(seal_card_secret("agent", &phone.public().kem, " ").is_err());
+        let mut s = request(
+            Kind::Save,
+            "shop.example.com",
+            "Save the card you just used",
+        );
+        s.save_card = Some(crate::SaveCard {
+            number,
+            cvc: None,
+            exp_month: 12,
+            exp_year: 2030,
+            holder: None,
+            url: None,
+            last4: "4242".into(),
+        });
+        assert!(check_request(&s).is_ok());
+        s.save = Some(SaveLogin {
+            url: "https://vg.no".into(),
+            username: "alex".into(),
+            password: seal_password("agent", &phone.public().kem, "pw").unwrap(),
+            title: None,
+        });
+        assert!(check_request(&s).unwrap_err().contains("not both"));
+        let mut l = request(Kind::Login, "vg.no", "Sign in");
+        l.save_card = s.save_card.clone();
+        assert!(check_request(&l).unwrap_err().contains("only a save"));
     }
 
     #[test]

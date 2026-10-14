@@ -3,6 +3,8 @@
 
 pub mod agent;
 pub mod bundle;
+pub mod card;
+pub mod cardfill;
 pub mod cli;
 pub mod commands;
 pub mod filter;

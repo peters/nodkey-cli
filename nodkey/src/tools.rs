@@ -2,13 +2,14 @@
 
 use serde_json::{Value, json};
 
-pub const TOOL_NAMES: [&str; 9] = [
+pub const TOOL_NAMES: [&str; 10] = [
     "pair",
     "list_phones",
     "unpair",
     "request_code",
     "request_login",
     "request_credentials",
+    "request_payment",
     "list_accounts",
     "cleanup_insights",
     "cleanup_logins",
@@ -129,6 +130,44 @@ pub fn tools() -> Value {
                 "additionalProperties": false
             },
             "annotations": { "readOnlyHint": true, "openWorldHint": true }
+        },
+        {
+            "name": "request_payment",
+            "title": "Spend the user's money: ask their iPhone for a payment card",
+            "description": format!("Spends the user's money. Asks Nodkey on the user's iPhone for the full payment card \
+                (number, expiry, CVC) to pay ONE purchase of an exact amount at one shop. Use it only when the user asked \
+                you to buy this exact thing. The user sees the shop and the amount and approves with Face ID every time; \
+                there is never an \"always allow\". The phone refuses at once (decision denied, error over_limit) when the \
+                amount is above the user's limit for you: never split a purchase to get under it. Full card numbers are \
+                off for every agent until the user turns them on (error reveal_off); a browser that fills cards for you \
+                (Horizon, or the Nodkey browser extension) is better, because the number then never enters this \
+                conversation. {APPROVAL} Always explain the reason: what you buy and why. Returns JSON with decision and, when approved, card (title, brand, last4, \
+                number, exp_month, exp_year, cvc). Use the card only for this purchase and never pay more than amount; \
+                never store, log or repeat the card details."),
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "merchant": { "type": "string", "description": "The shop's site, e.g. \"shop.example.com\"." },
+                    "amount": { "type": ["string", "number"], "description": "The total you will pay, with the decimals the shop shows, e.g. \"499.00\". No thousands separators." },
+                    "currency": { "type": "string", "description": "Three-letter currency code, e.g. \"NOK\", \"EUR\" or \"USD\"." },
+                    "reason": {
+                        "type": "string",
+                        "description": "What you are buying and why, in one short sentence the user reads on their iPhone, e.g. \
+                                        \"Buy the 2 m USB-C cable you asked for\"."
+                    },
+                    "image_path": {
+                        "type": "string",
+                        "description": "Optional absolute path to a PNG, JPEG or GIF (at most 1 MiB): a screenshot of the checkout \
+                                        page with the total, shown to the user on their iPhone."
+                    },
+                    "phone": phone,
+                    "model": model,
+                    "effort": effort
+                },
+                "required": ["merchant", "amount", "currency", "reason"],
+                "additionalProperties": false
+            },
+            "annotations": { "readOnlyHint": false, "destructiveHint": true, "idempotentHint": false, "openWorldHint": true }
         },
         {
             "name": "cleanup_insights",

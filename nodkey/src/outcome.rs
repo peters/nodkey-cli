@@ -2,7 +2,7 @@
 
 use std::time::Duration;
 
-use nodkey_proto::{Account, AccountEntry, Answer, Decision, Kind, Lease, MatchKind};
+use nodkey_proto::{Account, AccountEntry, Answer, CardEntry, Decision, Kind, Lease, MatchKind};
 use serde::Serialize;
 
 /// What a request tool returns.
@@ -26,6 +26,9 @@ pub struct Outcome<'a> {
     password: Option<&'a str>,
     #[serde(skip_serializing_if = "Option::is_none")]
     accounts: Option<Accounts<'a>>,
+    /// `list_accounts`: the cards this agent may use (no numbers), when cards are on for it.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    cards: Option<&'a [CardEntry]>,
     #[serde(skip_serializing_if = "Option::is_none")]
     moved: Option<u32>,
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -124,6 +127,7 @@ impl<'a> Outcome<'a> {
             username: a.username.as_deref(),
             password: a.password.as_ref().map(|p| p.expose()),
             accounts: a.accounts.as_deref().map(Accounts::Names),
+            cards: a.cards.as_deref().filter(|_| kind == Kind::List),
             moved: None,
             lease: a.lease.as_ref(),
             attachment_warning,
@@ -187,6 +191,7 @@ impl<'a> Outcome<'a> {
             username: None,
             password: None,
             accounts,
+            cards: None,
             moved: (a.decision == Decision::Approved).then_some(moved),
             lease: None,
             attachment_warning: None,
@@ -213,6 +218,7 @@ impl<'a> Outcome<'a> {
             username: None,
             password: None,
             accounts: None,
+            cards: None,
             moved: None,
             lease: None,
             attachment_warning,
