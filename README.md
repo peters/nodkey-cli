@@ -19,6 +19,10 @@
   <a href="https://apps.apple.com/app/id6820952672"><img src="https://toolbox.marketingtools.apple.com/api/v2/badges/download-on-the-app-store/black/en-us?size=250x83" height="44" alt="Download Nodkey on the App Store"></a>
 </p>
 
+<p align="center">
+  <img src="docs/images/demo.gif" width="100%" alt="A terminal asks Nodkey for a GitHub login, the iPhone shows the request, Face ID approves it and the terminal gets the login">
+</p>
+
 `nodkey` lets you and your coding agents ask [Nodkey](https://kh-labs.dev/nodkey/) on your iPhone
 for **one** one-time code or **one** login at a time. Every request shows up on your phone, and
 nothing leaves it until you approve with Face ID (or a lease you set answers for you). The relay in
@@ -33,6 +37,27 @@ One small binary does two jobs:
 Each agent pairs with its own name ("Claude Code @ my-laptop", "Codex @ my-laptop",
 "Terminal @ my-laptop"). In Nodkey you see who asked for what, and you can pause or remove one agent
 without touching the others.
+
+## Meet Nodkey
+
+<p align="center">
+  <img src="docs/images/app-passwords.png" width="200" alt="Nodkey: your passwords as colourful tiles">
+  <img src="docs/images/app-agent.png" width="200" alt="Nodkey: an agent asks for a password and you approve">
+  <img src="docs/images/app-codes.png" width="200" alt="Nodkey: two-step codes, big and clear">
+  <img src="docs/images/app-agents.png" width="200" alt="Nodkey: your agents, under control">
+</p>
+
+[Nodkey](https://apps.apple.com/app/id6820952672) is a free password manager and authenticator for
+iPhone:
+
+- **Passwords, two-step codes and passkeys** behind Face ID, filled in with AutoFill in Safari and
+  apps.
+- **Agents sign in, you decide.** You see who asks, for which site and why, and approve with Face
+  ID. Lend an account for a day or a week, pause an agent, or stop all agents with one tap.
+- **Move in in minutes** from Apple Passwords, 1Password, Bitwarden, Chrome, Firefox and more.
+  Export everything again at any time.
+- **Backed up in your own iCloud**, end-to-end encrypted.
+- **No account, no ads, no tracking.** In 12 languages.
 
 ## How it works
 
@@ -58,6 +83,8 @@ an account name or the reason.
 - Linux, macOS or Windows for `nodkey`.
 
 ## Install
+
+> The first public release is on its way. Until it is out, build `nodkey` with Rust (see below).
 
 ```sh
 curl -fsSL https://raw.githubusercontent.com/peters/nodkey-cli/main/install.sh | sh
