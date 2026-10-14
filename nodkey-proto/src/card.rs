@@ -205,10 +205,14 @@ impl CardRequest {
     }
 }
 
-/// `origin` is `https://<host>[:port]` with `host` the merchant or one of its subdomains.
+/// `origin` is `https://<host>[:port]` with `host` the merchant or one of its subdomains, or
+/// `http://localhost[:port]` with the merchant `localhost` (a shop running on this computer, as
+/// for passkeys).
 pub fn check_origin(origin: &str, merchant: &str) -> Result<(), String> {
+    let local = merchant.eq_ignore_ascii_case("localhost");
     let rest = origin
         .strip_prefix("https://")
+        .or_else(|| origin.strip_prefix("http://").filter(|_| local))
         .ok_or_else(|| format!("origin {origin:?} is not an https origin"))?;
     let host = match rest.rsplit_once(':') {
         Some((h, port)) if !port.is_empty() && port.bytes().all(|b| b.is_ascii_digit()) => h,

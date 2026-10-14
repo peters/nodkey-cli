@@ -427,7 +427,7 @@ holds the purchase:
 | `mode` | `fill`: a browser host fills the checkout form and the model never sees the number. `reveal`: the agent gets the full card (number, expiry, CVC). |
 | `merchant` | the shop's site; the same as `target` |
 | `amount` | **required**: what will be paid, `value` a decimal string with a dot (at most 12 digits before it and 3 after, no thousands separators, more than 0), `currency` an ISO 4217 code (`NOK`) |
-| `origin` | `fill`, required: the checkout page's origin as the host saw the frame (`https://<host>[:port]`, `host` the merchant or a subdomain of it), never from the page or the model. Absent for `reveal`. |
+| `origin` | `fill`, required: the checkout page's origin as the host saw the frame (`https://<host>[:port]`, `host` the merchant or a subdomain of it; or `http://localhost[:port]` with the merchant `localhost`, as for passkeys), never from the page or the model. Absent for `reveal`. |
 | `page_total` | `fill`, optional: the order total the host read on the checkout page (`total_source: page`) or the user typed because none was found (`total_source: user`). Must not be more than `amount` (same currency). Absent for `reveal`. |
 | `total_source` | `page` or `user`; present exactly when `page_total` is |
 

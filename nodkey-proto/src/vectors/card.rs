@@ -246,8 +246,9 @@ fn checks() -> Value {
     })
     .collect();
     let case = |name: &str, r: CardRequest| {
-        let error = r.check(MERCHANT).err().map(|(code, _)| code);
-        json!({"name": name, "card": r, "target": MERCHANT,
+        let target = r.merchant.clone();
+        let error = r.check(&target).err().map(|(code, _)| code);
+        json!({"name": name, "card": r, "target": target,
                "ok": error.is_none(), "error": error.flatten()})
     };
     let requests = vec![
@@ -285,6 +286,21 @@ fn checks() -> Value {
             "fill_without_origin",
             CardRequest {
                 origin: None,
+                ..fill()
+            },
+        ),
+        case(
+            "plain_http",
+            CardRequest {
+                origin: Some("http://www.shop.example.com".into()),
+                ..fill()
+            },
+        ),
+        case(
+            "localhost_shop",
+            CardRequest {
+                merchant: "localhost".into(),
+                origin: Some("http://localhost:8080".into()),
                 ..fill()
             },
         ),

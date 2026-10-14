@@ -410,6 +410,46 @@
         "card": {
           "amount": {
             "currency": "NOK",
+            "value": "499.00"
+          },
+          "merchant": "shop.example.com",
+          "mode": "fill",
+          "origin": "http://www.shop.example.com",
+          "page_total": {
+            "currency": "NOK",
+            "value": "499.00"
+          },
+          "total_source": "page"
+        },
+        "error": null,
+        "name": "plain_http",
+        "ok": false,
+        "target": "shop.example.com"
+      },
+      {
+        "card": {
+          "amount": {
+            "currency": "NOK",
+            "value": "499.00"
+          },
+          "merchant": "localhost",
+          "mode": "fill",
+          "origin": "http://localhost:8080",
+          "page_total": {
+            "currency": "NOK",
+            "value": "499.00"
+          },
+          "total_source": "page"
+        },
+        "error": null,
+        "name": "localhost_shop",
+        "ok": true,
+        "target": "localhost"
+      },
+      {
+        "card": {
+          "amount": {
+            "currency": "NOK",
             "value": "899.00"
           },
           "merchant": "shop.example.com",

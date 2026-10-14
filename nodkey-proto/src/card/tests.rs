@@ -115,6 +115,15 @@ fn request_rules() {
             .check("shop.example.com")
             .is_ok()
     );
+    for (origin, merchant, ok) in [
+        ("http://localhost:8080", "localhost", true),
+        ("http://localhost", "localhost", true),
+        ("http://localhost.evil.io", "localhost", false),
+        ("http://shop.example.com", "shop.example.com", false),
+        ("https://localhost:8443", "localhost", true),
+    ] {
+        assert_eq!(check_origin(origin, merchant).is_ok(), ok, "{origin}");
+    }
     let reveal = CardRequest {
         mode: CardMode::Reveal,
         merchant: "shop.example.com".into(),
