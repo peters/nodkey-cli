@@ -1,8 +1,6 @@
 #!/bin/sh
 # Install nodkey from the latest GitHub release.
 #   curl -fsSL https://raw.githubusercontent.com/peters/nodkey-cli/main/install.sh | sh
-# While the repository is private, use the GitHub CLI (it must be logged in):
-#   gh api repos/peters/nodkey-cli/contents/install.sh -H 'Accept: application/vnd.github.raw' | sh
 # NODKEY_INSTALL_DIR picks the folder (default ~/.local/bin). NODKEY_VERSION picks a tag.
 set -eu
 
@@ -23,7 +21,7 @@ esac
 target="$arch-$os"
 asset="nodkey-$target.tar.gz"
 
-# The GitHub CLI can read private repositories; plain curl only public ones.
+# A logged-in GitHub CLI avoids the API's limit on anonymous calls; plain curl works too.
 use_gh=no
 if command -v gh >/dev/null 2>&1 && gh auth token >/dev/null 2>&1; then
   use_gh=yes

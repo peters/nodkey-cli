@@ -43,8 +43,8 @@ stale). The app's tests keep a copy of that file; copy the new one there in the 
 
 ## Releases
 
-The repository is private. Do not make it public, publish a release or share an install link
-without the owner's explicit yes.
+The repository is public. Do not publish a release or announce an install link without the
+owner's explicit yes.
 
 1. Raise `version` in `Cargo.toml`, run the checks, commit, tag `vX.Y.Z` and push the tag.
    `release.yml` builds every target and makes a **draft** release with `SHA256SUMS`.
@@ -54,5 +54,5 @@ without the owner's explicit yes.
    `gh release upload vX.Y.Z <dir>/* --clobber --repo peters/nodkey-cli`.
 3. Publish the draft only after the owner says yes.
 
-CI runs Linux on every push. Run `CI` by hand (workflow_dispatch) for macOS and Windows before a
-release; run `Release` by hand to build the archives as workflow artifacts without a release.
+CI runs Linux, macOS and Windows on every push and pull request. Run `Release` by hand
+(workflow_dispatch) to build the archives as workflow artifacts without a release.

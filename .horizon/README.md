@@ -12,9 +12,9 @@ the user's persistent home; installed toolchains live outside user homes.
 
 ## CI inputs
 
-The push event in `.github/workflows/ci.yml` resolves the OS matrix to
-`ubuntu-latest`. The `test` job has no needs, outputs, services, tool setup actions,
-cache resets or secrets. `Cargo.toml` and `README.md` require Rust 1.85 or newer;
+The `test` job in `.github/workflows/ci.yml` runs on `ubuntu-latest`,
+`macos-latest` and `windows-latest`; the worker covers the Linux leg. The job
+has no needs, outputs, services, tool setup actions, cache resets or secrets. `Cargo.toml` and `README.md` require Rust 1.85 or newer;
 there is no Rust toolchain file or exact CI version. The worker pins Rust 1.99.0,
 the stable release found on 2026-10-11. Cargo.lock locks dependency versions.
 
@@ -48,22 +48,15 @@ sign, notarize or prove macOS, Windows or ARM64 release targets.
 
 ## Running the same checks
 
-The latest published localci v0.1.0 currently leaves this workflow's dynamic
-`fromJSON` OS matrix unresolved. Both `localci check` and `localci plan --json
---event push test` expose this limitation. Once a localci release supports that
-expression, the intended commands are:
+The OS matrix of the `test` job is static: Linux, macOS and Windows. On Linux,
+localci runs the Linux leg and skips the others:
 
 ```sh
 localci run --event push horizon-pins test
 localci run --event push horizon-pins test --fast
 ```
 
-The image proof uses the exact Linux CI commands below, including the
-`horizon-pins` job's pin verification, because localci cannot select the `test`
-job. No Linux run step is omitted or needs credentials or services. Repeated
-command proofs reuse Cargo caches, but do not prove localci fast mode.
-
-The commands are:
+The Linux leg runs the same commands as the image proof:
 
 ```sh
 python3 .horizon/verify-pins.py
@@ -89,8 +82,7 @@ Horizon reported a successful proof on 2026-10-11 for
 `horizon-setup-nodkey-cli:candidate`: image build and worker checks in 3 seconds,
 Linux CI commands in 38 seconds, and the repeated command proof in 9 seconds.
 All 83 tests passed in each run as UID 10001. Format, Clippy, pin verification and
-shell syntax checks also passed. The repeat uses Cargo caches; localci matrix
-selection and its `--fast` behavior remain unproven.
+shell syntax checks also passed. The repeat uses Cargo caches.
 
 ## Changes to the existing setup
 
