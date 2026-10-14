@@ -11,7 +11,6 @@
 
 <p align="center">
   <a href="https://github.com/peters/nodkey-cli/actions/workflows/ci.yml"><img src="https://github.com/peters/nodkey-cli/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
-  <a href="https://github.com/peters/nodkey-cli/releases"><img src="https://img.shields.io/github/v/release/peters/nodkey-cli?include_prereleases&label=release" alt="Latest release"></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue" alt="MIT license"></a>
 </p>
 
