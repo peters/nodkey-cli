@@ -144,6 +144,9 @@ pub enum Kind {
     Passkey,
     /// Several codes and logins in one request ([`crate::BundleRequest`]); `target` is empty.
     Bundle,
+    /// A payment card for one purchase ([`crate::CardRequest`]); `target` is the merchant. Never
+    /// covered by a lease and never part of a bundle.
+    Card,
 }
 
 /// The login a `save` request asks the phone to keep.
@@ -294,6 +297,12 @@ pub struct Request {
     /// The items of a `bundle` request; absent for the other kinds.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub bundle: Option<crate::BundleRequest>,
+    /// What a `card` request asks for; absent for the other kinds.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub card: Option<crate::CardRequest>,
+    /// The card a `save` request is about (instead of `save`).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub save_card: Option<crate::SaveCard>,
     /// Who is asking, as the agent reports it (shown in the phone's history; self-reported).
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub client: Option<ClientInfo>,
@@ -484,9 +493,16 @@ pub struct Answer {
     /// `bundle`: one answer per item, in the request's order.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub items: Option<Vec<crate::BundleItemAnswer>>,
+    /// An approved `card` request: the card for this one purchase.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub card: Option<crate::CardAnswer>,
+    /// `list`: the cards this agent may use (no numbers), only when cards are on for it.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub cards: Option<Vec<crate::CardEntry>>,
     /// Why the phone refused without asking the user: `empty_filter`, `paused`, `unknown_group`,
-    /// `unsupported_version`, `unsupported_kind`, and for passkeys `bad_client_data`,
-    /// `no_passkey`, `unsupported_algorithm` or `excluded` (see [`crate::passkey::errors`]).
+    /// `unsupported_version`, `unsupported_kind`, for passkeys `bad_client_data`, `no_passkey`,
+    /// `unsupported_algorithm` or `excluded` (see [`crate::passkey::errors`]), and for cards
+    /// [`crate::card::errors`].
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<String>,
     /// `insights`: counts, age buckets and anonymous groups (docs/agent-protocol.md), passed on as is.
@@ -513,6 +529,8 @@ impl Answer {
             saved: None,
             passkey: None,
             items: None,
+            card: None,
+            cards: None,
             error: None,
             insights: None,
         }

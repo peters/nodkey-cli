@@ -71,6 +71,7 @@ fn every_hpke_vector_opens_and_reseals() {
             "pairing" => Purpose::Pairing,
             "attachment" => Purpose::Attachment,
             "password" => Purpose::Password,
+            "card" => Purpose::Card,
             other => panic!("{other}"),
         };
         assert_eq!(purpose.info(), s(h, "info"), "{name}");
@@ -143,7 +144,7 @@ fn aad_rules() {
             "request" => format!("{}{agent}", s(&pt, "request_id")),
             "answer" => format!("{}{phone}", s(&pt, "request_id")),
             "pairing" => format!("{}{phone}", s(&v["pairing_code"], "code")),
-            "password" => agent.to_owned(),
+            "password" | "card" => agent.to_owned(),
             _ => {
                 // attachment: request_id of the login request with the attachment.
                 let req = v["hpke"]
@@ -295,4 +296,35 @@ fn webauthn_vector() {
     let a = plaintext("answer_passkey_create");
     assert_eq!(a["passkey"]["public_key"], w["public_key_spki"]);
     assert_eq!(a["passkey"]["public_key_algorithm"], -7);
+}
+
+#[test]
+fn card_checks_match() {
+    use nodkey_proto::{CardRequest, Money, card};
+    let c = &load()["cards"];
+    for a in c["amounts"].as_array().unwrap() {
+        let parsed = Money::parse(s(a, "value"), s(a, "currency"));
+        assert_eq!(parsed.is_ok(), a["ok"].as_bool().unwrap(), "{a}");
+        if let Ok(m) = parsed {
+            assert_eq!(serde_json::to_value(&m).unwrap(), a["normalized"]);
+            assert_eq!(m.thousandths().unwrap(), a["thousandths"].as_u64().unwrap());
+        }
+    }
+    for r in c["requests"].as_array().unwrap() {
+        let card: CardRequest = serde_json::from_value(r["card"].clone()).unwrap();
+        let got = card.check(s(r, "target")).err().and_then(|(code, _)| code);
+        assert_eq!(
+            got.is_none() && card.check(s(r, "target")).is_ok(),
+            r["ok"].as_bool().unwrap(),
+            "{}",
+            s(r, "name")
+        );
+        assert_eq!(got, r["error"].as_str(), "{}", s(r, "name"));
+    }
+    for n in c["numbers"].as_array().unwrap() {
+        let number = s(n, "number");
+        assert_eq!(card::luhn(number), n["luhn"].as_bool().unwrap());
+        assert_eq!(card::brand(number), s(n, "brand"));
+        assert_eq!(card::last4(number).as_deref(), n["last4"].as_str());
+    }
 }

@@ -146,6 +146,286 @@
       "ts": 1791620002
     }
   ],
+  "cards": {
+    "amounts": [
+      {
+        "currency": "NOK",
+        "normalized": {
+          "currency": "NOK",
+          "value": "499.00"
+        },
+        "ok": true,
+        "thousandths": 499000,
+        "value": "499.00"
+      },
+      {
+        "currency": "nok",
+        "normalized": {
+          "currency": "NOK",
+          "value": "499.5"
+        },
+        "ok": true,
+        "thousandths": 499500,
+        "value": "499,5"
+      },
+      {
+        "currency": "JPY",
+        "normalized": {
+          "currency": "JPY",
+          "value": "1500"
+        },
+        "ok": true,
+        "thousandths": 1500000,
+        "value": "1500"
+      },
+      {
+        "currency": "KWD",
+        "normalized": {
+          "currency": "KWD",
+          "value": "12.345"
+        },
+        "ok": true,
+        "thousandths": 12345,
+        "value": "12.345"
+      },
+      {
+        "currency": "NOK",
+        "ok": false,
+        "value": "0"
+      },
+      {
+        "currency": "NOK",
+        "ok": false,
+        "value": "1 000"
+      },
+      {
+        "currency": "NOK",
+        "ok": false,
+        "value": "1.000,00"
+      },
+      {
+        "currency": "NOK",
+        "ok": false,
+        "value": "12.3456"
+      },
+      {
+        "currency": "NO",
+        "ok": false,
+        "value": "5"
+      }
+    ],
+    "numbers": [
+      {
+        "brand": "visa",
+        "last4": "4242",
+        "luhn": true,
+        "number": "4242 4242 4242 4242"
+      },
+      {
+        "brand": "visa",
+        "last4": "4241",
+        "luhn": false,
+        "number": "4242424242424241"
+      },
+      {
+        "brand": "mastercard",
+        "last4": "4444",
+        "luhn": true,
+        "number": "5555555555554444"
+      },
+      {
+        "brand": "mastercard",
+        "last4": "3222",
+        "luhn": true,
+        "number": "2223003122003222"
+      },
+      {
+        "brand": "amex",
+        "last4": "0005",
+        "luhn": true,
+        "number": "378282246310005"
+      },
+      {
+        "brand": "discover",
+        "last4": "1117",
+        "luhn": true,
+        "number": "6011111111111117"
+      },
+      {
+        "brand": "diners",
+        "last4": "1667",
+        "luhn": true,
+        "number": "36227206271667"
+      },
+      {
+        "brand": "jcb",
+        "last4": "0505",
+        "luhn": true,
+        "number": "3566002020360505"
+      },
+      {
+        "brand": "unionpay",
+        "last4": "0005",
+        "luhn": true,
+        "number": "6200000000000005"
+      },
+      {
+        "brand": "maestro",
+        "last4": "8453",
+        "luhn": true,
+        "number": "6759649826438453"
+      },
+      {
+        "brand": "visa",
+        "last4": "4242",
+        "luhn": false,
+        "number": "4242"
+      }
+    ],
+    "requests": [
+      {
+        "card": {
+          "amount": {
+            "currency": "NOK",
+            "value": "499.00"
+          },
+          "merchant": "shop.example.com",
+          "mode": "fill",
+          "origin": "https://www.shop.example.com",
+          "page_total": {
+            "currency": "NOK",
+            "value": "499.00"
+          },
+          "total_source": "page"
+        },
+        "error": null,
+        "name": "fill",
+        "ok": true,
+        "target": "shop.example.com"
+      },
+      {
+        "card": {
+          "amount": {
+            "currency": "NOK",
+            "value": "899.00"
+          },
+          "merchant": "shop.example.com",
+          "mode": "reveal"
+        },
+        "error": null,
+        "name": "reveal",
+        "ok": true,
+        "target": "shop.example.com"
+      },
+      {
+        "card": {
+          "merchant": "shop.example.com",
+          "mode": "reveal"
+        },
+        "error": "amount_missing",
+        "name": "missing_amount",
+        "ok": false,
+        "target": "shop.example.com"
+      },
+      {
+        "card": {
+          "amount": {
+            "currency": "NOK",
+            "value": "499.00"
+          },
+          "merchant": "shop.example.com",
+          "mode": "fill",
+          "origin": "https://www.shop.example.com",
+          "page_total": {
+            "currency": "NOK",
+            "value": "4999.00"
+          },
+          "total_source": "page"
+        },
+        "error": "total_mismatch",
+        "name": "page_total_higher",
+        "ok": false,
+        "target": "shop.example.com"
+      },
+      {
+        "card": {
+          "amount": {
+            "currency": "NOK",
+            "value": "499.00"
+          },
+          "merchant": "shop.example.com",
+          "mode": "fill",
+          "origin": "https://www.shop.example.com",
+          "page_total": {
+            "currency": "EUR",
+            "value": "499.00"
+          },
+          "total_source": "page"
+        },
+        "error": "total_mismatch",
+        "name": "page_total_other_currency",
+        "ok": false,
+        "target": "shop.example.com"
+      },
+      {
+        "card": {
+          "amount": {
+            "currency": "NOK",
+            "value": "499.00"
+          },
+          "merchant": "shop.example.com",
+          "mode": "fill",
+          "origin": "https://shop.example.com.evil.io",
+          "page_total": {
+            "currency": "NOK",
+            "value": "499.00"
+          },
+          "total_source": "page"
+        },
+        "error": null,
+        "name": "origin_lookalike",
+        "ok": false,
+        "target": "shop.example.com"
+      },
+      {
+        "card": {
+          "amount": {
+            "currency": "NOK",
+            "value": "499.00"
+          },
+          "merchant": "shop.example.com",
+          "mode": "fill",
+          "page_total": {
+            "currency": "NOK",
+            "value": "499.00"
+          },
+          "total_source": "page"
+        },
+        "error": null,
+        "name": "fill_without_origin",
+        "ok": false,
+        "target": "shop.example.com"
+      },
+      {
+        "card": {
+          "amount": {
+            "currency": "NOK",
+            "value": "899.00"
+          },
+          "merchant": "shop.example.com",
+          "mode": "reveal",
+          "page_total": {
+            "currency": "NOK",
+            "value": "899.00"
+          }
+        },
+        "error": null,
+        "name": "reveal_with_page_total",
+        "ok": false,
+        "target": "shop.example.com"
+      }
+    ]
+  },
   "check": {
     "agent_kem": "fE5zmodqNC-MJSk500yxJtz4i2vlbx3Hpg2qO712pTQ",
     "agent_sign": "bOp7Vh4eecFjmSW9F1BoO_BAhHKC4mrGJXQb6K3A-j0",
@@ -500,6 +780,214 @@
       "name": "answer_bundle",
       "plaintext": "{\"v\":1,\"request_id\":\"lAyoFTN7Zweriki4_6IQWg\",\"decision\":\"approved\",\"items\":[{\"id\":\"1\",\"decision\":\"approved\",\"account\":{\"issuer\":\"OpenAI\",\"name\":\"alex@example.com\",\"site\":\"openai.com\",\"sites\":[\"chatgpt.com\"]},\"match\":\"alias\",\"username\":\"alex@example.com\",\"password\":\"correct horse battery staple\",\"lease\":{\"kind\":\"once\"}},{\"id\":\"2\",\"decision\":\"denied\"}]}",
       "plaintext_b64u": "eyJ2IjoxLCJyZXF1ZXN0X2lkIjoibEF5b0ZUTjdad2VyaWtpNF82SVFXZyIsImRlY2lzaW9uIjoiYXBwcm92ZWQiLCJpdGVtcyI6W3siaWQiOiIxIiwiZGVjaXNpb24iOiJhcHByb3ZlZCIsImFjY291bnQiOnsiaXNzdWVyIjoiT3BlbkFJIiwibmFtZSI6ImFsZXhAZXhhbXBsZS5jb20iLCJzaXRlIjoib3BlbmFpLmNvbSIsInNpdGVzIjpbImNoYXRncHQuY29tIl19LCJtYXRjaCI6ImFsaWFzIiwidXNlcm5hbWUiOiJhbGV4QGV4YW1wbGUuY29tIiwicGFzc3dvcmQiOiJjb3JyZWN0IGhvcnNlIGJhdHRlcnkgc3RhcGxlIiwibGVhc2UiOnsia2luZCI6Im9uY2UifX0seyJpZCI6IjIiLCJkZWNpc2lvbiI6ImRlbmllZCJ9XX0",
+      "purpose": "answer",
+      "recipient_kem_pk": "fE5zmodqNC-MJSk500yxJtz4i2vlbx3Hpg2qO712pTQ",
+      "recipient_kem_sk": "WVg29q7eTJuYsXMJkPAqAx2veoBDBCceAKKxCEs90KU",
+      "sender": "phone"
+    },
+    {
+      "aad": "bf7a2OaunHBhXuxLiYvMcAIdQP77UDyu6DAF-4aCs1-Q",
+      "ct": "9jWH1AN6EX6wZFXZVZW-jtCzaq4X1Ciexf0MviSHeKKNWmAyKh3pLm-LcO8Tkg4KjCr5c6Nf3nK5wQ2yDx243peIN-ct_2Om9jLIyQuGqGaOV9GmaCcNEUApPVWMQtmjz3jUg2XEjj7mATgKbqZ6-RLoJOSUUv5P1S72JCKmEI5n72fHKGmqi4SVQZTpuSSqwG9s0_QrqGg_khMXvVWiQQPzPyZj4XAVHv39qXq17cmhiYonXZy33im1q3M_8Z9j4D3y0aDTCcl6z5sed-nUGx53Lp2rNlnjnLNbGRdpWShUQ2mZMIQPJ0Yc1vleNjhaibygxmPZpDYrP1ePRAFYGpfkEVYrjhhCOYAEE2hAA6USuWMiNiOsWdAH9nzel-4QxNoBcg1A0sui3CJoV2bXNqojw3XIhAirrpiRWOBckAOhPwErZ72-ke-sn8GANiV96dUwVxZsnkcUOyF6_1jP3wyNhc7TBPOKTCZJnZdWY2f86htZ7qzATm5nNW4vrIonmEDgsVlHNMEhy2m-YtWusrliBso",
+      "enc": "jDoQo0QB1imBxBi67SHUS02VeW9iQalkSmDTpZYX0kE",
+      "ikm_e": "LczK4SiPAMlP17UrZZrNotPHuQJdvgSIF3GJQnpWEbA",
+      "info": "nodkey/v1/request",
+      "name": "request_card_fill",
+      "plaintext": "{\"v\":1,\"request_id\":\"bf7a2OaunHBhXuxLiYvMcA\",\"kind\":\"card\",\"target\":\"shop.example.com\",\"reason\":\"Buy the 2 m USB-C cable you asked for\",\"agent\":\"Agent · Horizon\",\"ts\":1791620000,\"card\":{\"mode\":\"fill\",\"merchant\":\"shop.example.com\",\"amount\":{\"value\":\"499.00\",\"currency\":\"NOK\"},\"origin\":\"https://www.shop.example.com\",\"page_total\":{\"value\":\"499.00\",\"currency\":\"NOK\"},\"total_source\":\"page\"}}",
+      "plaintext_b64u": "eyJ2IjoxLCJyZXF1ZXN0X2lkIjoiYmY3YTJPYXVuSEJoWHV4TGlZdk1jQSIsImtpbmQiOiJjYXJkIiwidGFyZ2V0Ijoic2hvcC5leGFtcGxlLmNvbSIsInJlYXNvbiI6IkJ1eSB0aGUgMiBtIFVTQi1DIGNhYmxlIHlvdSBhc2tlZCBmb3IiLCJhZ2VudCI6IkFnZW50IMK3IEhvcml6b24iLCJ0cyI6MTc5MTYyMDAwMCwiY2FyZCI6eyJtb2RlIjoiZmlsbCIsIm1lcmNoYW50Ijoic2hvcC5leGFtcGxlLmNvbSIsImFtb3VudCI6eyJ2YWx1ZSI6IjQ5OS4wMCIsImN1cnJlbmN5IjoiTk9LIn0sIm9yaWdpbiI6Imh0dHBzOi8vd3d3LnNob3AuZXhhbXBsZS5jb20iLCJwYWdlX3RvdGFsIjp7InZhbHVlIjoiNDk5LjAwIiwiY3VycmVuY3kiOiJOT0sifSwidG90YWxfc291cmNlIjoicGFnZSJ9fQ",
+      "purpose": "request",
+      "recipient_kem_pk": "Td-3-HXWLqROvCB5uulMNssHXo3O2K_LQIby38T-z28",
+      "recipient_kem_sk": "vazvVwr6Ybz3fJM8Ey3EblV_Ow4P6yCovbNOvWY7IiI",
+      "sender": "agent"
+    },
+    {
+      "aad": "foSSeVGUYsz2Hw4nxt-AJQIdQP77UDyu6DAF-4aCs1-Q",
+      "ct": "pbRzqIqqklLzm-jiCMVgKgWl_pj7u3qAzADBdOv3ZIjnKnb5Arc-UDXGZB1qyUDKx2nXLQp_rU0VAodVhbP1EzhWtdl-0YC_Q4e6wyJ76v9HmOvbblzmbqVyUJi4J3xJ0jflRT3tsqh6o2qieFw1EQclprwTXOTRVxpENXoQhDpAq87umY8I1xu8SZ-l8768KzNk7dchvu-u0vK4-PxC-EDxopdqO0U7P8Y-7BF5lHonhHzmcWUbqcNG9GEfDo60cYAxh1-WllL89VDgWg9d6GLLZnZH20-AFqaptoiBthhjUiVLB6Hnm99ctjGWxjm62xxKjd6VD7AZEQ9QIz213nejVTmhIINu2wBKrI2If5914ke_KTVKfsudJ37xC8B4",
+      "enc": "44gZbi2BKM1zhKecHqeq15b0oQQhQ938c4jIFj_neDo",
+      "ikm_e": "gwWjvys8qrCG3eBjk2be3eWWB8EVFu7pUNtrTZqxmmU",
+      "info": "nodkey/v1/request",
+      "name": "request_card_reveal",
+      "plaintext": "{\"v\":1,\"request_id\":\"foSSeVGUYsz2Hw4nxt-AJQ\",\"kind\":\"card\",\"target\":\"shop.example.com\",\"reason\":\"Buy the game on your wish list\",\"agent\":\"Agent · Horizon\",\"ts\":1791620000,\"card\":{\"mode\":\"reveal\",\"merchant\":\"shop.example.com\",\"amount\":{\"value\":\"899.00\",\"currency\":\"NOK\"}}}",
+      "plaintext_b64u": "eyJ2IjoxLCJyZXF1ZXN0X2lkIjoiZm9TU2VWR1VZc3oySHc0bnh0LUFKUSIsImtpbmQiOiJjYXJkIiwidGFyZ2V0Ijoic2hvcC5leGFtcGxlLmNvbSIsInJlYXNvbiI6IkJ1eSB0aGUgZ2FtZSBvbiB5b3VyIHdpc2ggbGlzdCIsImFnZW50IjoiQWdlbnQgwrcgSG9yaXpvbiIsInRzIjoxNzkxNjIwMDAwLCJjYXJkIjp7Im1vZGUiOiJyZXZlYWwiLCJtZXJjaGFudCI6InNob3AuZXhhbXBsZS5jb20iLCJhbW91bnQiOnsidmFsdWUiOiI4OTkuMDAiLCJjdXJyZW5jeSI6Ik5PSyJ9fX0",
+      "purpose": "request",
+      "recipient_kem_pk": "Td-3-HXWLqROvCB5uulMNssHXo3O2K_LQIby38T-z28",
+      "recipient_kem_sk": "vazvVwr6Ybz3fJM8Ey3EblV_Ow4P6yCovbNOvWY7IiI",
+      "sender": "agent"
+    },
+    {
+      "aad": "MoPM_PaIwQKzUkWM9AielQIdQP77UDyu6DAF-4aCs1-Q",
+      "ct": "FRb2fSoDbEBAte7G4VqxRZNtsyfwmvqiSge4p426FJeB-rI2u3NtL92zch-pK5C9qgcMPwXFCPQA-AmSIY3jgL0snMuUkkf4Zt7mupw588TL-jaXYvt2wWVskbJBNRxQqgChB9c1stfYlHyIzFfZAb2OW7fWl4kon6_vk-NSO0yhWtBSADgAa-QNyLZ5Emp-RPuIxBfA7W_0c58P_QifgPHLwYI2_Ph7OmdkDZlrH0oowDgYjaFABq6-uaYU6phbRGdnFcSy4jS0TEHhGUKt5Vu1Snc0rJkvIcZgKvQWLZM",
+      "enc": "q09lvV8ph1ukQFMQ_cvulFFke4wQNQtE13Q6ySyK-kA",
+      "ikm_e": "qmu3dTMtNeG4gyQsEgiBKm7fi2wTh8LQfB7k-b2CSQw",
+      "info": "nodkey/v1/request",
+      "name": "request_card_missing_amount",
+      "plaintext": "{\"v\":1,\"request_id\":\"MoPM_PaIwQKzUkWM9AielQ\",\"kind\":\"card\",\"target\":\"shop.example.com\",\"reason\":\"Buy a cable\",\"agent\":\"Agent · Horizon\",\"ts\":1791620000,\"card\":{\"mode\":\"reveal\",\"merchant\":\"shop.example.com\"}}",
+      "plaintext_b64u": "eyJ2IjoxLCJyZXF1ZXN0X2lkIjoiTW9QTV9QYUl3UUt6VWtXTTlBaWVsUSIsImtpbmQiOiJjYXJkIiwidGFyZ2V0Ijoic2hvcC5leGFtcGxlLmNvbSIsInJlYXNvbiI6IkJ1eSBhIGNhYmxlIiwiYWdlbnQiOiJBZ2VudCDCtyBIb3Jpem9uIiwidHMiOjE3OTE2MjAwMDAsImNhcmQiOnsibW9kZSI6InJldmVhbCIsIm1lcmNoYW50Ijoic2hvcC5leGFtcGxlLmNvbSJ9fQ",
+      "purpose": "request",
+      "recipient_kem_pk": "Td-3-HXWLqROvCB5uulMNssHXo3O2K_LQIby38T-z28",
+      "recipient_kem_sk": "vazvVwr6Ybz3fJM8Ey3EblV_Ow4P6yCovbNOvWY7IiI",
+      "sender": "agent"
+    },
+    {
+      "aad": "bf7a2OaunHBhXuxLiYvMcA0g0Bt23Hxsm5z-wpZp2lpA",
+      "ct": "JtnVZBkMnAMcecPAus70oBiQe6E6C15vCC9PJMJ-MSFJLDzLGbiXhUvic8WXx_I9UFKm79IEE3FzR_0YuJUdHfIsEaAidM-9ya6QmUyuD20NZL93wX7qOGT1LHf6pnig_GBEig4FjCChkWpAX_n_VrIV9hlmXKNHwSTIor02J10tCOiQbPQSWmorf2No6ha_1O3Gf9sIHnELq4HqydRircD4Yk7f2uhv6Jp-QOGgo5E11UmYvy0hoKyyP6FUETaP9tTDs8nFoERqiDb4fafNoTqP0dCLW3GOthKwuXtnQJorwv3wwtLb5ig7DMStM6DKFMiOn6vvlIULaIGkdLYFP8e7Og3BL_EE5UC6Gp9QPzZ3Ld9_Ig3HueF7eTIx7CZFu4Kk",
+      "enc": "BPMcofvmDRV4Pt_qNny9dpeIZYory0otVUrUjafWMzA",
+      "ikm_e": "3Q5FNa3y-nIHkuh14iAHWj2UVtiS6blvCuC1XlYI0pA",
+      "info": "nodkey/v1/answer",
+      "name": "answer_card",
+      "plaintext": "{\"v\":1,\"request_id\":\"bf7a2OaunHBhXuxLiYvMcA\",\"decision\":\"approved\",\"card\":{\"title\":\"Test Visa\",\"brand\":\"visa\",\"last4\":\"4242\",\"holder\":\"Alex Example\",\"number\":\"4242424242424242\",\"exp_month\":12,\"exp_year\":2030,\"cvc\":\"123\",\"approved_amount\":{\"value\":\"499.00\",\"currency\":\"NOK\"}}}",
+      "plaintext_b64u": "eyJ2IjoxLCJyZXF1ZXN0X2lkIjoiYmY3YTJPYXVuSEJoWHV4TGlZdk1jQSIsImRlY2lzaW9uIjoiYXBwcm92ZWQiLCJjYXJkIjp7InRpdGxlIjoiVGVzdCBWaXNhIiwiYnJhbmQiOiJ2aXNhIiwibGFzdDQiOiI0MjQyIiwiaG9sZGVyIjoiQWxleCBFeGFtcGxlIiwibnVtYmVyIjoiNDI0MjQyNDI0MjQyNDI0MiIsImV4cF9tb250aCI6MTIsImV4cF95ZWFyIjoyMDMwLCJjdmMiOiIxMjMiLCJhcHByb3ZlZF9hbW91bnQiOnsidmFsdWUiOiI0OTkuMDAiLCJjdXJyZW5jeSI6Ik5PSyJ9fX0",
+      "purpose": "answer",
+      "recipient_kem_pk": "fE5zmodqNC-MJSk500yxJtz4i2vlbx3Hpg2qO712pTQ",
+      "recipient_kem_sk": "WVg29q7eTJuYsXMJkPAqAx2veoBDBCceAKKxCEs90KU",
+      "sender": "phone"
+    },
+    {
+      "aad": "MoPM_PaIwQKzUkWM9AielQ0g0Bt23Hxsm5z-wpZp2lpA",
+      "ct": "0MuzkcKceffkxNuyPwp0RIP_SET2IYzQ2j8WNXskPVoaSMpNp6Et-P-ETFe_S6qpKZTqADfRtHIKSF3SM3qnJ7xVnKBZaGZ8UsagNvPW6SvsNLswStq5CqIitLwr_rcE-ncL-cA58fHU4Q",
+      "enc": "ViYE0IrAJ4v7A15ngPip2Gs74b7GC5WGa8ncLe_AqTE",
+      "ikm_e": "J88a7cIvXuGtyELqvWRomd8CFzhG51mK5iDouphusmk",
+      "info": "nodkey/v1/answer",
+      "name": "answer_card_amount_missing",
+      "plaintext": "{\"v\":1,\"request_id\":\"MoPM_PaIwQKzUkWM9AielQ\",\"decision\":\"denied\",\"error\":\"amount_missing\"}",
+      "plaintext_b64u": "eyJ2IjoxLCJyZXF1ZXN0X2lkIjoiTW9QTV9QYUl3UUt6VWtXTTlBaWVsUSIsImRlY2lzaW9uIjoiZGVuaWVkIiwiZXJyb3IiOiJhbW91bnRfbWlzc2luZyJ9",
+      "purpose": "answer",
+      "recipient_kem_pk": "fE5zmodqNC-MJSk500yxJtz4i2vlbx3Hpg2qO712pTQ",
+      "recipient_kem_sk": "WVg29q7eTJuYsXMJkPAqAx2veoBDBCceAKKxCEs90KU",
+      "sender": "phone"
+    },
+    {
+      "aad": "foSSeVGUYsz2Hw4nxt-AJQ0g0Bt23Hxsm5z-wpZp2lpA",
+      "ct": "6n-eOsG1vn9gxyLrr9Hn7mkcjuP1dk7MaUQVqyzV5IfRMz-T9yklO_oh9kCE1dbN9Oh4y5ZUUY66TkelbqN8hjA33_ZuhHdDZPYyw_oLG7HF1JBqf9wE4awwtfQy6FA4H7quXb-o",
+      "enc": "HxKdpzrP7eFmWZ88caACiLfN6m81Nx9qFR1roDX_4l4",
+      "ikm_e": "Xq4MC7cDY9NzEQrxrJ1LWgDwXFH6FlXd-x1HjsgqOjg",
+      "info": "nodkey/v1/answer",
+      "name": "answer_card_over_limit",
+      "plaintext": "{\"v\":1,\"request_id\":\"foSSeVGUYsz2Hw4nxt-AJQ\",\"decision\":\"denied\",\"error\":\"over_limit\"}",
+      "plaintext_b64u": "eyJ2IjoxLCJyZXF1ZXN0X2lkIjoiZm9TU2VWR1VZc3oySHc0bnh0LUFKUSIsImRlY2lzaW9uIjoiZGVuaWVkIiwiZXJyb3IiOiJvdmVyX2xpbWl0In0",
+      "purpose": "answer",
+      "recipient_kem_pk": "fE5zmodqNC-MJSk500yxJtz4i2vlbx3Hpg2qO712pTQ",
+      "recipient_kem_sk": "WVg29q7eTJuYsXMJkPAqAx2veoBDBCceAKKxCEs90KU",
+      "sender": "phone"
+    },
+    {
+      "aad": "foSSeVGUYsz2Hw4nxt-AJQ0g0Bt23Hxsm5z-wpZp2lpA",
+      "ct": "KKtskvx83M1JnYO8Mvt3JYb7ngWQAkRl9CooLkHRlqD2bsFMTDq8SthtMjDHbjDgbfWyTigjvZRmEbyn9SIJSdozMbL-owfl9py0qTBN_lS4X_EpYjlSraGaQcLfKNo66LkMmmHR",
+      "enc": "btknWPkyRrjo0QHEvBSzmDH0DYc-2-BHfaDe8s60Y1E",
+      "ikm_e": "dU3e61SCE_PQJ9waG3Oc6ylmK7jorySYy3azecOFSYs",
+      "info": "nodkey/v1/answer",
+      "name": "answer_card_reveal_off",
+      "plaintext": "{\"v\":1,\"request_id\":\"foSSeVGUYsz2Hw4nxt-AJQ\",\"decision\":\"denied\",\"error\":\"reveal_off\"}",
+      "plaintext_b64u": "eyJ2IjoxLCJyZXF1ZXN0X2lkIjoiZm9TU2VWR1VZc3oySHc0bnh0LUFKUSIsImRlY2lzaW9uIjoiZGVuaWVkIiwiZXJyb3IiOiJyZXZlYWxfb2ZmIn0",
+      "purpose": "answer",
+      "recipient_kem_pk": "fE5zmodqNC-MJSk500yxJtz4i2vlbx3Hpg2qO712pTQ",
+      "recipient_kem_sk": "WVg29q7eTJuYsXMJkPAqAx2veoBDBCceAKKxCEs90KU",
+      "sender": "phone"
+    },
+    {
+      "aad": "bf7a2OaunHBhXuxLiYvMcA0g0Bt23Hxsm5z-wpZp2lpA",
+      "ct": "Bs6DEz1VTrmNmV8zBHdzdmWuvfw6nWxddvczZ7h4ju5UiNIrPllKeAy4cWq7QlLy5GaLDCaePCXc0hBQbtuNLhUb6xtCoPHil68RgFCsgrKs_Y28FFK-cxK7w_vJ6BcyUjL9Ld4",
+      "enc": "xMEU02B_FVyFoaPswPWJPAt10X5LW_LqUIUEY1j5tCE",
+      "ikm_e": "hpxFL8j_G44N44clMN4NT_6s6wfgj00UEZ8vYkgVKFQ",
+      "info": "nodkey/v1/answer",
+      "name": "answer_cards_off",
+      "plaintext": "{\"v\":1,\"request_id\":\"bf7a2OaunHBhXuxLiYvMcA\",\"decision\":\"denied\",\"error\":\"cards_off\"}",
+      "plaintext_b64u": "eyJ2IjoxLCJyZXF1ZXN0X2lkIjoiYmY3YTJPYXVuSEJoWHV4TGlZdk1jQSIsImRlY2lzaW9uIjoiZGVuaWVkIiwiZXJyb3IiOiJjYXJkc19vZmYifQ",
+      "purpose": "answer",
+      "recipient_kem_pk": "fE5zmodqNC-MJSk500yxJtz4i2vlbx3Hpg2qO712pTQ",
+      "recipient_kem_sk": "WVg29q7eTJuYsXMJkPAqAx2veoBDBCceAKKxCEs90KU",
+      "sender": "phone"
+    },
+    {
+      "aad": "bf7a2OaunHBhXuxLiYvMcA0g0Bt23Hxsm5z-wpZp2lpA",
+      "ct": "zZtXSR6B-bNqAZL_jHAmJGk86l52j752Mmbv-gjUJ4gs5I1XPnyo0IxFnTJaatLvsOhqioMpJiPSY4E7uFqnFkKelZ7d1ohS7R7rB6socUKpQ0wvZPTf7g_CSazfMs5Q-N6_J9vNsg6EQg",
+      "enc": "VU6c9TugHsYrYRqeT5yj6yyHyxC7V2CkUxcj9rgZ2m8",
+      "ikm_e": "j-nSNGWZwI1DBrteupeNydn7TQ-nPdgiTROOtuoXGGY",
+      "info": "nodkey/v1/answer",
+      "name": "answer_card_total_mismatch",
+      "plaintext": "{\"v\":1,\"request_id\":\"bf7a2OaunHBhXuxLiYvMcA\",\"decision\":\"denied\",\"error\":\"total_mismatch\"}",
+      "plaintext_b64u": "eyJ2IjoxLCJyZXF1ZXN0X2lkIjoiYmY3YTJPYXVuSEJoWHV4TGlZdk1jQSIsImRlY2lzaW9uIjoiZGVuaWVkIiwiZXJyb3IiOiJ0b3RhbF9taXNtYXRjaCJ9",
+      "purpose": "answer",
+      "recipient_kem_pk": "fE5zmodqNC-MJSk500yxJtz4i2vlbx3Hpg2qO712pTQ",
+      "recipient_kem_sk": "WVg29q7eTJuYsXMJkPAqAx2veoBDBCceAKKxCEs90KU",
+      "sender": "phone"
+    },
+    {
+      "aad": "bf7a2OaunHBhXuxLiYvMcA0g0Bt23Hxsm5z-wpZp2lpA",
+      "ct": "7YRf_qAetgRNswgi03BIf24FmjaLd5RyJ_IKfpO87u86ZPST7LhxsqT4CEV1-swIQA0GVTJQlw4xefojvK3gGR-HCd6Wonn6Ep-bw_pmNuW9Q6mHbKafCTicYPVKfQBzr05k",
+      "enc": "3vMY_2TiqYQVyheeZUkrt5SgdDLjmEZ4CTobiqLygW4",
+      "ikm_e": "qqTGl6MxXzZddCNGTh6zVdv6XuWqNOzWSnv3EtUBJlY",
+      "info": "nodkey/v1/answer",
+      "name": "answer_card_no_card",
+      "plaintext": "{\"v\":1,\"request_id\":\"bf7a2OaunHBhXuxLiYvMcA\",\"decision\":\"denied\",\"error\":\"no_card\"}",
+      "plaintext_b64u": "eyJ2IjoxLCJyZXF1ZXN0X2lkIjoiYmY3YTJPYXVuSEJoWHV4TGlZdk1jQSIsImRlY2lzaW9uIjoiZGVuaWVkIiwiZXJyb3IiOiJub19jYXJkIn0",
+      "purpose": "answer",
+      "recipient_kem_pk": "fE5zmodqNC-MJSk500yxJtz4i2vlbx3Hpg2qO712pTQ",
+      "recipient_kem_sk": "WVg29q7eTJuYsXMJkPAqAx2veoBDBCceAKKxCEs90KU",
+      "sender": "phone"
+    },
+    {
+      "aad": "IdQP77UDyu6DAF-4aCs1-Q",
+      "ct": "UwvI9M77BCjg3-9qIUwZUiQ9tAaVE-sF7pW6yMQDbfU",
+      "enc": "1X672skOehuKlia6BKxSgqgx-EFqoZbOmzDgYQYYHAg",
+      "ikm_e": "qV-upeMPh6Pzp1v-f3Gt668AxkIngHfDse0XG4CZbWc",
+      "info": "nodkey/v1/card",
+      "name": "save_card_number",
+      "plaintext_b64u": "NDI0MjQyNDI0MjQyNDI0Mg",
+      "purpose": "card",
+      "recipient_kem_pk": "Td-3-HXWLqROvCB5uulMNssHXo3O2K_LQIby38T-z28",
+      "recipient_kem_sk": "vazvVwr6Ybz3fJM8Ey3EblV_Ow4P6yCovbNOvWY7IiI",
+      "sender": "agent"
+    },
+    {
+      "aad": "IdQP77UDyu6DAF-4aCs1-Q",
+      "ct": "ppbwPaecHll01zvH0wav5f01SQ",
+      "enc": "DMAa9CkEHeBH5L79-d8mSgZA78AJ-NZvxNMLfE0HpHU",
+      "ikm_e": "oGqDUaa_TRnV-iPfhwIeb-LwwCP6sYGlk8RQqopjiI4",
+      "info": "nodkey/v1/card",
+      "name": "save_card_cvc",
+      "plaintext_b64u": "MTIz",
+      "purpose": "card",
+      "recipient_kem_pk": "Td-3-HXWLqROvCB5uulMNssHXo3O2K_LQIby38T-z28",
+      "recipient_kem_sk": "vazvVwr6Ybz3fJM8Ey3EblV_Ow4P6yCovbNOvWY7IiI",
+      "sender": "agent"
+    },
+    {
+      "aad": "TyeBmw9vpJnYlDsKmQvOZQIdQP77UDyu6DAF-4aCs1-Q",
+      "ct": "DPlZiuIc2ACi5P8JhwDYs69ut4EgeVQQ3DUgoFxaGPrfqiCoRCibg8olfkumOHqryBYU6I_CX7kTk1rcSX1J_xd1W321sUAqi29bEWqIVbGa_vKvOh1F-05K2e-wzVEqE910ZTGWKbrXffVtFU_KTsmn6elwFSlQASiRZzsn69OSfQ5FTsabrl5p0FINk5sGZCL3c5_DwYmkCTrBa5a_ifeATuXVehaxu0XMAS4bfTu1lU5q93bnPlLnFjnU_pJ926mB4YBWmZ6KmqzSmAdk6wF29hNCrE213xGm-czLDeK_uN3xUS6l40RxJQAD40FwL-8BbHbi9xKAfKosjGOWYVD1z9MbyrDjQDmw1awY2L-msXyUs96zZ7ptVO-9hmuQL4VO_jBHK6x-dLfPkC3X6EcxwzJnuxPepDUC87LSkn73gDKbqEpfQeTIjNjI0G4K3atSyT8qvAjmzG4W18fDPhgc4_n0nos15rZclHC7m1Upx3-jv5uc4Qo1Co9bGObw19Vz0FuBjtxJysYrfZkq-cn46IEPSmH_KLHWvfhRPQx3j2dSBep3QYxB1JkpOjJUfSMpCW_kd5IY1AdCY1mZ4Z-21lt2Zg16UG3Nj_Z_jVbuyErLUVQ22lAJk9gzAK2Nxa_O8sfdBppFWd8sOMLbQsehzhX3Fq-PQ6ltJaFx0OLGnr05g9gnZYGH3pEdNxX4chilQpFFuGmEMS0D4v82",
+      "enc": "KckYjhHKoLUWCi03vJU8_VsioB-0GgGu3T2xPQqB4Go",
+      "ikm_e": "7FYhIQdXkias53vtkCU68zdRSRWOjKTcGGKP7St9oZc",
+      "info": "nodkey/v1/request",
+      "name": "request_save_card",
+      "plaintext": "{\"v\":1,\"request_id\":\"TyeBmw9vpJnYlDsKmQvOZQ\",\"kind\":\"save\",\"target\":\"shop.example.com\",\"reason\":\"Save the card you just used on shop.example.com\",\"agent\":\"Agent · Horizon\",\"ts\":1791620000,\"save_card\":{\"number\":{\"enc\":\"1X672skOehuKlia6BKxSgqgx-EFqoZbOmzDgYQYYHAg\",\"ct\":\"UwvI9M77BCjg3-9qIUwZUiQ9tAaVE-sF7pW6yMQDbfU\"},\"cvc\":{\"enc\":\"DMAa9CkEHeBH5L79-d8mSgZA78AJ-NZvxNMLfE0HpHU\",\"ct\":\"ppbwPaecHll01zvH0wav5f01SQ\"},\"exp_month\":12,\"exp_year\":2030,\"holder\":\"Alex Example\",\"url\":\"https://www.shop.example.com/checkout\",\"last4\":\"4242\"}}",
+      "plaintext_b64u": "eyJ2IjoxLCJyZXF1ZXN0X2lkIjoiVHllQm13OXZwSm5ZbERzS21Rdk9aUSIsImtpbmQiOiJzYXZlIiwidGFyZ2V0Ijoic2hvcC5leGFtcGxlLmNvbSIsInJlYXNvbiI6IlNhdmUgdGhlIGNhcmQgeW91IGp1c3QgdXNlZCBvbiBzaG9wLmV4YW1wbGUuY29tIiwiYWdlbnQiOiJBZ2VudCDCtyBIb3Jpem9uIiwidHMiOjE3OTE2MjAwMDAsInNhdmVfY2FyZCI6eyJudW1iZXIiOnsiZW5jIjoiMVg2NzJza09laHVLbGlhNkJLeFNncWd4LUVGcW9aYk9tekRnWVFZWUhBZyIsImN0IjoiVXd2STlNNzdCQ2pnMy05cUlVd1pVaVE5dEFhVkUtc0Y3cFc2eU1RRGJmVSJ9LCJjdmMiOnsiZW5jIjoiRE1BYTlDa0VIZUJINUw3OS1kOG1TZ1pBNzhBSi1OWnZ4Tk1MZkUwSHBIVSIsImN0IjoicHBid1BhZWNIbGwwMXp2SDB3YXY1ZjAxU1EifSwiZXhwX21vbnRoIjoxMiwiZXhwX3llYXIiOjIwMzAsImhvbGRlciI6IkFsZXggRXhhbXBsZSIsInVybCI6Imh0dHBzOi8vd3d3LnNob3AuZXhhbXBsZS5jb20vY2hlY2tvdXQiLCJsYXN0NCI6IjQyNDIifX0",
+      "purpose": "request",
+      "recipient_kem_pk": "Td-3-HXWLqROvCB5uulMNssHXo3O2K_LQIby38T-z28",
+      "recipient_kem_sk": "vazvVwr6Ybz3fJM8Ey3EblV_Ow4P6yCovbNOvWY7IiI",
+      "sender": "agent"
+    },
+    {
+      "aad": "TyeBmw9vpJnYlDsKmQvOZQ0g0Bt23Hxsm5z-wpZp2lpA",
+      "ct": "IHMIyW1qBaNRUYv6U-YHQsV8CcDb9y_DmR6y4AqUrBC7Cu9avWTtv5Q_32DOxOABD5bRnxj2nhvYiXTMoFn4UZ0iZsFYm9FRtcZxPphP9MD3TqEPhhKmvMgHI-Q3plYfKu4m",
+      "enc": "KFJs8uN4VvalCH-ycUwK6Z5bie78mqyP4jSCgHaEGA4",
+      "ikm_e": "mfQSXuZDV8HEFQiAWHmL3dYRrIVEmfZkecrmwZZbaE8",
+      "info": "nodkey/v1/answer",
+      "name": "answer_save_card",
+      "plaintext": "{\"v\":1,\"request_id\":\"TyeBmw9vpJnYlDsKmQvOZQ\",\"decision\":\"approved\",\"saved\":\"added\"}",
+      "plaintext_b64u": "eyJ2IjoxLCJyZXF1ZXN0X2lkIjoiVHllQm13OXZwSm5ZbERzS21Rdk9aUSIsImRlY2lzaW9uIjoiYXBwcm92ZWQiLCJzYXZlZCI6ImFkZGVkIn0",
+      "purpose": "answer",
+      "recipient_kem_pk": "fE5zmodqNC-MJSk500yxJtz4i2vlbx3Hpg2qO712pTQ",
+      "recipient_kem_sk": "WVg29q7eTJuYsXMJkPAqAx2veoBDBCceAKKxCEs90KU",
+      "sender": "phone"
+    },
+    {
+      "aad": "NtjYx-mfEf9aTdZLy0Dmeg0g0Bt23Hxsm5z-wpZp2lpA",
+      "ct": "RHnoGOCpgFuD6Jo9kwd1QnXDzMPEyhyZTHJorOE77rmSnXruIgm-2LI1SuI48iEwwzobtrmQeSz51S-LzrUJFnZaaPwcqyqz1dwJMCMONvnmaWpJphmHZhedk1xfN2MuCMUONgq_EBcNLTddn0jvCfaPgSG_zVN_Zp2690nzn4ZA2RScPnfgBQOHpqrBATpIb80RzWEBsN2BgD8Izb0Y",
+      "enc": "9wJZz3sebkC2uNXdRjuIrh8rkjSQ0je59iVpRrtmWHY",
+      "ikm_e": "XTA111oHfS0XnXldzZQAdJ_ZnvKc_hL2IhX6X-dd4rc",
+      "info": "nodkey/v1/answer",
+      "name": "answer_list_with_cards",
+      "plaintext": "{\"v\":1,\"request_id\":\"NtjYx-mfEf9aTdZLy0Dmeg\",\"decision\":\"approved\",\"accounts\":[],\"cards\":[{\"title\":\"Test Visa\",\"brand\":\"visa\",\"last4\":\"4242\"}]}",
+      "plaintext_b64u": "eyJ2IjoxLCJyZXF1ZXN0X2lkIjoiTnRqWXgtbWZFZjlhVGRaTHkwRG1lZyIsImRlY2lzaW9uIjoiYXBwcm92ZWQiLCJhY2NvdW50cyI6W10sImNhcmRzIjpbeyJ0aXRsZSI6IlRlc3QgVmlzYSIsImJyYW5kIjoidmlzYSIsImxhc3Q0IjoiNDI0MiJ9XX0",
       "purpose": "answer",
       "recipient_kem_pk": "fE5zmodqNC-MJSk500yxJtz4i2vlbx3Hpg2qO712pTQ",
       "recipient_kem_sk": "WVg29q7eTJuYsXMJkPAqAx2veoBDBCceAKKxCEs90KU",

@@ -186,6 +186,8 @@ pub(super) fn add(ctx: &mut Ctx, agent: &Side, phone: &Side) -> Value {
         save: None,
         passkey: Some(passkey),
         bundle: None,
+        card: None,
+        save_card: None,
         client: None,
     };
     let r_create = request(

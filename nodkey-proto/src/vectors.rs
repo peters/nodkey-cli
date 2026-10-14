@@ -34,6 +34,7 @@ pub const PNG: [u8; 76] = [
 ];
 
 mod bundle;
+mod card;
 mod matching;
 pub mod passkey;
 mod save;
@@ -170,6 +171,8 @@ fn request(
         save: None,
         passkey: None,
         bundle: None,
+        card: None,
+        save_card: None,
         client: None,
     }
 }
@@ -390,6 +393,7 @@ pub fn build() -> Value {
     let webauthn = passkey::add(&mut ctx, &agent, &phone); // After the others: their bytes stay.
     matching::add(&mut ctx, &agent, &phone);
     bundle::add(&mut ctx, &agent, &phone);
+    let cards = card::add(&mut ctx, &agent, &phone); // Last: earlier bytes stay the same.
 
     // Signed relay calls.
     let agent_info = crate::AgentInfo {
@@ -571,5 +575,6 @@ pub fn build() -> Value {
         "hpke": ctx.hpke,
         "auth": auth,
         "webauthn": webauthn,
+        "cards": cards,
     })
 }

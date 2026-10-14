@@ -166,6 +166,11 @@ mod tests {
                 .contains("only code and login")
         );
         assert!(
+            with(&|b| b.items[0].kind = Kind::Card)
+                .unwrap_err()
+                .contains("only code and login")
+        );
+        assert!(
             with(&|b| b.items[0].target = " ".into())
                 .unwrap_err()
                 .contains("target")

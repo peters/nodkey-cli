@@ -39,6 +39,8 @@ HPKE (RFC 9180) base mode, suite DHKEM(X25519, HKDF-SHA256) / HKDF-SHA256 / ChaC
 | answer (phone → agent) | `nodkey/v1/answer` | `request_id` ‖ `phone_id` |
 | pairing grant (phone → agent) | `nodkey/v1/pairing` | pairing `code` (6 canonical upper-case characters, no dash: `K7P2QX`) ‖ `phone_id` |
 | attachment (agent → phone) | `nodkey/v1/attachment` | `request_id` ‖ `agent_id` |
+| saved password (agent → phone, inside a `save` request) | `nodkey/v1/password` | `agent_id` |
+| saved card number or CVC (agent → phone, inside a `save` request) | `nodkey/v1/card` | `agent_id` |
 
 ## Signing relay calls
 
@@ -96,7 +98,7 @@ Pairing grant (phone → agent):
 Request (agent → phone):
 
 ```json
-{"v":1, "request_id":"…", "kind":"code|login|list|insights|cleanup|save|passkey|bundle", "target":"github.com/alex",
+{"v":1, "request_id":"…", "kind":"code|login|list|insights|cleanup|save|passkey|bundle|card", "target":"github.com/alex",
  "reason":"Merge PR #42", "agent":"Claude · Horizon", "ts":1791620000}
 ```
 
@@ -406,6 +408,95 @@ and create the `client_data_json` (text and b64u), its hash, the expected `authe
 the `attestation_object` (create), and `signed_data` and a `signature` that verifies with the public
 key (get; RFC 6979 nonces, so the file stays the same).
 
+## Payment cards
+
+`kind: card` asks for a payment card to pay **one purchase**. A card request always names the shop
+and the amount, so the user sees what money is about to be spent. `target` is the merchant; `card`
+holds the purchase:
+
+```json
+{"v":1, "request_id":"…", "kind":"card", "target":"shop.example.com",
+ "reason":"Buy the 2 m USB-C cable you asked for", "agent":"Claude Code @ my-laptop", "ts":1791620000,
+ "card":{"mode":"fill", "merchant":"shop.example.com", "amount":{"value":"499.00", "currency":"NOK"},
+         "origin":"https://www.shop.example.com", "page_total":{"value":"499.00", "currency":"NOK"},
+         "total_source":"page"}}
+```
+
+| Field | Meaning |
+| --- | --- |
+| `mode` | `fill`: a browser host fills the checkout form and the model never sees the number. `reveal`: the agent gets the full card (number, expiry, CVC). |
+| `merchant` | the shop's site; the same as `target` |
+| `amount` | **required**: what will be paid, `value` a decimal string with a dot (at most 12 digits before it and 3 after, no thousands separators, more than 0), `currency` an ISO 4217 code (`NOK`) |
+| `origin` | `fill`, required: the checkout page's origin as the host saw the frame (`https://<host>[:port]`, `host` the merchant or a subdomain of it), never from the page or the model. Absent for `reveal`. |
+| `page_total` | `fill`, optional: the order total the host read on the checkout page (`total_source: page`) or the user typed because none was found (`total_source: user`). Must not be more than `amount` (same currency). Absent for `reveal`. |
+| `total_source` | `page` or `user`; present exactly when `page_total` is |
+
+Both sides check these rules (`nodkey_proto::CardRequest::check`; the vector section `cards`
+lists amounts, requests, card numbers and what each side must decide for them). The agent tools do
+not send a request that fails them; the host refuses `total_mismatch` itself before it sends.
+
+**Rules on the phone.** Cards are off for every agent until the user turns them on for it (Face ID),
+also for scope `all`. The user picks which cards an agent may use and sets a limit per purchase and
+per 24 hours. Full card numbers (`reveal`) are a separate setting, off by default. A card request is
+**never covered by a lease**, is never part of a bundle and never part of a follow-up window: Face
+ID every time. The notification (category `AGENT_REQUEST_CARD`) shows the amount and the shop in its
+title and offers only Open Nodkey and Deny; the user approves in the app on a sheet that shows the
+amount, the shop, the reason, the picture and the card, with a button the user holds ("Hold to pay
+499,00 kr"). The history records the amount and the shop of every card request, also of refusals.
+
+Refusals without asking (`decision: denied`, `error`), in this order:
+
+| `error` | When |
+| --- | --- |
+| `cards_off` | cards are off for this agent |
+| `amount_missing` | no `amount`, or not a valid amount |
+| `total_mismatch` | `page_total` is more than `amount` |
+| `bad_card_request` | the card data breaks another rule above |
+| `reveal_off` | `mode: reveal` while full card numbers are off for this agent |
+| `over_limit` | `amount` is above the agent's limit per purchase, or would take the last 24 hours above the daily limit |
+| `no_card` | no card on the phone may be used by this agent |
+| `paused`, `unsupported_kind`, `unsupported_version` | as for every kind |
+
+An approved answer carries the card and the amount the user approved:
+
+```json
+{"v":1, "request_id":"…", "decision":"approved",
+ "card":{"title":"Test Visa", "brand":"visa", "last4":"4242", "holder":"Alex Example",
+         "number":"4242424242424242", "exp_month":12, "exp_year":2030, "cvc":"123",
+         "approved_amount":{"value":"499.00", "currency":"NOK"}}}
+```
+
+`brand` is `visa`, `mastercard`, `amex`, `discover`, `diners`, `jcb`, `unionpay`, `maestro` or
+`other` (`nodkey_proto::card::brand`). `cvc` is absent when the card has none stored. A `fill` host
+fills the form only when the page total is still at most `approved_amount`, gives the model only the
+brand and the last four digits, and never stores the card.
+
+A `list` answer carries `cards` (`title`, `brand`, `last4`; never the number) when cards are on for
+the agent.
+
+### Saving a card
+
+A browser offers to keep a card the user typed: `kind: save` with `save_card` instead of `save`.
+`number` and `cvc` are each sealed to the phone on their own (`info` = `nodkey/v1/card`, `aad` =
+`agent_id`) the moment they are read, like a saved password:
+
+```json
+{"v":1, "request_id":"…", "kind":"save", "target":"shop.example.com",
+ "reason":"Save the card you just used on shop.example.com", "agent":"Firefox on Linux", "ts":1791620000,
+ "save_card":{"number":{"enc":"…","ct":"…"}, "cvc":{"enc":"…","ct":"…"}, "exp_month":12, "exp_year":2030,
+              "holder":"Alex Example", "url":"https://www.shop.example.com/checkout", "last4":"4242"}}
+```
+
+The phone shows the holder, `····last4` and the expiry and asks the user to save it (Face ID). The
+same number updates the card the phone has. The answer carries `saved`: `added`, `updated` or
+`unchanged`. Never covered by a lease.
+
+Vectors: `request_card_fill`, `request_card_reveal`, `request_card_missing_amount`, `answer_card`,
+`answer_card_amount_missing`, `answer_card_over_limit`, `answer_card_reveal_off`,
+`answer_cards_off`, `answer_card_total_mismatch`, `answer_card_no_card`, `save_card_number`,
+`save_card_cvc`, `request_save_card`, `answer_save_card`, `answer_list_with_cards`, and the `cards`
+section. Test card numbers only.
+
 ## Opening with the X25519 step elsewhere
 
 An agent may keep its X25519 private key where it cannot be read out, for example as a
@@ -427,7 +518,8 @@ long as the request (120 s). Without a picture everything works the same.
 
 ## Leases
 
-A lease is `(agent_id, account_id, kind: code|login, until)` (for passkeys see "Passkeys"), kept only on the phone (keychain-backed
+A lease is `(agent_id, account_id, kind: code|login, until)` (for passkeys see "Passkeys"; cards
+never have one), kept only on the phone (keychain-backed
 store shared with the notification extensions). While a matching lease is valid the phone answers by
 itself and shows a quiet notification ("Claude got the password for vg.no"). Durations: once (no lease),
 1 day, 7 days, always (until revoked). The user sees and revokes leases under Agents; removing an agent
@@ -462,15 +554,20 @@ change ignore such a request, and the agent sees `expired`.) Requests also carry
   the user to compare. Other tools: `list_phones()`, `unpair(phone)` (calls the agent-side `DELETE`
   and forgets the phone), `request_code(target, reason, image_path?)`,
   `request_login(target, reason, image_path?)`, `request_credentials(items, reason, follow_up_seconds?,
-  image_path?)`, `list_accounts()`, `cleanup_insights()`,
+  image_path?)`, `request_payment(merchant, amount, currency, reason, image_path?)` (`mode: reveal`;
+  its description starts with "Spends the user's money."), `list_accounts()`, `cleanup_insights()`,
   `cleanup_logins(filter, reason)` (dates as Unix seconds or `YYYY-MM-DD`; an unknown filter key is an
   error, so a typo cannot widen the filter). `image_path` is an optional PNG/JPEG/GIF file (for example
   a browser screenshot) sent as the attachment. Results go to the model; the server keeps nothing.
 - The command line does the same in one process: `nodkey pair` shows the code and then the check
-  number; `nodkey code`, `login`, `credentials`, `accounts`, `insights`, `cleanup`, `phones`, `unpair`. Exit codes:
-  0 approved, 1 error, 2 denied, 3 expired, 64 bad arguments.
+  number; `nodkey code`, `login`, `credentials`, `pay`, `accounts`, `insights`, `cleanup`, `phones`, `unpair`. Exit codes:
+  0 approved, 1 error, 2 denied, 3 expired, 64 bad arguments; for `pay` and `card-fill` also 5
+  `over_limit`, 6 `reveal_off`, 7 `cards_off` or `no_card`, 8 `total_mismatch`. `nodkey pay MERCHANT
+  AMOUNT CURRENCY --reason TEXT --reveal` prints the full card, so it requires `--reveal`; without a
+  host nothing can fill a card for it. A missing amount is refused before anything is sent.
 - `nodkey webauthn --agent <profile> [--phone PHONE]` is the authenticator a browser host (Horizon)
-  calls; see below.
+  calls; `nodkey card-fill --agent <profile> [--phone PHONE]` gives such a host a card to fill. See
+  below.
 
 ## The authenticator command
 
@@ -508,3 +605,45 @@ the origin inside `client_data_json` and runs the client data check. Results:
 
 A failure from the phone also carries the phone's `error` code. A bridge turns `excluded` into
 `InvalidStateError` and every other failure into `NotAllowedError`.
+
+## The card fill command
+
+`nodkey card-fill --agent <profile>` is how a browser host (Horizon) fills a checkout form for an
+agent without the card reaching the model. It reads one JSON object on stdin and writes one JSON
+object on stdout, also when it fails (waiting notes go to stderr):
+
+```json
+{"version":1, "merchant":"shop.example.com", "origin":"https://www.shop.example.com",
+ "amount":{"value":"499.00", "currency":"NOK"}, "page_total":{"value":"499,00", "currency":"NOK"},
+ "total_source":"page", "reason":"Buy the 2 m USB-C cable you asked for",
+ "requester":{"app":"Horizon", "agent":"Claude Code"}}
+```
+
+`amount` comes from the agent (or is the page total when the user fills by hand); `origin` and
+`page_total` come from the host itself, never from the page's script or the model. Amounts take a dot
+or a comma before the decimals. Unknown fields are refused. The command sends `kind: card`, `mode:
+fill`. Results:
+
+```json
+{"version":1, "status":"ok",
+ "card":{"number":"4242424242424242", "exp_month":12, "exp_year":2030, "cvc":"123", "holder":"Alex Example",
+         "brand":"visa", "last4":"4242", "title":"Test Visa"},
+ "approved_amount":{"value":"499.00", "currency":"NOK"},
+ "summary":"filled: Visa ····4242 on shop.example.com, at most 499.00 NOK. One purchase; ask again for the next one."}
+{"version":1, "status":"denied|expired|over_limit|cards_off|total_mismatch|error", "message":"…", "error":"…"}
+```
+
+| `status` | Exit | When |
+| --- | --- | --- |
+| `ok` | 0 | the user approved; fill the form, then give the model only `summary` |
+| `denied` | 2 | the user said no, or the agent is paused |
+| `expired` | 3 | no answer in time |
+| `over_limit` | 5 | above the user's limit for this agent |
+| `cards_off` | 7 | cards are off for this agent, or no card may be used (`error` says which) |
+| `total_mismatch` | 8 | the page total is more than the amount; checked before anything is sent |
+| `error` | 1 | not paired, relay trouble, an app that is too old |
+| `error` | 64 | the input is not a valid request (`error: amount_missing` when the amount is missing) |
+
+Before it fills, the host reads the page total again and fills nothing when it is now more than
+`approved_amount`. It keeps watching the total until the form is sent and clears the card fields if
+the total goes up. It never clicks the pay button itself and never stores the card.

@@ -7,6 +7,7 @@
 pub mod auth;
 pub mod b64u;
 pub mod bundle;
+pub mod card;
 pub mod check;
 pub mod client;
 pub mod code;
@@ -22,6 +23,7 @@ pub mod vectors;
 pub mod webauthn;
 
 pub use bundle::{BundleItem, BundleItemAnswer, BundleRequest};
+pub use card::{CardAnswer, CardEntry, CardMode, CardRequest, Money, SaveCard, TotalSource};
 pub use keys::{KeyPair, PublicKeys};
 pub use messages::*;
 pub use passkey::{

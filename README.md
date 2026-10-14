@@ -140,6 +140,7 @@ An agent pairs the same way with its `pair` tool: it shows you the code, then th
 ```sh
 nodkey code github.com/alex --reason "Merge PR #42" --field code
 nodkey login vg.no --reason "Check my subscription"
+nodkey pay shop.example.com 499 NOK --reveal --reason "Buy the cable I asked for"
 nodkey accounts
 nodkey cleanup --ip-only --reason "Remove logins for old router addresses"
 nodkey cleanup --query '*.old-company.example' --last-used-before 2022-01-01 --reason "Old job"
@@ -153,10 +154,15 @@ nodkey agents
   JPEG or GIF, at most 1 MiB) to the notification.
 - `cleanup` only proposes. Your iPhone shows the matching logins and you confirm with Face ID. They go
   to Recently deleted, where you can get them back for 30 days.
-- Exit codes: 0 approved, 1 error, 2 denied, 3 no answer in time, 64 bad arguments.
+- `pay` spends money: it asks your iPhone for your card for one purchase, and your iPhone shows the
+  shop and the amount. It works only if you turned on "full card number" for that agent in Nodkey,
+  and never above the limit you set for it.
+- Exit codes: 0 approved, 1 error, 2 denied, 3 no answer in time, 64 bad arguments. `pay` also has
+  5 above your limit, 6 full card numbers off, 7 cards off.
 - `nodkey webauthn` is for browser hosts such as Horizon: it reads one passkey request (sign in or
   create) as JSON on stdin and writes the result as JSON on stdout. Your iPhone shows the site and
-  signs with a passkey that never leaves it. See `docs/agent-protocol.md`.
+  signs with a passkey that never leaves it. `nodkey card-fill` gives such a host your card to fill
+  a checkout form, so the agent never sees the number. See `docs/agent-protocol.md`.
 
 `nodkey --help` lists every option.
 
@@ -166,6 +172,8 @@ nodkey agents
 | --- | --- |
 | `request_code` | one current one-time code for an account |
 | `request_login` | user name and password (and a code, if the login has one) |
+| `request_credentials` | up to 6 logins and codes in one request |
+| `request_payment` | spends money: your card for one purchase at a shop, for an exact amount |
 | `list_accounts` | the accounts this agent may ask for, without secrets |
 | `cleanup_insights` | anonymous numbers to suggest clean-up rules from |
 | `cleanup_logins` | propose moving matching saved logins to Recently deleted |
@@ -193,6 +201,8 @@ The agent folder (only you can open it) holds one folder per agent under `agents
 - Anyone who can read an agent's `identity.json` can ask your phone as that agent. You still have to
   approve, but keep the folder private. To cut an agent off, remove it under Agents in Nodkey.
 - A tool result goes to the model. The skill tells agents to use a secret only for the task at hand.
+- Cards are off for every agent until you turn them on. Each payment needs Face ID; there is no
+  "always allow" for cards, and your iPhone refuses by itself above the limit you set.
 
 The protocol is in [docs/agent-protocol.md](docs/agent-protocol.md). To report a security problem,
 see [SECURITY.md](SECURITY.md).

@@ -22,6 +22,10 @@ Usage:
   nodkey login TARGET --reason TEXT        user name and password (and a code if it has one)
   nodkey credentials ITEM... --reason TEXT up to 6 logins and codes in one request (JSON);
                                            ITEM is login:TARGET or code:TARGET
+  nodkey pay MERCHANT AMOUNT CURRENCY --reason TEXT --reveal
+                                           the full payment card for ONE purchase (spends money;
+                                           only when the user turned full card numbers on for
+                                           this agent); e.g. nodkey pay shop.example.com 499 NOK
   nodkey accounts [--reason TEXT]          the accounts this agent may ask for (no secrets)
   nodkey insights [--reason TEXT]          anonymous clean-up numbers (JSON)
   nodkey cleanup FILTER... --reason TEXT   propose moving old saved logins to Recently deleted
@@ -30,6 +34,8 @@ Usage:
   nodkey agents                            the agents paired on this computer
   nodkey webauthn [--phone PHONE]          sign in with a passkey or make one: one JSON request
                                            on stdin, one JSON result on stdout (for browser hosts)
+  nodkey card-fill [--phone PHONE]         a card for a browser host to fill a checkout form: one
+                                           JSON request on stdin, one JSON result on stdout
   nodkey mcp                               run the MCP server on stdio
   nodkey setup [--remove] [--dry-run]      add (or remove) the MCP server and skill in your agents
   nodkey skill                             print the agent skill
@@ -46,6 +52,10 @@ Options for code and login:
 Options for credentials: --reason, --image, --phone, --model, --effort as above, and
   --follow-up SECS  how long a fresh code for an approved item follows without asking (120-600)
 
+Options for pay: --reason, --image, --field (number, cvc, exp_month, ...), --phone, --model,
+  --effort as above, and --reveal (required: the card number is printed). Without a browser
+  host nothing can fill the card for you; the user decides on the iPhone every time.
+
 Clean-up filter (every one you give must hold; at least one):
   --ip-only  --never-used  --query PATTERN  --username NAME  --domain DOMAIN  --group ID
   --last-used-before DATE  --added-before DATE  --password-changed-before DATE
@@ -58,7 +68,9 @@ Global options:
   --json           print JSON for accounts, cleanup, phones, agents, unpair and pair
   -h, --help       -V, --version
 
-Exit codes: 0 approved or done, 1 error, 2 denied, 3 expired (no answer), 64 bad arguments.
+Exit codes: 0 approved or done, 1 error, 2 denied, 3 expired (no answer), 64 bad arguments;
+pay and card-fill: 5 over the user's limit, 6 full card numbers off, 7 cards off or no card,
+8 the page total is higher than the amount.
 Environment: NODKEY_AGENT_DIR (default ~/.config/nodkey-agent), NODKEY_REQUEST_TIMEOUT (120 s),
 NODKEY_PAIR_TIMEOUT (300 s), NODKEY_DEBUG.
 ";
@@ -86,7 +98,14 @@ const VALUE_FLAGS: [&str; 17] = [
     "added-before",
     "password-changed-before",
 ];
-const BOOL_FLAGS: [&str; 5] = ["json", "ip-only", "never-used", "remove", "dry-run"];
+const BOOL_FLAGS: [&str; 6] = [
+    "json",
+    "ip-only",
+    "never-used",
+    "remove",
+    "dry-run",
+    "reveal",
+];
 
 /// Parsed arguments: positionals and `--flag [value]`.
 #[derive(Debug, Default)]
@@ -180,6 +199,7 @@ pub fn main(raw: Vec<String>) -> ExitCode {
     let args = match Args::parse(rest) {
         Ok(a) => a,
         Err(e) if command == "webauthn" => return crate::webauthn::bad_input(&e),
+        Err(e) if command == "card-fill" => return crate::cardfill::bad_input(&e),
         Err(e) => return usage_error(&e),
     };
     if std::env::var_os("NODKEY_DEBUG").is_none() && command != "mcp" {
@@ -198,7 +218,8 @@ pub fn main(raw: Vec<String>) -> ExitCode {
             return ExitCode::SUCCESS;
         }
         "webauthn" => return crate::webauthn::main(&args, agent(&args, profile::TERMINAL)),
-        "pair" | "code" | "login" | "credentials" | "accounts" | "insights" | "cleanup"
+        "card-fill" => return crate::cardfill::main(&args, agent(&args, profile::TERMINAL)),
+        "pair" | "code" | "login" | "credentials" | "pay" | "accounts" | "insights" | "cleanup"
         | "phones" | "unpair" | "agents" => check(command, &args),
         other => Err(format!("unknown command {other:?}; see nodkey --help")),
     };
@@ -276,6 +297,15 @@ fn check(command: &str, a: &Args) -> Result<(), String> {
             a.value("reason").map(|_| ()).ok_or_else(|| {
                 "nodkey credentials needs --reason: say in one sentence why".to_owned()
             })
+        }
+        "pay" => {
+            a.only(
+                command,
+                &[
+                    "reason", "image", "field", "phone", "model", "effort", "reveal",
+                ],
+            )?;
+            crate::card::payment(a).map(|_| ())
         }
         "accounts" | "insights" => a
             .only(command, &["reason", "phone", "model", "effort"])

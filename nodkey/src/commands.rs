@@ -5,6 +5,7 @@ use serde_json::{Value, json};
 
 use crate::{
     agent::{Agent, Reported},
+    card::payment,
     cli::{Args, DENIED, EXPIRED, cleanup_filter, credential_items},
 };
 
@@ -107,6 +108,38 @@ pub async fn run(command: &str, a: &Args, agent: &Agent) -> Result<u8, String> {
                 );
             }
             println!("{}", text.as_str());
+            Ok(code)
+        }
+        "pay" => {
+            let (merchant, amount) = payment(a)?;
+            let text = agent
+                .pay(
+                    &merchant,
+                    amount,
+                    a.value("reason").unwrap_or_default(),
+                    a.value("image"),
+                    a.value("phone"),
+                    reported,
+                    &wait_note(),
+                )
+                .await?;
+            let v = parse(&text)?;
+            let code = crate::card::exit_for_error(v["error"].as_str()).unwrap_or(exit_for(&v));
+            if code != 0 {
+                eprintln!(
+                    "nodkey: {}",
+                    v["message"].as_str().unwrap_or("not approved")
+                );
+            }
+            match a.value("field") {
+                Some(field) if code == 0 => match &v["card"][field] {
+                    Value::String(s) => println!("{s}"),
+                    Value::Null => return Err(format!("the card has no {field}")),
+                    other => println!("{other}"),
+                },
+                Some(_) => {}
+                None => println!("{}", text.as_str()),
+            }
             Ok(code)
         }
         "accounts" | "insights" => {
@@ -298,6 +331,14 @@ fn print_accounts(v: &Value) {
             e["name"].as_str().unwrap_or_default(),
             e["site"].as_str().unwrap_or("-"),
             has.join("+")
+        );
+    }
+    for c in v["cards"].as_array().into_iter().flatten() {
+        println!(
+            "Card  {}  {} \u{b7}\u{b7}\u{b7}\u{b7}{}",
+            c["title"].as_str().unwrap_or_default(),
+            c["brand"].as_str().unwrap_or_default(),
+            c["last4"].as_str().unwrap_or_default()
         );
     }
 }
