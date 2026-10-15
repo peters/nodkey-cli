@@ -98,7 +98,7 @@ Pairing grant (phone → agent):
 Request (agent → phone):
 
 ```json
-{"v":1, "request_id":"…", "kind":"code|login|list|insights|cleanup|save|passkey|bundle|card", "target":"github.com/alex",
+{"v":1, "request_id":"…", "kind":"code|login|list|insights|cleanup|save|passkey|bundle|card|session_end", "target":"github.com/alex",
  "reason":"Merge PR #42", "agent":"Claude · Horizon", "ts":1791620000}
 ```
 
@@ -186,14 +186,15 @@ Answer (phone → agent):
 
 ```json
 {"v":1, "request_id":"…", "decision":"approved|denied|expired",
- "lease":{"kind":"once|day|week|always", "until":1791706400},
+ "lease":{"kind":"once|day|week|always|session", "until":1791706400},
  "account":{"issuer":"GitHub", "name":"alex", "site":"github.com"},
  "code":"190274", "seconds_left":12,
  "username":"alex", "password":"…",
  "accounts":[{"issuer":"GitHub","name":"alex","site":"github.com","has_code":true,"has_password":true}]}
 ```
 
-Only the fields that apply are present. `until` is absent for `once` and `always`.
+Only the fields that apply are present. `until` is absent for `once` and `always`. `session`
+means the answer came from a task session (see "Task sessions").
 
 A `code` or `login` answer also carries `match`: `direct` (the account's name or site matched the
 target), `alias` (one of its extra websites matched) or `chosen` (nothing matched and the user picked
@@ -235,10 +236,12 @@ one site and a code on another. `target` is empty; `bundle` holds the items:
            "follow_up":300}}
 ```
 
-- 1 to 6 items, each `code` or `login` with a `target` as in a single request and an `id` (1 to 16
-  characters, unique in the bundle; `nodkey` numbers them `"1"`, `"2"`, …).
+- 1 to 10 items, each `code` or `login` with a `target` as in a single request and an `id` (1 to 16
+  characters, unique in the bundle; `nodkey` numbers them `"1"`, `"2"`, …). A bundle with a
+  `session` may also hold `passkey` items (see "Task sessions").
 - `follow_up` (optional, 120 to 600 seconds, default 120): for how long after the approval a fresh
-  `code` request from the same agent for an approved item is answered without asking.
+  `code` request from the same agent for an approved item is answered without asking. A bundle with
+  a `session` has no `follow_up`: the session covers it.
 - Both sides check these rules; the agent tools also refuse a request whose sealed `ct` would be
   longer than the relay's 3400 characters (`REQUEST_CT_MAX`, so the push stays under 4 KB).
 
@@ -264,6 +267,95 @@ answer per item in the request's order, carrying the same fields as a single ans
 An older app answers `unsupported_kind`. The MCP tool is `request_credentials(items, reason,
 follow_up_seconds?, image_path?)`; the command line is `nodkey credentials login:chatgpt.com
 code:github.com/alex --reason TEXT [--follow-up SECS]`. Vectors: `request_bundle`, `answer_bundle`.
+
+## Task sessions
+
+A task session lets one approval cover a whole task. The agent lists everything the task needs in a
+bundle with `session`; the user approves the plan once; until the session ends, a later request from
+the same agent for an approved item is answered without asking. It is for tasks that sign in to two
+or three places, need fresh codes while they work, or are logged out half-way.
+
+```json
+{"v":1, "request_id":"…", "kind":"bundle", "target":"", "reason":"Upload the release to the add-on store",
+ "agent":"Claude Code @ my-laptop", "ts":1791620000,
+ "bundle":{"items":[{"id":"1", "kind":"login", "target":"accounts.firefox.com"},
+                    {"id":"2", "kind":"code", "target":"accounts.firefox.com"},
+                    {"id":"3", "kind":"passkey", "target":"github.com"}],
+           "session":1800}}
+```
+
+- `session`: the length the agent asks for, in seconds: `900`, `1800` or `3600`. The phone shows it
+  as 15, 30 or 60 minutes, and the user may pick another of the three before approving.
+- A `passkey` item names a relying party (`github.com`, the registrable domain); it is allowed only
+  with `session`. Approving it lets later passkey sign-ins (`op: get`) for that relying party go
+  through in the session. Its item answer carries `account` (the passkey's user name and site), never
+  a signature: the agent signs in later with a normal `passkey` request.
+- `login` and `code` items are answered at once, as in any bundle.
+
+The phone shows the plan as one sheet (the items, their accounts, the reason, the session length)
+and asks for Face ID once. The notification for such a bundle opens the app; it has no Approve
+action. The answer carries `session` when at least one item was approved:
+
+```json
+{"v":1, "request_id":"…", "decision":"approved",
+ "session":{"id":"Qm9vdHN0cmFwU2Vzc2lvbg", "until":1791621800},
+ "items":[{"id":"1", "decision":"approved", "account":{…}, "username":"…", "password":"…",
+           "lease":{"kind":"session", "until":1791621800}},
+          {"id":"2", "decision":"approved", "account":{…}, "code":"190274", "seconds_left":21},
+          {"id":"3", "decision":"approved", "account":{"issuer":"github.com", "name":"alex", "site":"github.com"}}]}
+```
+
+`session.id` is 22 characters of base64url (16 random bytes); `until` is when it ends (Unix
+seconds). While it runs, the agent puts `session_id` on its requests:
+
+```json
+{"v":1, "request_id":"…", "kind":"code", "target":"accounts.firefox.com", "reason":"…",
+ "agent":"Claude Code @ my-laptop", "ts":1791620300, "session_id":"Qm9vdHN0cmFwU2Vzc2lvbg"}
+```
+
+The phone answers without asking when all of these hold: the session exists and has not ended, it
+belongs to the same agent, and the request asks for an approved item:
+
+| Request | Covered when |
+| --- | --- |
+| `code` | it matches the account of an approved `code` or `login` item |
+| `login` | it matches the account of an approved `login` item |
+| `passkey` with `op: get` | its `rp_id` is the relying party of an approved `passkey` item, with the same passkey |
+
+Such an answer carries `lease: {"kind":"session", "until":…}`. Anything else is asked as usual,
+with or without `session_id`: another site or account, a passkey create, `save`, `save_card`,
+`card`, `list`, `insights`, `cleanup` and `bundle`. A request with an unknown or ended `session_id`
+is also asked as usual; its answer carries `session_ended: true`, so the agent stops sending the id.
+
+A session ends when its time is up, when the agent ends it, when the user taps Stop on it, pauses
+the agent or stops all agents, or when the agent is removed. The agent ends it when the task is done:
+
+```json
+{"v":1, "request_id":"…", "kind":"session_end", "target":"", "reason":"Done", "agent":"…", "ts":…,
+ "session_id":"Qm9vdHN0cmFwU2Vzc2lvbg"}
+{"v":1, "request_id":"…", "decision":"approved"}
+```
+
+`session_end` is answered at once, without a notification, also for an unknown session. The phone
+keeps sessions with the leases (shared with the notification extensions), so the service extension
+answers a covered request while the app is closed, with a quiet notification. Agents shows the
+running session ("Active task": time left, what was used, Stop), and the history records every
+answer under it. Scopes apply to every item as in any bundle. An older app ignores `session` (the
+answer has none, and the agent asks as before), refuses a bundle with a `passkey` item or more than
+6 items (`error: "bad_bundle"`; the agent tools then say the app needs an update), and answers
+`session_end` with `unsupported_kind`. Vectors: `request_bundle_session`,
+`answer_bundle_session`, `request_code_in_session`, `answer_code_in_session`, `request_session_end`.
+
+## A code with little time left
+
+A `code` in any answer (single, bundle item or session) that has fewer than 8 seconds left comes with
+the next one: `next_code` and `next_seconds_left` (`seconds_left` + the period, usually 30). The agent
+uses `next_code` instead; most sites accept the next code at once, and it is valid for longer.
+
+```json
+{"v":1, "request_id":"…", "decision":"approved", "code":"190274", "seconds_left":4,
+ "next_code":"582911", "next_seconds_left":34}
+```
 
 ## Saving a login
 
@@ -554,7 +646,7 @@ change ignore such a request, and the agent sees `expired`.) Requests also carry
   the user to compare. Other tools: `list_phones()`, `unpair(phone)` (calls the agent-side `DELETE`
   and forgets the phone), `request_code(target, reason, image_path?)`,
   `request_login(target, reason, image_path?)`, `request_credentials(items, reason, follow_up_seconds?,
-  image_path?)`, `request_payment(merchant, amount, currency, reason, image_path?)` (`mode: reveal`;
+  session_minutes?, image_path?)`, `end_session()`, `request_payment(merchant, amount, currency, reason, image_path?)` (`mode: reveal`;
   its description starts with "Spends the user's money."), `list_accounts()`, `cleanup_insights()`,
   `cleanup_logins(filter, reason)` (dates as Unix seconds or `YYYY-MM-DD`; an unknown filter key is an
   error, so a typo cannot widen the filter). `image_path` is an optional PNG/JPEG/GIF file (for example
