@@ -301,12 +301,15 @@ action. The answer carries `session` when at least one item was approved:
  "session":{"id":"Qm9vdHN0cmFwU2Vzc2lvbg", "until":1791621800},
  "items":[{"id":"1", "decision":"approved", "account":{…}, "username":"…", "password":"…",
            "lease":{"kind":"session", "until":1791621800}},
-          {"id":"2", "decision":"approved", "account":{…}, "code":"190274", "seconds_left":21},
+          {"id":"2", "decision":"approved", "account":{…}, "code":"190274", "seconds_left":21,
+           "lease":{"kind":"session", "until":1791621800}},
           {"id":"3", "decision":"approved", "account":{"issuer":"github.com", "name":"alex", "site":"github.com"}}]}
 ```
 
-`session.id` is 22 characters of base64url (16 random bytes); `until` is when it ends (Unix
-seconds). While it runs, the agent puts `session_id` on its requests:
+Every approved `login` and `code` item carries `lease: {"kind":"session", …}`; a `passkey` item
+carries none. A plan is never answered by leases, even when every item is lent: a session starts
+only from an approval in the app. `session.id` is 22 characters of base64url (16 random bytes);
+`until` is when it ends (Unix seconds). While it runs, the agent puts `session_id` on its requests:
 
 ```json
 {"v":1, "request_id":"…", "kind":"code", "target":"accounts.firefox.com", "reason":"…",
@@ -318,9 +321,12 @@ belongs to the same agent, and the request asks for an approved item:
 
 | Request | Covered when |
 | --- | --- |
-| `code` | it matches the account of an approved `code` or `login` item |
+| `code` | it matches the account of an approved `code` or `login` item (also the code account linked to an approved login: same site and user name) |
 | `login` | it matches the account of an approved `login` item |
-| `passkey` with `op: get` | its `rp_id` is the relying party of an approved `passkey` item, with the same passkey |
+| `passkey` with `op: get` | its `rp_id` is the relying party of an approved `passkey` item, or a site below it, with the same passkey |
+
+An account the user picked by hand for an item (no saved account matched its site) covers later
+requests for that site in the session, as in the follow-up window.
 
 Such an answer carries `lease: {"kind":"session", "until":…}`. Anything else is asked as usual,
 with or without `session_id`: another site or account, a passkey create, `save`, `save_card`,
@@ -336,7 +342,9 @@ the agent or stops all agents, or when the agent is removed. The agent ends it w
 {"v":1, "request_id":"…", "decision":"approved"}
 ```
 
-`session_end` is answered at once, without a notification, also for an unknown session. The phone
+`session_end` is answered at once, also for an unknown session, and before the pause check; the
+relay still pushes it, so the phone shows a quiet notification ("Claude Code finished its task").
+It leaves no history line. The phone
 keeps sessions with the leases (shared with the notification extensions), so the service extension
 answers a covered request while the app is closed, with a quiet notification. Agents shows the
 running session ("Active task": time left, what was used, Stop), and the history records every
