@@ -38,6 +38,7 @@ mod card;
 mod matching;
 pub mod passkey;
 mod save;
+mod session;
 fn label32(label: &str) -> [u8; 32] {
     Sha256::digest(label.as_bytes()).into()
 }
@@ -174,6 +175,7 @@ fn request(
         card: None,
         save_card: None,
         client: None,
+        session_id: None,
     }
 }
 
@@ -394,6 +396,7 @@ pub fn build() -> Value {
     matching::add(&mut ctx, &agent, &phone);
     bundle::add(&mut ctx, &agent, &phone);
     let cards = card::add(&mut ctx, &agent, &phone); // Last: earlier bytes stay the same.
+    session::add(&mut ctx, &agent, &phone); // After cards: earlier bytes stay the same.
 
     // Signed relay calls.
     let agent_info = crate::AgentInfo {

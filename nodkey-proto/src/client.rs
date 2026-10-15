@@ -90,6 +90,7 @@ pub fn check_request(r: &Request) -> Result<(), String> {
         (_, Some(_)) => Err("only a card request carries card data".into()),
         _ => Ok(()),
     }?;
+    check_session(r)?;
     if sealed_ct_len(r) > REQUEST_CT_MAX {
         return Err(
             "the request is too large to send to the phone; ask for fewer items or shorten the reason"
@@ -97,6 +98,22 @@ pub fn check_request(r: &Request) -> Result<(), String> {
         );
     }
     Ok(())
+}
+
+/// The task session rules: `session_end` names a session and nothing else; a session id has the
+/// right shape and goes only on requests a session can cover.
+fn check_session(r: &Request) -> Result<(), String> {
+    match (&r.kind, &r.session_id) {
+        (Kind::SessionEnd, None) => Err("session_end needs the session_id".into()),
+        (Kind::SessionEnd, Some(_)) if !r.target.is_empty() => {
+            Err("session_end has no target".into())
+        }
+        (_, Some(id)) if !crate::session::valid_id(id) => {
+            Err("session_id must be 22 base64url characters".into())
+        }
+        (Kind::Code | Kind::Login | Kind::Passkey | Kind::SessionEnd, _) | (_, None) => Ok(()),
+        (_, Some(_)) => Err("only code, login and passkey requests belong to a session".into()),
+    }
 }
 
 /// Seals a checked request to the phone: the envelope to `POST /v1/phones/{phone_id}/requests`.
@@ -217,6 +234,7 @@ mod tests {
             card: None,
             save_card: None,
             client: None,
+            session_id: None,
         }
     }
 
@@ -232,6 +250,7 @@ mod tests {
         b.bundle = Some(crate::BundleRequest {
             items: vec![item("1", "chatgpt.com"), item("2", "github.com")],
             follow_up: None,
+            session: None,
         });
         assert!(check_request(&b).is_ok());
         b.target = "chatgpt.com".into();
@@ -259,6 +278,7 @@ mod tests {
                 .map(|i| item(&i.to_string(), &"t".repeat(200)))
                 .collect(),
             follow_up: Some(600),
+            session: None,
         });
         assert!(sealed_ct_len(&b) > REQUEST_CT_MAX);
         assert!(check_request(&b).unwrap_err().contains("too large"));

@@ -2,8 +2,8 @@
 //!
 //! Binary values are b64u strings; times are Unix seconds.
 
+use crate::Secret;
 use serde::{Deserialize, Serialize};
-use zeroize::Zeroize;
 
 use crate::Error;
 
@@ -147,6 +147,9 @@ pub enum Kind {
     /// A payment card for one purchase ([`crate::CardRequest`]); `target` is the merchant. Never
     /// covered by a lease and never part of a bundle.
     Card,
+    /// Ends a task session ([`Request::session_id`]); answered at once, without asking.
+    #[serde(rename = "session_end")]
+    SessionEnd,
 }
 
 /// The login a `save` request asks the phone to keep.
@@ -306,6 +309,9 @@ pub struct Request {
     /// Who is asking, as the agent reports it (shown in the phone's history; self-reported).
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub client: Option<ClientInfo>,
+    /// The task session this request belongs to (see "Task sessions").
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub session_id: Option<String>,
 }
 
 /// What the agent says about itself, for the history on the phone. Self-reported: the phone shows
@@ -376,6 +382,8 @@ pub enum LeaseKind {
     Day,
     Week,
     Always,
+    /// Answered under a task session ([`crate::SessionInfo`]).
+    Session,
 }
 
 /// Lease information in an answer.
@@ -427,36 +435,6 @@ pub struct AccountEntry {
     pub sites: Option<Vec<String>>,
 }
 
-/// A secret string from the phone (a code or a password). Its `Debug` output is redacted and its
-/// memory is wiped on drop; serialising it writes the value (that is how it reaches the model).
-#[derive(Clone, PartialEq, Eq, Serialize, Deserialize)]
-#[serde(transparent)]
-pub struct Secret(String);
-
-impl Secret {
-    /// Wraps a value.
-    pub fn new(s: impl Into<String>) -> Self {
-        Secret(s.into())
-    }
-
-    /// The value.
-    pub fn expose(&self) -> &str {
-        &self.0
-    }
-}
-
-impl std::fmt::Debug for Secret {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.write_str("Secret(<redacted>)")
-    }
-}
-
-impl Drop for Secret {
-    fn drop(&mut self) {
-        self.0.zeroize();
-    }
-}
-
 /// Answer, phone → agent (`nodkey/v1/answer`). Only the fields that apply are present.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Answer {
@@ -474,6 +452,11 @@ pub struct Answer {
     pub code: Option<Secret>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub seconds_left: Option<u32>,
+    /// The next code, when `seconds_left` is below [`crate::session::NEXT_CODE_BELOW`].
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub next_code: Option<Secret>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub next_seconds_left: Option<u32>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub username: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -508,6 +491,12 @@ pub struct Answer {
     /// `insights`: counts, age buckets and anonymous groups (docs/agent-protocol.md), passed on as is.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub insights: Option<serde_json::Value>,
+    /// An approved `bundle` with `session`: the task session it started.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub session: Option<crate::SessionInfo>,
+    /// The request named a session that is unknown or has ended.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub session_ended: Option<bool>,
 }
 
 impl Answer {
@@ -522,6 +511,8 @@ impl Answer {
             match_kind: None,
             code: None,
             seconds_left: None,
+            next_code: None,
+            next_seconds_left: None,
             username: None,
             password: None,
             accounts: None,
@@ -533,6 +524,8 @@ impl Answer {
             cards: None,
             error: None,
             insights: None,
+            session: None,
+            session_ended: None,
         }
     }
 }

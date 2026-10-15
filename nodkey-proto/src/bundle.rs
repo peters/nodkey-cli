@@ -1,13 +1,16 @@
 //! Bundles (`kind: bundle`): several codes and logins in one request, so a sign-in that needs a
 //! login on one site and a code on another asks the user once. The phone answers each item on its
-//! own; the bundle is `approved` when the user approved at least one item.
+//! own; the bundle is `approved` when the user approved at least one item. A bundle with `session`
+//! starts a task session (see [`crate::session`]) and may also hold `passkey` items.
 
 use serde::{Deserialize, Serialize};
 
 use crate::{Account, Decision, Kind, Lease, MatchKind, Secret, client::MAX_TARGET};
 
 /// At most this many items in one bundle.
-pub const MAX_ITEMS: usize = 6;
+pub const MAX_ITEMS: usize = 10;
+/// Apps before task sessions take at most this many.
+pub const MAX_ITEMS_OLD: usize = 6;
 /// The follow-up window (seconds) an agent may ask for; the default is the usual 120 s.
 pub const FOLLOW_UP_MIN: u32 = 120;
 pub const FOLLOW_UP_MAX: u32 = 600;
@@ -22,14 +25,17 @@ pub struct BundleRequest {
     /// without asking (120 to 600; absent means 120).
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub follow_up: Option<u32>,
+    /// Start a task session of this many seconds ([`crate::session::SESSION_LENGTHS`]).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub session: Option<u32>,
 }
 
-/// One code or login in a bundle.
+/// One code, login or (in a session) passkey in a bundle.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct BundleItem {
     /// The agent's name for the item, unique in the bundle ("1", "chatgpt"); the answer uses it.
     pub id: String,
-    /// `code` or `login`.
+    /// `code` or `login`; also `passkey` (a relying party) in a bundle with `session`.
     pub kind: Kind,
     /// As in a single request: a site or issuer, optionally `/account`.
     pub target: String,
@@ -52,9 +58,10 @@ impl BundleRequest {
             if !ids.insert(id) {
                 return Err(format!("the item id {id:?} is used twice"));
             }
-            if !matches!(item.kind, Kind::Code | Kind::Login) {
+            let passkey_ok = self.session.is_some() && item.kind == Kind::Passkey;
+            if !matches!(item.kind, Kind::Code | Kind::Login) && !passkey_ok {
                 return Err(format!(
-                    "item {id:?}: a bundle holds only code and login items"
+                    "item {id:?}: a bundle holds code and login items (passkey items need a session)"
                 ));
             }
             let target = item.target.trim();
@@ -65,6 +72,14 @@ impl BundleRequest {
             }
             if target.chars().count() > MAX_TARGET {
                 return Err(format!("item {id:?}: target is too long"));
+            }
+        }
+        if let Some(length) = self.session {
+            if !crate::session::valid_length(length) {
+                return Err("session must be 900, 1800 or 3600 seconds".into());
+            }
+            if self.follow_up.is_some() {
+                return Err("a bundle with a session has no follow_up".into());
             }
         }
         match self.follow_up {
@@ -91,6 +106,10 @@ pub struct BundleItemAnswer {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub seconds_left: Option<u32>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub next_code: Option<Secret>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub next_seconds_left: Option<u32>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub username: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub password: Option<Secret>,
@@ -111,6 +130,8 @@ impl BundleItemAnswer {
             match_kind: None,
             code: None,
             seconds_left: None,
+            next_code: None,
+            next_seconds_left: None,
             username: None,
             password: None,
             lease: None,
@@ -139,6 +160,7 @@ mod tests {
                 item("2", Kind::Code, "github.com/alex"),
             ],
             follow_up: Some(300),
+            session: None,
         };
         assert!(ok.check().is_ok());
         let with = |f: &dyn Fn(&mut BundleRequest)| {
@@ -146,13 +168,14 @@ mod tests {
             f(&mut b);
             b.check()
         };
-        assert!(with(&|b| b.items.clear()).unwrap_err().contains("1 to 6"));
-        assert!(
-            with(&|b| b.items = (0..7)
+        assert!(with(&|b| b.items.clear()).unwrap_err().contains("1 to 10"));
+        let many = |n: usize| -> Vec<BundleItem> {
+            (0..n)
                 .map(|i| item(&i.to_string(), Kind::Code, "x"))
-                .collect())
-            .is_err()
-        );
+                .collect()
+        };
+        assert!(with(&|b| b.items = many(10)).is_ok());
+        assert!(with(&|b| b.items = many(11)).is_err());
         assert!(
             with(&|b| b.items[1].id = "1".into())
                 .unwrap_err()
@@ -163,12 +186,12 @@ mod tests {
         assert!(
             with(&|b| b.items[0].kind = Kind::List)
                 .unwrap_err()
-                .contains("only code and login")
+                .contains("code and login items")
         );
         assert!(
             with(&|b| b.items[0].kind = Kind::Card)
                 .unwrap_err()
-                .contains("only code and login")
+                .contains("code and login items")
         );
         assert!(
             with(&|b| b.items[0].target = " ".into())
@@ -185,6 +208,42 @@ mod tests {
     }
 
     #[test]
+    fn session_rules() {
+        let plan = BundleRequest {
+            items: vec![
+                item("1", Kind::Login, "accounts.example.com"),
+                item("2", Kind::Code, "accounts.example.com"),
+                item("3", Kind::Passkey, "github.com"),
+            ],
+            follow_up: None,
+            session: Some(1800),
+        };
+        assert!(plan.check().is_ok());
+        let with = |f: &dyn Fn(&mut BundleRequest)| {
+            let mut b = plan.clone();
+            f(&mut b);
+            b.check()
+        };
+        assert!(with(&|b| b.session = Some(3600)).is_ok());
+        assert!(
+            with(&|b| b.session = Some(600))
+                .unwrap_err()
+                .contains("900, 1800 or 3600")
+        );
+        assert!(
+            with(&|b| b.follow_up = Some(300))
+                .unwrap_err()
+                .contains("no follow_up")
+        );
+        assert!(
+            with(&|b| b.session = None)
+                .unwrap_err()
+                .contains("passkey items need a session")
+        );
+        assert!(with(&|b| b.items[2].kind = Kind::Card).is_err());
+    }
+
+    #[test]
     fn json_names() {
         let mut a = BundleItemAnswer::decision("1", Decision::Approved);
         a.match_kind = Some(MatchKind::Alias);
@@ -193,6 +252,7 @@ mod tests {
         let b = BundleRequest {
             items: vec![item("1", Kind::Code, "github.com")],
             follow_up: None,
+            session: None,
         };
         assert_eq!(
             serde_json::to_string(&b).unwrap(),

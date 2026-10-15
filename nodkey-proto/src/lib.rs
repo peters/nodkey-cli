@@ -16,6 +16,8 @@ pub mod keys;
 pub mod messages;
 pub mod passkey;
 pub mod seal;
+pub mod secret;
+pub mod session;
 #[doc(hidden)]
 pub mod testing;
 #[doc(hidden)]
@@ -30,6 +32,8 @@ pub use passkey::{
     PasskeyAnswer, PasskeyCreate, PasskeyGet, PasskeyOp, PasskeyRequest, PasskeyUser, Requirement,
 };
 pub use seal::{Purpose, Sealed};
+pub use secret::Secret;
+pub use session::SessionInfo;
 
 /// Protocol version carried in every plaintext message (`"v": 1`).
 pub const VERSION: u8 = 1;
