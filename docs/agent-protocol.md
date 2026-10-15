@@ -350,7 +350,8 @@ answer has none, and the agent asks as before), refuses a bundle with a `passkey
 
 A `code` in any answer (single, bundle item or session) that has fewer than 8 seconds left comes with
 the next one: `next_code` and `next_seconds_left` (`seconds_left` + the period, usually 30). The agent
-uses `next_code` instead; most sites accept the next code at once, and it is valid for longer.
+tools wait until the next code is current (at most 8 seconds) and hand that one on, so an agent never
+gets a code that runs out while it types.
 
 ```json
 {"v":1, "request_id":"…", "decision":"approved", "code":"190274", "seconds_left":4,
@@ -650,7 +651,10 @@ change ignore such a request, and the agent sees `expired`.) Requests also carry
   its description starts with "Spends the user's money."), `list_accounts()`, `cleanup_insights()`,
   `cleanup_logins(filter, reason)` (dates as Unix seconds or `YYYY-MM-DD`; an unknown filter key is an
   error, so a typo cannot widen the filter). `image_path` is an optional PNG/JPEG/GIF file (for example
-  a browser screenshot) sent as the attachment. Results go to the model; the server keeps nothing.
+  a browser screenshot) sent as the attachment. Results go to the model; the server keeps no secret.
+  A running task session (its id, end, phone and the approved items, never a secret) is kept in
+  `agents/<profile>/session.json`, so the MCP server, the command line and `nodkey webauthn` of one
+  profile share it; `end_session()` and `nodkey end-session` end it.
 - The command line does the same in one process: `nodkey pair` shows the code and then the check
   number; `nodkey code`, `login`, `credentials`, `pay`, `accounts`, `insights`, `cleanup`, `phones`, `unpair`. Exit codes:
   0 approved, 1 error, 2 denied, 3 expired, 64 bad arguments; for `pay` and `card-fill` also 5

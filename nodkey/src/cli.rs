@@ -20,8 +20,10 @@ Usage:
   nodkey pair [--name NAME]                pair this agent with your iPhone (once)
   nodkey code TARGET --reason TEXT         one one-time code
   nodkey login TARGET --reason TEXT        user name and password (and a code if it has one)
-  nodkey credentials ITEM... --reason TEXT up to 6 logins and codes in one request (JSON);
-                                           ITEM is login:TARGET or code:TARGET
+  nodkey credentials ITEM... --reason TEXT up to 10 logins and codes in one request (JSON);
+                                           ITEM is login:TARGET, code:TARGET or passkey:SITE
+                                           (passkey items need --session)
+  nodkey end-session [--reason TEXT]       end this agent's task session (from --session)
   nodkey pay MERCHANT AMOUNT CURRENCY --reason TEXT --reveal
                                            the full payment card for ONE purchase (spends money;
                                            only when the user turned full card numbers on for
@@ -50,7 +52,10 @@ Options for code and login:
   --model NAME     --effort LEVEL   shown in the history on the phone
 
 Options for credentials: --reason, --image, --phone, --model, --effort as above, and
-  --follow-up SECS  how long a fresh code for an approved item follows without asking (120-600)
+  --session MIN     a task session: for 15, 30 or 60 minutes, codes, logins and passkey
+                    sign-ins for the approved items go through without asking again
+  --follow-up SECS  without a session: how long a fresh code for an approved item follows
+                    without asking (120-600)
 
 Options for pay: --reason, --image, --field (number, cvc, exp_month, ...), --phone, --model,
   --effort as above, and --reveal (required: the card number is printed). Without a browser
@@ -79,9 +84,10 @@ pub(crate) const DENIED: u8 = 2;
 pub(crate) const EXPIRED: u8 = 3;
 const BAD_ARGS: u8 = 64;
 
-const VALUE_FLAGS: [&str; 17] = [
+const VALUE_FLAGS: [&str; 18] = [
     "agent",
     "follow-up",
+    "session",
     "relay",
     "name",
     "reason",
@@ -220,7 +226,7 @@ pub fn main(raw: Vec<String>) -> ExitCode {
         "webauthn" => return crate::webauthn::main(&args, agent(&args, profile::TERMINAL)),
         "card-fill" => return crate::cardfill::main(&args, agent(&args, profile::TERMINAL)),
         "pair" | "code" | "login" | "credentials" | "pay" | "accounts" | "insights" | "cleanup"
-        | "phones" | "unpair" | "agents" => check(command, &args),
+        | "phones" | "unpair" | "agents" | "end-session" => check(command, &args),
         other => Err(format!("unknown command {other:?}; see nodkey --help")),
     };
     if let Err(e) = result {
@@ -285,7 +291,15 @@ fn check(command: &str, a: &Args) -> Result<(), String> {
         "credentials" => {
             a.only(
                 command,
-                &["reason", "image", "phone", "model", "effort", "follow-up"],
+                &[
+                    "reason",
+                    "image",
+                    "phone",
+                    "model",
+                    "effort",
+                    "follow-up",
+                    "session",
+                ],
             )?;
             if a.positional.is_empty() {
                 return Err(
@@ -324,6 +338,9 @@ fn check(command: &str, a: &Args) -> Result<(), String> {
         "unpair" => a
             .only(command, &[])
             .and(a.positionals(command, 1, "one PHONE")),
+        "end-session" => a
+            .only(command, &["reason", "model", "effort"])
+            .and(a.positionals(command, 0, "no arguments")),
         _ => Ok(()),
     }
 }
@@ -381,10 +398,9 @@ fn mcp(a: &Args) -> ExitCode {
     ExitCode::SUCCESS
 }
 
-/// The items and follow-up window of `nodkey credentials`, checked by the same rules as the tool.
-pub(crate) fn credential_items(
-    a: &Args,
-) -> Result<(Vec<crate::bundle::Wanted>, Option<u32>), String> {
+/// The items, follow-up window and session length of `nodkey credentials`, checked by the same
+/// rules as the tool.
+pub(crate) fn credential_items(a: &Args) -> Result<crate::bundle::Plan, String> {
     let wanted = a
         .positional
         .iter()
@@ -398,7 +414,16 @@ pub(crate) fn credential_items(
                 .map_err(|_| "--follow-up takes whole seconds (120-600)".to_owned())
         })
         .transpose()?;
-    Ok((wanted, follow_up))
+    let session = a
+        .value("session")
+        .map(|v| {
+            v.trim()
+                .parse::<u64>()
+                .map_err(|_| "--session takes minutes: 15, 30 or 60".to_owned())
+                .and_then(crate::bundle::session_seconds)
+        })
+        .transpose()?;
+    Ok((wanted, follow_up, session))
 }
 
 /// The clean-up filter from the command line, checked by the same rules as the MCP tool.

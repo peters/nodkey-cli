@@ -1,6 +1,6 @@
 ---
 name: nodkey
-description: Use the user's logins, one-time codes and saved passwords from Nodkey on their iPhone, each request approved by them with Face ID; sign in to websites, fetch a two-step code, see which accounts exist, tidy up old saved logins, and pay a purchase the user asked for with their card. Use when a task needs a login or a two-step code, when asked to sign in to a site (for example in a Horizon browser panel), when the user asks which accounts they have, or when they ask to clean up, review or remove stale or old saved passwords, or when they ask you to buy something. Uses the nodkey MCP server (request_login, request_code, request_credentials, request_payment, cleanup_insights, list_accounts, cleanup_logins, pair, list_phones, unpair) or the nodkey command.
+description: Use the user's logins, one-time codes and saved passwords from Nodkey on their iPhone, each request approved by them with Face ID; sign in to websites, fetch a two-step code, see which accounts exist, tidy up old saved logins, and pay a purchase the user asked for with their card. Use when a task needs a login or a two-step code, when asked to sign in to a site (for example in a Horizon browser panel), when the user asks which accounts they have, or when they ask to clean up, review or remove stale or old saved passwords, or when they ask you to buy something. Uses the nodkey MCP server (request_login, request_code, request_credentials, end_session, request_payment, cleanup_insights, list_accounts, cleanup_logins, pair, list_phones, unpair) or the nodkey command.
 ---
 
 # Nodkey
@@ -16,7 +16,9 @@ for 1 day / 7 days / always"); then the phone answers by itself. You never keep 
   shows a password in clear text.
 - On `denied` or `expired`, stop and tell the user in one line; do not retry on your own. On a refusal
   with "paused", the user has paused you (or all agents) under Agents in Nodkey: tell them, do not retry.
-- One request per thing you need. Do not ask again in the same task unless the site logged you out.
+- **Plan first, ask once.** Before the first request, list every site the task signs in to and what
+  each needs (login, code, passkey). More than one thing: one `request_credentials` with a session
+  (see "Plan the task, ask once"). One thing only: `request_login` or `request_code`.
 - Tell the user in one line when a request is waiting on their iPhone. It waits up to two minutes.
 - If several accounts match, the phone asks them which one; never guess user names.
 - Pass `model` (the model you run on, e.g. `claude-opus-5-5`) and `effort` (your reasoning effort,
@@ -32,10 +34,10 @@ for 1 day / 7 days / always"); then the phone answers by itself. You never keep 
 3. `request_login(target, reason, image_path)`: `target` is the site (`vg.no`) or site/user
    (`github.com/alex`); `reason` is one plain sentence ("Check the subscription page").
 4. On `approved`: fill user name and password (`browser_act` `fill`) and submit. If the site asks
-   for a one-time code and the answer has `code` with `seconds_left` ≥ 5, use it; otherwise call
-   `request_code(target, reason)`. For two minutes after the user approved, a `request_code` for the
-   same account is answered without asking them again, so a code that expired while you typed costs
-   nothing: just ask for a fresh one.
+   for a one-time code, use the answer's `code` (the tools never hand out a code with less than 8
+   seconds left: they wait for the next one). If it ran out while you typed, call
+   `request_code(target, reason)`: for two minutes after the approval (or while a task session runs)
+   it is answered without asking the user again.
 5. Check the result with a snapshot and report it in one line.
 
 Tips from real sign-ins: when the answer's `account.site` names a different host than the page you
@@ -45,15 +47,29 @@ one by hand (a login saved for openai.com used on chatgpt.com); use it for this 
 `account.sites` lists more websites the account is used on. Two-step pages may split the code into one box per digit: fill them one by one. When a site offers an
 app prompt instead of a code (Google, Microsoft), choose "another way" and the authenticator code.
 
-## Several sign-ins at once
+## Plan the task, ask once
 
-When one task needs more than one login or code (a login on chatgpt.com and a code for
-github.com), ask once with `request_credentials(items, reason)`, items like
-`[{"kind": "login", "target": "chatgpt.com"}, {"kind": "code", "target": "github.com/alex"}]`
-(at most 6). The user approves the items they want with one Face ID; each item in the answer has its
-own `decision`. Use only the approved ones, each for its own site; do not ask again for the denied
-ones. Pass `follow_up_seconds` (up to 600) only when the work really takes longer than two minutes
-and you will need fresh codes.
+When a task needs more than one thing, ask for all of it in one plan. The user approves the plan
+with one Face ID, and a task session covers the rest of the task.
+
+1. **List what the task needs** before you open the first page: every site, and for each a `login`,
+   a `code` or a `passkey` sign-in. Take along what will come: a login on a site with two-step
+   sign-in also needs its `code`; a portal that sends you on to another sign-in (Microsoft, Google,
+   Schibsted) needs both.
+2. **Ask once:** `request_credentials(items, reason, session_minutes)`, items like
+   `[{"kind": "login", "target": "accounts.example.com"}, {"kind": "code", "target": "accounts.example.com"},
+   {"kind": "passkey", "target": "github.com"}]` (at most 10). `session_minutes` by the job: 15 for a
+   few sign-ins, 30 for a normal task, 60 only for long work.
+3. **Use the answer.** Each item has its own `decision`; use only the approved ones, each for its own
+   site, and do not ask again for the denied ones. When `session` is in the answer, the session
+   runs: `request_code`, `request_login` and passkey sign-ins for the approved items go through
+   without asking (a fresh code, or the same login after the site logged you out). Anything else
+   still asks the user.
+4. **End it:** call `end_session` when the task is done.
+
+Without `session_minutes` the plan is answered once, and fresh codes follow for two minutes
+(`follow_up_seconds` up to 600). An older Nodkey app answers without a session, or refuses passkey
+items and plans with more than 6 items (`bad_bundle`): then tell the user to update Nodkey.
 
 ## Pay for something (spends the user's money)
 
@@ -127,7 +143,8 @@ When the MCP tools are not available but the `nodkey` command is, use it the sam
 ```sh
 nodkey code github.com/alex --reason "Merge PR #42" --field code      # prints only the code
 nodkey login vg.no --reason "Check the subscription page"              # JSON with username, password
-nodkey credentials login:chatgpt.com code:github.com/alex --reason "Compare the notes"   # several at once
+nodkey credentials login:chatgpt.com code:github.com/alex --session 30 --reason "Compare the notes"   # a plan
+nodkey end-session                                                     # the task is done
 nodkey accounts --reason "See which accounts I may ask for"
 nodkey insights
 nodkey cleanup --ip-only --reason "Remove logins for old router addresses"

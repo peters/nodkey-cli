@@ -2,13 +2,14 @@
 
 use serde_json::{Value, json};
 
-pub const TOOL_NAMES: [&str; 10] = [
+pub const TOOL_NAMES: [&str; 11] = [
     "pair",
     "list_phones",
     "unpair",
     "request_code",
     "request_login",
     "request_credentials",
+    "end_session",
     "request_payment",
     "list_accounts",
     "cleanup_insights",
@@ -85,27 +86,30 @@ pub fn tools() -> Value {
         },
         {
             "name": "request_credentials",
-            "title": "Ask the user's iPhone for several logins and codes at once",
-            "description": format!("Ask Nodkey on the user's iPhone for up to 6 logins and one-time codes in one request, \
-                when one task needs several (a login on one site and a code on another). The user sees every item, can \
-                leave some out or pick another account, and approves once with Face ID. {APPROVAL} Always explain the \
-                reason. Returns JSON with decision (approved when at least one item was approved), approved and of \
-                (counts), and items: one per item in your order with id, kind, target, decision and, when approved, \
-                username and password (logins), code and seconds_left (codes), account and match. Use each item only \
-                for its own sign-in; never store, log or repeat the secrets. For a single login or code use \
-                request_login or request_code."),
+            "title": "Ask the user's iPhone for everything a task needs, once",
+            "description": format!("Ask Nodkey on the user's iPhone for everything one task needs in one request: up to 10 \
+                logins, one-time codes and (with session_minutes) passkeys. Plan first: list every site the task signs in \
+                to and ask once, instead of one request per thing. The user sees every item, can leave some out or pick \
+                another account, and approves once with Face ID. {APPROVAL} Always explain the reason. With \
+                session_minutes (15, 30 or 60) the approval starts a task session: until it ends, request_code, \
+                request_login and passkey sign-ins for the approved items go through without asking again (for a fresh \
+                code, or after the site logged you out); call end_session when the task is done. Returns JSON with \
+                decision (approved when at least one item was approved), approved and of (counts), session (id, until) \
+                when one started, and items: one per item in your order with id, kind, target, decision and, when \
+                approved, username and password (logins), code and seconds_left (codes), account and match. Use each \
+                item only for its own sign-in; never store, log or repeat the secrets."),
             "inputSchema": {
                 "type": "object",
                 "properties": {
                     "items": {
                         "type": "array",
                         "minItems": 1,
-                        "maxItems": 6,
-                        "description": "What you need, in order.",
+                        "maxItems": 10,
+                        "description": "What the task needs, in order.",
                         "items": {
                             "type": "object",
                             "properties": {
-                                "kind": { "type": "string", "enum": ["login", "code"], "description": "login: user name and password (and a code when it has one); code: one one-time code." },
+                                "kind": { "type": "string", "enum": ["login", "code", "passkey"], "description": "login: user name and password (and a code when it has one); code: one one-time code; passkey (only with session_minutes): later passkey sign-ins on that site (target = the site, e.g. github.com) go through in the session." },
                                 "target": target
                             },
                             "required": ["kind", "target"],
@@ -113,6 +117,12 @@ pub fn tools() -> Value {
                         }
                     },
                     "reason": reason,
+                    "session_minutes": {
+                        "type": "integer",
+                        "enum": [15, 30, 60],
+                        "description": "Optional: start a task session of this many minutes. Pick by the job: 15 for a few \
+                                        sign-ins, 30 for a normal task, 60 only for long work. The user may change it."
+                    },
                     "follow_up_seconds": {
                         "type": "integer",
                         "minimum": 120,
@@ -130,6 +140,23 @@ pub fn tools() -> Value {
                 "additionalProperties": false
             },
             "annotations": { "readOnlyHint": true, "openWorldHint": true }
+        },
+        {
+            "name": "end_session",
+            "title": "End the task session",
+            "description": "End the task session that request_credentials with session_minutes started, when the \
+                task is done, so later requests ask the user again. Answered at once; the user is not asked. Returns \
+                JSON with ended and a message.",
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "reason": { "type": "string", "description": "Optional: one short sentence, e.g. \"The upload is done\"." },
+                    "model": model,
+                    "effort": effort
+                },
+                "additionalProperties": false
+            },
+            "annotations": { "readOnlyHint": false, "idempotentHint": true, "openWorldHint": true }
         },
         {
             "name": "request_payment",

@@ -9,6 +9,9 @@
 //!   public_key}]` (b64u; `public_key` is SPKI DER, to check signatures with).
 //! - `PUT /_fake/cards` with `{"enabled": bool, "reveal": bool, "limit": {"value", "currency"} | null}`:
 //!   what the user allowed for cards (default: on, full numbers on, 1000.00 NOK per purchase).
+//! - `GET /_fake/sessions`: the running task sessions, `[{id, agent_id, until, items, used}]`.
+//! - `PUT /_fake/seconds_left` with a number: the seconds left of every code from now on (17 by
+//!   default); below 8 the answer also carries the next code.
 
 use std::sync::Arc;
 
@@ -31,6 +34,17 @@ pub(crate) fn routes() -> Router<Shared> {
         .route("/_fake/check/{agent_id}", get(check))
         .route("/_fake/passkeys", get(passkeys))
         .route("/_fake/cards", axum::routing::put(set_cards))
+        .route("/_fake/sessions", get(sessions))
+        .route("/_fake/seconds_left", axum::routing::put(set_seconds_left))
+}
+
+async fn sessions(State(fake): State<Shared>) -> Response {
+    Json(fake.sessions.lock().unwrap().list.clone()).into_response()
+}
+
+async fn set_seconds_left(State(fake): State<Shared>, Json(seconds): Json<u32>) -> StatusCode {
+    fake.sessions.lock().unwrap().seconds_left = seconds;
+    StatusCode::NO_CONTENT
 }
 
 async fn set_cards(

@@ -13,6 +13,7 @@ pub mod cards;
 pub mod control;
 pub mod passkeys;
 mod phone;
+pub mod sessions;
 
 pub use phone::{SAVED_LOGINS, cleanup_matches};
 
@@ -100,6 +101,8 @@ pub struct Fake {
     pub passkeys: Mutex<Vec<passkeys::FakePasskey>>,
     /// What the user allowed for cards.
     pub cards: Mutex<cards::FakeCards>,
+    /// Running task sessions and the code clock.
+    pub sessions: Mutex<sessions::FakeSessions>,
     /// Where this relay listens; the phone calls it for the pairing lookup.
     addr: std::sync::OnceLock<SocketAddr>,
     inner: Mutex<Inner>,
@@ -511,6 +514,10 @@ async fn wait_answer(
     if let Some(refused) = cards::refuse(&fake, &rid, &request) {
         return seal_answer(&fake, &agent_id, &rid, &refused);
     }
+    if let Some(mut covered) = sessions::answer_now(&fake, &agent_id, &rid, &request) {
+        sessions::after(&fake, &agent_id, &request, &mut covered);
+        return seal_answer(&fake, &agent_id, &rid, &covered);
+    }
     let mut answer = match mode {
         Mode::Silent => {
             tokio::time::sleep(Duration::from_secs(q.wait.unwrap_or(1).min(60))).await;
@@ -523,6 +530,7 @@ async fn wait_answer(
     if mode == Mode::Approve {
         phone::approve(&fake, &mut answer, &request);
     }
+    sessions::after(&fake, &agent_id, &request, &mut answer);
     seal_answer(&fake, &agent_id, &rid, &answer)
 }
 
@@ -553,6 +561,7 @@ pub fn start_on(bind: &str, claim_on_poll: u32) -> (Shared, SocketAddr) {
         claim_on_poll,
         passkeys: Mutex::new(vec![passkeys::FakePasskey::test()]),
         cards: Mutex::new(cards::FakeCards::default()),
+        sessions: Mutex::new(sessions::FakeSessions::default()),
         addr: std::sync::OnceLock::new(),
         inner: Mutex::new(Inner::default()),
     });

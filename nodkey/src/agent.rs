@@ -420,6 +420,7 @@ impl Agent {
         let phones = store.phones().map_err(err)?;
         let phone = select_phone(&phones, phone_selector)?;
         let phone_keys = phone.keys().map_err(err)?;
+        crate::session::attach(&store, &phone.phone_id, &mut request);
 
         let image = match image_path.map(str::trim).filter(|p| !p.is_empty()) {
             Some(path) => Some(load_image(path).await?),
@@ -501,9 +502,11 @@ impl Agent {
                 &client::answer_aad(&ex.request_id, &phone.phone_id),
             )
             .map_err(|_| "The answer does not decrypt; ignoring it.".to_owned())?;
-        let answer = client::read_answer(&plain, &ex.request_id)
+        let mut answer = client::read_answer(&plain, &ex.request_id)
             .map_err(|e| format!("{e}; ignoring it."))?;
         drop(plain);
+        crate::session::note(&store, &phone.phone_id, &request, &answer);
+        crate::session::settle(&mut answer).await;
         ex.answer = Some(answer);
         Ok(ex)
     }
@@ -536,6 +539,7 @@ pub fn new_request(kind: Kind, target: &str, reason: &str, client: ClientInfo) -
         card: None,
         save_card: None,
         client: Some(client.tidy()),
+        session_id: None,
     }
 }
 

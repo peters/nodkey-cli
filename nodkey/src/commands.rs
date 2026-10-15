@@ -87,12 +87,13 @@ pub async fn run(command: &str, a: &Args, agent: &Agent) -> Result<u8, String> {
             Ok(code)
         }
         "credentials" => {
-            let (wanted, follow_up) = credential_items(a)?;
+            let (wanted, follow_up, session) = credential_items(a)?;
             let text = agent
                 .credentials(
                     wanted,
                     a.value("reason").unwrap_or_default(),
                     follow_up,
+                    session,
                     a.value("image"),
                     a.value("phone"),
                     reported,
@@ -233,6 +234,15 @@ pub async fn run(command: &str, a: &Args, agent: &Agent) -> Result<u8, String> {
             Ok(0)
         }
         "agents" => agents(a, agent),
+        "end-session" => {
+            let v = parse(
+                &agent
+                    .end_session(a.value("reason"), reported, &wait_note())
+                    .await?,
+            )?;
+            eprintln!("nodkey: {}", v["message"].as_str().unwrap_or_default());
+            Ok(0)
+        }
         _ => Err(format!("unknown command {command:?}")),
     }
 }
