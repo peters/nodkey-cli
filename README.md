@@ -172,7 +172,8 @@ nodkey agents
 | --- | --- |
 | `request_code` | one current one-time code for an account |
 | `request_login` | user name and password (and a code, if the login has one) |
-| `request_credentials` | up to 6 logins and codes in one request |
+| `request_credentials` | everything a task needs in one request: up to 10 logins, codes and passkeys; with a session, the rest of the task does not ask again |
+| `end_session` | end the task session when the task is done |
 | `request_payment` | spends money: your card for one purchase at a shop, for an exact amount |
 | `list_accounts` | the accounts this agent may ask for, without secrets |
 | `cleanup_insights` | anonymous numbers to suggest clean-up rules from |
@@ -189,7 +190,8 @@ nodkey agents
 | `NODKEY_REQUEST_TIMEOUT` / `NODKEY_PAIR_TIMEOUT` (seconds) | 120 / 300 |
 
 The agent folder (only you can open it) holds one folder per agent under `agents/` with its keys
-(`identity.json`) and paired phones (`phones.json`).
+(`identity.json`), paired phones (`phones.json`) and, while one runs, the task session
+(`session.json`: its id and end, never a secret).
 
 ## Security
 

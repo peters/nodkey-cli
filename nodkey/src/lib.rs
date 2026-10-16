@@ -14,6 +14,7 @@ pub mod mcp;
 pub mod outcome;
 pub mod profile;
 pub mod relay;
+pub mod session;
 pub mod setup;
 pub mod store;
 pub mod tools;

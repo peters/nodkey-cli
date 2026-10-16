@@ -93,7 +93,7 @@ impl Store {
 
     /// Writes `name` atomically with mode 0600. With `exclusive`, fails with `AlreadyExists`
     /// instead of replacing an existing file.
-    fn write(&self, name: &str, bytes: &[u8], exclusive: bool) -> io::Result<()> {
+    pub(crate) fn write(&self, name: &str, bytes: &[u8], exclusive: bool) -> io::Result<()> {
         self.ensure_dir()?;
         let target = self.dir.join(name);
         let tmp = self.dir.join(format!(".{name}.{}.tmp", std::process::id()));
@@ -124,7 +124,7 @@ impl Store {
         result
     }
 
-    fn read(&self, name: &str) -> io::Result<Option<Zeroizing<Vec<u8>>>> {
+    pub(crate) fn read(&self, name: &str) -> io::Result<Option<Zeroizing<Vec<u8>>>> {
         match fs::read(self.dir.join(name)) {
             Ok(b) => Ok(Some(Zeroizing::new(b))),
             Err(e) if e.kind() == io::ErrorKind::NotFound => Ok(None),

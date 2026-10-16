@@ -30,6 +30,7 @@ pub(super) fn add(ctx: &mut Ctx, agent: &Side, phone: &Side) {
             },
         ],
         follow_up: Some(300),
+        session: None,
     });
     ctx.seal(
         "request_bundle",

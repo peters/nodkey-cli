@@ -122,6 +122,7 @@ pub(crate) fn approve(fake: &Fake, answer: &mut Answer, request: &Request) {
             crate::passkeys::approve(fake, answer, passkey);
         }
         Kind::Bundle => *answer = crate::bundle::answer(request, &answer.request_id.clone()),
+        Kind::SessionEnd => answer.lease = None,
         Kind::Cleanup => {
             // Never a lease: the user confirms every clean-up.
             answer.lease = None;

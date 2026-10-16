@@ -1,9 +1,11 @@
 //! Bundles: several codes and logins in one request (the `request_credentials` tool and
-//! `nodkey credentials`), approved by the user in one go, item by item.
+//! `nodkey credentials`), approved by the user in one go, item by item. With a session length the
+//! bundle is a task plan: it may also name passkeys, and the session covers later requests for the
+//! approved items (see [`crate::session`]).
 
 use nodkey_proto::{
     Account, Answer, BundleItem, BundleItemAnswer, BundleRequest, ClientInfo, Decision, Kind,
-    Lease, MatchKind,
+    Lease, MatchKind, SessionInfo,
 };
 use serde::Serialize;
 
@@ -12,7 +14,7 @@ use crate::{
     outcome::{OLD_PROTOCOL, Outcome, PAUSED},
 };
 
-/// One code or login an agent wants: `kind` (`code` or `login`) and `target`.
+/// One code, login or passkey an agent wants: `kind` and `target`.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Wanted {
     pub kind: Kind,
@@ -22,9 +24,9 @@ pub struct Wanted {
 impl Wanted {
     /// `login:chatgpt.com` or `code:github.com/alex` (the command line's form).
     pub fn parse(text: &str) -> Result<Self, String> {
-        let (kind, target) = text
-            .split_once(':')
-            .ok_or_else(|| format!("{text:?}: give each item as login:TARGET or code:TARGET"))?;
+        let (kind, target) = text.split_once(':').ok_or_else(|| {
+            format!("{text:?}: give each item as login:TARGET, code:TARGET or passkey:SITE")
+        })?;
         Ok(Wanted {
             kind: kind_named(kind)?,
             target: target.trim().to_owned(),
@@ -32,23 +34,35 @@ impl Wanted {
     }
 }
 
-/// `code` or `login`.
+/// `code`, `login` or `passkey`.
 pub fn kind_named(name: &str) -> Result<Kind, String> {
     match name.trim() {
         "code" => Ok(Kind::Code),
         "login" => Ok(Kind::Login),
+        "passkey" => Ok(Kind::Passkey),
         other => Err(format!(
-            "{other:?} is not an item kind; a bundle holds code and login items"
+            "{other:?} is not an item kind; a bundle holds code, login and (with a session) passkey items"
         )),
     }
 }
 
-/// The `items` and `follow_up_seconds` of a `request_credentials` call.
-pub fn from_args(
-    args: &serde_json::Map<String, serde_json::Value>,
-) -> Result<(Vec<Wanted>, Option<u32>), String> {
+/// The session length in seconds for `minutes` (15, 30 or 60).
+pub fn session_seconds(minutes: u64) -> Result<u32, String> {
+    u32::try_from(minutes)
+        .ok()
+        .and_then(nodkey_proto::session::length_for_minutes)
+        .ok_or_else(|| "session_minutes must be 15, 30 or 60".to_owned())
+}
+
+/// What a `request_credentials` call or `nodkey credentials` asks for: the items, the follow-up
+/// window and the session length (seconds).
+pub type Plan = (Vec<Wanted>, Option<u32>, Option<u32>);
+
+/// The `items`, `follow_up_seconds` and `session_minutes` (as seconds) of a
+/// `request_credentials` call.
+pub fn from_args(args: &serde_json::Map<String, serde_json::Value>) -> Result<Plan, String> {
     let items = args.get("items").and_then(|v| v.as_array()).ok_or(
-        "items is required: a list of {\"kind\": \"login\" or \"code\", \"target\": \"...\"}",
+        "items is required: a list of {\"kind\": \"login\", \"code\" or \"passkey\", \"target\": \"...\"}",
     )?;
     let mut wanted = Vec::new();
     for item in items {
@@ -81,18 +95,26 @@ pub fn from_args(
                 .ok_or("follow_up_seconds must be a whole number of seconds")?,
         ),
     };
-    Ok((wanted, follow_up))
+    let session = match args.get("session_minutes") {
+        None | Some(serde_json::Value::Null) => None,
+        Some(v) => Some(session_seconds(
+            v.as_u64().ok_or("session_minutes must be 15, 30 or 60")?,
+        )?),
+    };
+    Ok((wanted, follow_up, session))
 }
 
 impl Agent {
     /// Asks for several codes and logins at once and waits for the user's answer. Items are
-    /// numbered "1", "2", ... in the order given. `image_path`: a picture for the notification.
+    /// numbered "1", "2", ... in the order given. `session`: seconds of a task session to start.
+    /// `image_path`: a picture for the notification.
     #[allow(clippy::too_many_arguments)]
     pub async fn credentials(
         &self,
         wanted: Vec<Wanted>,
         reason: &str,
         follow_up: Option<u32>,
+        session: Option<u32>,
         image_path: Option<&str>,
         phone_selector: Option<&str>,
         reported: Reported<'_>,
@@ -109,6 +131,7 @@ impl Agent {
                 })
                 .collect(),
             follow_up,
+            session,
         };
         bundle.check()?;
         let client = ClientInfo {
@@ -152,6 +175,9 @@ pub struct BundleOutcome<'a> {
     approved: usize,
     of: usize,
     items: Vec<ItemOutcome<'a>>,
+    /// The task session the approval started: later requests for approved items go through.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    session: Option<&'a SessionInfo>,
     #[serde(skip_serializing_if = "Option::is_none")]
     attachment_warning: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -236,7 +262,22 @@ pub fn outcome<'a>(
             if chosen {
                 m.push_str(" Items with match chosen: nothing matched that site and the user picked the account by hand.");
             }
+            if let Some(info) = &a.session {
+                let minutes = info.until.saturating_sub(nodkey_proto::unix_now()).div_ceil(60);
+                m.push_str(&format!(
+                    " A task session runs for about {minutes} more minutes: request_code, request_login and passkey \
+                     sign-ins for the approved items go through without asking the user again. Call end_session \
+                     when the task is done."
+                ));
+            } else if asked.is_some_and(|b| b.session.is_some()) {
+                m.push_str(" The phone did not start a task session (its app may be older); ask as usual for anything else.");
+            }
             m
+        }
+        Decision::Denied if a.error.as_deref() == Some("bad_bundle") => {
+            "The phone could not read this bundle. Its Nodkey app may be older than task sessions (passkey items, \
+             more than 6 items): ask the user to update Nodkey, or ask for at most 6 code and login items."
+                .to_owned()
         }
         Decision::Denied if a.error.as_deref() == Some("paused") => PAUSED.to_owned(),
         Decision::Denied
@@ -260,6 +301,7 @@ pub fn outcome<'a>(
         approved,
         of,
         items,
+        session: a.session.as_ref(),
         attachment_warning,
         error: a.error.as_deref(),
         message,
@@ -289,24 +331,35 @@ mod tests {
         assert!(
             Wanted::parse("list:x")
                 .unwrap_err()
-                .contains("code and login")
+                .contains("code, login and")
+        );
+        assert_eq!(
+            Wanted::parse("passkey:github.com").unwrap().kind,
+            Kind::Passkey
         );
     }
 
     #[test]
     fn tool_arguments() {
         let args = |v: serde_json::Value| v.as_object().unwrap().clone();
-        let (wanted, follow) = from_args(&args(serde_json::json!({
+        let (wanted, follow, session) = from_args(&args(serde_json::json!({
             "items": [{"kind": "login", "target": " chatgpt.com "}], "follow_up_seconds": 300
         })))
         .unwrap();
         assert_eq!(wanted[0].target, "chatgpt.com");
         assert_eq!(follow, Some(300));
+        assert_eq!(session, None);
+        let (wanted, _, session) = from_args(&args(serde_json::json!({
+            "items": [{"kind": "passkey", "target": "github.com"}], "session_minutes": 60
+        })))
+        .unwrap();
+        assert_eq!(wanted[0].kind, Kind::Passkey);
+        assert_eq!(session, Some(3600));
         for (bad, want) in [
             (serde_json::json!({}), "items is required"),
             (
                 serde_json::json!({"items": [{"kind": "list", "target": "x"}]}),
-                "code and login",
+                "code, login and",
             ),
             (serde_json::json!({"items": [{"kind": "code"}]}), "target"),
             (
@@ -316,6 +369,10 @@ mod tests {
             (
                 serde_json::json!({"items": [], "follow_up_seconds": "soon"}),
                 "whole number",
+            ),
+            (
+                serde_json::json!({"items": [], "session_minutes": 45}),
+                "15, 30 or 60",
             ),
         ] {
             assert!(from_args(&args(bad)).unwrap_err().contains(want), "{want}");
@@ -338,6 +395,7 @@ mod tests {
                 },
             ],
             follow_up: None,
+            session: None,
         };
         let mut a = Answer::decision("rid", Decision::Approved);
         let mut login = BundleItemAnswer::decision("1", Decision::Approved);

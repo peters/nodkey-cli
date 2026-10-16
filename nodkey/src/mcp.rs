@@ -337,11 +337,12 @@ impl Server {
                 .await
             }
             "request_credentials" => {
-                let (wanted, follow_up) = crate::bundle::from_args(args)?;
+                let (wanted, follow_up, session) = crate::bundle::from_args(args)?;
                 a.credentials(
                     wanted,
                     req_str(args, "reason")?,
                     follow_up,
+                    session,
                     opt_str(args, "image_path")?,
                     opt_str(args, "phone")?,
                     reported(args)?,
@@ -386,6 +387,10 @@ impl Server {
                     &progress,
                 )
                 .await
+            }
+            "end_session" => {
+                a.end_session(opt_str(args, "reason")?, reported(args)?, &progress)
+                    .await
             }
             "list_accounts" => {
                 let reason = opt_str(args, "reason")?.unwrap_or("See which accounts I may ask for");
@@ -504,6 +509,7 @@ mod tests {
                 "request_code",
                 "request_login",
                 "request_credentials",
+                "end_session",
                 "request_payment",
                 "cleanup_insights",
                 "list_accounts",
