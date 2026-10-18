@@ -550,6 +550,8 @@ add one later (an older backup would not have it), so such a passkey answers `pr
   signs, its entry in `eval_by_credential` is used, else `eval`. `second` is optional.
 
 The agent checks these rules before it sends; the vector section `prf.input_checks` lists cases.
+The phone checks them too and answers a `prf` that breaks them (or does not decode) with
+`bad_client_data` at once.
 
 `prf` in the answer:
 
