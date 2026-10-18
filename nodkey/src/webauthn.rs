@@ -180,7 +180,7 @@ fn result(passkey: &PasskeyRequest, ex: &Exchanged) -> (Value, u8) {
                 ),
                 Some("paused") => (
                     "denied",
-                    "The user has paused this agent in Nodkey.",
+                    "This agent is paused in Nodkey (by the user or by its limit); the user can resume it under Agents.",
                     DENIED,
                 ),
                 Some(errors::BAD_CLIENT_DATA) => {

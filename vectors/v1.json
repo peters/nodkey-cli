@@ -1268,6 +1268,76 @@
       "recipient_kem_pk": "fE5zmodqNC-MJSk500yxJtz4i2vlbx3Hpg2qO712pTQ",
       "recipient_kem_sk": "WVg29q7eTJuYsXMJkPAqAx2veoBDBCceAKKxCEs90KU",
       "sender": "phone"
+    },
+    {
+      "aad": "0PZ7shU1xUPoSfWHlWVJcA0g0Bt23Hxsm5z-wpZp2lpA",
+      "ct": "uxNzSZWUvg76BTYvcljbcqBxgDit0BHoOKo_oHmcch8AlXzVX12nz1qbS31na7nJZxfcWgaFpFHzvQrMdy23roy9KOy6Xna2EVXiWqbAsLv2ulefzaKZrNQoh5zA1dI38DuiDemVz5TRyF5QtVrsjR6h9n2-lC2c5rI7HjGoepyfBwYnKPYPOzuMWqr4aIa-1Nen0rpsjAlXkerZWZmzBEl3LBipLOBa1sNAe4impnI2NPBNo5AN_YJlf1wsGo-UDncugjICZaLkTgE5VgXOq6d1SgbPVjM8VC10zXDlv23v79n6LXdJFtoZuXbQqN7yyVCm51FTWR0uu4IrajzU5lGWvBEX5-oDDA",
+      "enc": "KZ_KaLax_o5p0pT4pipx_8AxNJjmj_fS4GgxbXnCRHM",
+      "ikm_e": "8VuOJLN_z1Fi4DNVZBiEiWAHz1CN_ekaSFpdQNPOIeM",
+      "info": "nodkey/v1/answer",
+      "name": "answer_code_quota_warning",
+      "plaintext": "{\"v\":1,\"request_id\":\"0PZ7shU1xUPoSfWHlWVJcA\",\"decision\":\"approved\",\"lease\":{\"kind\":\"once\"},\"account\":{\"issuer\":\"GitHub\",\"name\":\"alex\",\"site\":\"github.com\"},\"code\":\"190274\",\"seconds_left\":12,\"error\":\"quota_warning\",\"quota\":{\"new_today\":12,\"limit\":10}}",
+      "plaintext_b64u": "eyJ2IjoxLCJyZXF1ZXN0X2lkIjoiMFBaN3NoVTF4VVBvU2ZXSGxXVkpjQSIsImRlY2lzaW9uIjoiYXBwcm92ZWQiLCJsZWFzZSI6eyJraW5kIjoib25jZSJ9LCJhY2NvdW50Ijp7Imlzc3VlciI6IkdpdEh1YiIsIm5hbWUiOiJhbGV4Iiwic2l0ZSI6ImdpdGh1Yi5jb20ifSwiY29kZSI6IjE5MDI3NCIsInNlY29uZHNfbGVmdCI6MTIsImVycm9yIjoicXVvdGFfd2FybmluZyIsInF1b3RhIjp7Im5ld190b2RheSI6MTIsImxpbWl0IjoxMH19",
+      "purpose": "answer",
+      "recipient_kem_pk": "fE5zmodqNC-MJSk500yxJtz4i2vlbx3Hpg2qO712pTQ",
+      "recipient_kem_sk": "WVg29q7eTJuYsXMJkPAqAx2veoBDBCceAKKxCEs90KU",
+      "sender": "phone"
+    },
+    {
+      "aad": "DjEzC-6pdiLjv71vyq2Rag0g0Bt23Hxsm5z-wpZp2lpA",
+      "ct": "OUZG_sUEtGpnMUW8L4qR1OX_e2CxgyI0DKACNgsnuqjQIhf0RY_jrQFvGQxnAGXQckcTA7NMPLZqGxVC8YeGDfnwJ8aTKgiq_utoQfygGEdPWJj1s3dEJNC_86gz4LnBve2qB0j3pD_F1-Zeq7ouifJIxb_Xd461DOpemHFZ-yLXugZs_oBnGHMJ3Tgela-SqRs_ikQeK2nh_kXjpXN-w62fFILjpR0U3ZQcHFy7tMB1Re31ox_v5oWyS82B0skrDwVl-iq2Bjuv__ydAF_86M4WUjS4JhpiTWDZCNzpNCdntudCm8NEJYZ49mnFso-q3gk-r6dfyOP11iEuhGxz3fVN1qcy9HZWV1Bn4CXtpuozJCoMKN84LCcGDuVNSAy-a5TItvrcdBS8b3Cy_prnnbkSlU3TNjQIzTtQ2nQu",
+      "enc": "fsWjT0O38j4aHmzb8rQRtScsIxKyPpi5mkpIKcryCxI",
+      "ikm_e": "r9QBZ8TyUCil7nw0zJoXvYB4zAjDO13CSYZn3JVKmio",
+      "info": "nodkey/v1/answer",
+      "name": "answer_login_quota_warning_burst",
+      "plaintext": "{\"v\":1,\"request_id\":\"DjEzC-6pdiLjv71vyq2Rag\",\"decision\":\"approved\",\"lease\":{\"kind\":\"once\"},\"account\":{\"issuer\":\"VG\",\"name\":\"alex@example.com\",\"site\":\"vg.no\"},\"username\":\"alex@example.com\",\"password\":\"correct horse battery staple\",\"error\":\"quota_warning\",\"quota\":{\"new_today\":6,\"limit\":10,\"burst\":true}}",
+      "plaintext_b64u": "eyJ2IjoxLCJyZXF1ZXN0X2lkIjoiRGpFekMtNnBkaUxqdjcxdnlxMlJhZyIsImRlY2lzaW9uIjoiYXBwcm92ZWQiLCJsZWFzZSI6eyJraW5kIjoib25jZSJ9LCJhY2NvdW50Ijp7Imlzc3VlciI6IlZHIiwibmFtZSI6ImFsZXhAZXhhbXBsZS5jb20iLCJzaXRlIjoidmcubm8ifSwidXNlcm5hbWUiOiJhbGV4QGV4YW1wbGUuY29tIiwicGFzc3dvcmQiOiJjb3JyZWN0IGhvcnNlIGJhdHRlcnkgc3RhcGxlIiwiZXJyb3IiOiJxdW90YV93YXJuaW5nIiwicXVvdGEiOnsibmV3X3RvZGF5Ijo2LCJsaW1pdCI6MTAsImJ1cnN0Ijp0cnVlfX0",
+      "purpose": "answer",
+      "recipient_kem_pk": "fE5zmodqNC-MJSk500yxJtz4i2vlbx3Hpg2qO712pTQ",
+      "recipient_kem_sk": "WVg29q7eTJuYsXMJkPAqAx2veoBDBCceAKKxCEs90KU",
+      "sender": "phone"
+    },
+    {
+      "aad": "lAyoFTN7Zweriki4_6IQWg0g0Bt23Hxsm5z-wpZp2lpA",
+      "ct": "JTMAAjZMhwot3Ze0GNHxomqpnNTQw1S_NoNOYxXqvW0bL9ywjemUSfj_Gv4gDb7J6ThTvAHuoj0ygBDWb4Evi89x3f19Pq4BAQUz-HFijakc5GNtZGqL9o6-amEeg8IcYidmBSsFTUvyr4Gba8U5QQpCrSQ4G9jec5Etqhw_un0Ro0z_r-w6nj7hTRcReWD8P0Mo-pnE8fBahhzgPjnzlqraojKufUb0bjelRstUxJdNbXKaWUCF-SjYOyVQzcmIX0aDRnlztOUOpkHFMI63NHDaH7FXY111-K_o4hP0uMA071OMSK88jEQJFXmi0q-IMkl9J63sex0k1VDBY67KCCu1oV8Tsxx9G5rk4jDvZmb0EJLmi2uCrjK8tFeZNUOHopajAjKbDEEaNPplk69c_sZ3vInYR_kSGpK6nL5cGekeykyV2sH43BFJ6pTQ63QW3zGG",
+      "enc": "MUqy0z3DT__EgyHYCH1QPAqZSW2munnVwe-sRVmQklE",
+      "ikm_e": "ngOV5-jt1sfkvlqX9jzw1w_X8Pdm8MhWy4CDXvDEIh4",
+      "info": "nodkey/v1/answer",
+      "name": "answer_bundle_quota_warning",
+      "plaintext": "{\"v\":1,\"request_id\":\"lAyoFTN7Zweriki4_6IQWg\",\"decision\":\"approved\",\"items\":[{\"id\":\"1\",\"decision\":\"approved\",\"account\":{\"issuer\":\"GitHub\",\"name\":\"alex\",\"site\":\"github.com\"},\"code\":\"190274\",\"seconds_left\":12,\"lease\":{\"kind\":\"once\"}},{\"id\":\"2\",\"decision\":\"denied\"}],\"error\":\"quota_warning\",\"quota\":{\"new_today\":11,\"limit\":10}}",
+      "plaintext_b64u": "eyJ2IjoxLCJyZXF1ZXN0X2lkIjoibEF5b0ZUTjdad2VyaWtpNF82SVFXZyIsImRlY2lzaW9uIjoiYXBwcm92ZWQiLCJpdGVtcyI6W3siaWQiOiIxIiwiZGVjaXNpb24iOiJhcHByb3ZlZCIsImFjY291bnQiOnsiaXNzdWVyIjoiR2l0SHViIiwibmFtZSI6ImFsZXgiLCJzaXRlIjoiZ2l0aHViLmNvbSJ9LCJjb2RlIjoiMTkwMjc0Iiwic2Vjb25kc19sZWZ0IjoxMiwibGVhc2UiOnsia2luZCI6Im9uY2UifX0seyJpZCI6IjIiLCJkZWNpc2lvbiI6ImRlbmllZCJ9XSwiZXJyb3IiOiJxdW90YV93YXJuaW5nIiwicXVvdGEiOnsibmV3X3RvZGF5IjoxMSwibGltaXQiOjEwfX0",
+      "purpose": "answer",
+      "recipient_kem_pk": "fE5zmodqNC-MJSk500yxJtz4i2vlbx3Hpg2qO712pTQ",
+      "recipient_kem_sk": "WVg29q7eTJuYsXMJkPAqAx2veoBDBCceAKKxCEs90KU",
+      "sender": "phone"
+    },
+    {
+      "aad": "0PZ7shU1xUPoSfWHlWVJcA0g0Bt23Hxsm5z-wpZp2lpA",
+      "ct": "BQ1jUtts71XRSnfb1R7TFXVJtn6PATtfUBkpbNibkV8lEsbjUthgWXQds-TJutGZdmD_KiqjNElIkfd7_e9J_fONvs-rCE9wj64l7gD8Y08ClFFv1fBpEq8nFtx9dmDt1Zw",
+      "enc": "qAXL014qxx8foAmBTB_z9ZmCuE5h4HTL_maXSB54V0c",
+      "ikm_e": "K3oWXKATieQkSC2CIYv_TvvTJVWvePLAKoF0hykWRaY",
+      "info": "nodkey/v1/answer",
+      "name": "answer_paused",
+      "plaintext": "{\"v\":1,\"request_id\":\"0PZ7shU1xUPoSfWHlWVJcA\",\"decision\":\"denied\",\"error\":\"paused\"}",
+      "plaintext_b64u": "eyJ2IjoxLCJyZXF1ZXN0X2lkIjoiMFBaN3NoVTF4VVBvU2ZXSGxXVkpjQSIsImRlY2lzaW9uIjoiZGVuaWVkIiwiZXJyb3IiOiJwYXVzZWQifQ",
+      "purpose": "answer",
+      "recipient_kem_pk": "fE5zmodqNC-MJSk500yxJtz4i2vlbx3Hpg2qO712pTQ",
+      "recipient_kem_sk": "WVg29q7eTJuYsXMJkPAqAx2veoBDBCceAKKxCEs90KU",
+      "sender": "phone"
+    },
+    {
+      "aad": "0PZ7shU1xUPoSfWHlWVJcA0g0Bt23Hxsm5z-wpZp2lpA",
+      "ct": "cLssHiFHevNbVGC2NvcSUBY8WZ9-kmDkeVD1XlNhzV0266ysz3XQK3T6NRmVb-YG0KJ93LjmCP92J3XLOY2k8LEPG7r5RGVU0UJAoxLo0zmL0ndMs8qPHFSv3WofMco53495OJIFtZU2kwbvH04uuwfA9ZvNcMfey2ajnzsDx770OpVxjqQ",
+      "enc": "c9JxXmiC9DUEZbcFK9NWsSb_6Vu-nl6_3G-GD_bmwDs",
+      "ikm_e": "Z5njomaU2m2aqbSAj2-PrhYz4B7PqefDg9wUsOs7yCA",
+      "info": "nodkey/v1/answer",
+      "name": "answer_paused_by_limit",
+      "plaintext": "{\"v\":1,\"request_id\":\"0PZ7shU1xUPoSfWHlWVJcA\",\"decision\":\"denied\",\"error\":\"paused\",\"quota\":{\"new_today\":25,\"limit\":10}}",
+      "plaintext_b64u": "eyJ2IjoxLCJyZXF1ZXN0X2lkIjoiMFBaN3NoVTF4VVBvU2ZXSGxXVkpjQSIsImRlY2lzaW9uIjoiZGVuaWVkIiwiZXJyb3IiOiJwYXVzZWQiLCJxdW90YSI6eyJuZXdfdG9kYXkiOjI1LCJsaW1pdCI6MTB9fQ",
+      "purpose": "answer",
+      "recipient_kem_pk": "fE5zmodqNC-MJSk500yxJtz4i2vlbx3Hpg2qO712pTQ",
+      "recipient_kem_sk": "WVg29q7eTJuYsXMJkPAqAx2veoBDBCceAKKxCEs90KU",
+      "sender": "phone"
     }
   ],
   "keys": {
@@ -1309,6 +1379,24 @@
         "input": "OIL-abc"
       }
     ]
+  },
+  "quota": {
+    "burst_count": 5,
+    "burst_seconds": 600,
+    "default_limit": 10,
+    "errors": [
+      "quota_warning",
+      "paused"
+    ],
+    "limit_choices": [
+      5,
+      10,
+      25
+    ],
+    "new_after_seconds": 2592000,
+    "ok_for_today_seconds": 86400,
+    "pause_above": 25,
+    "window_seconds": 86400
   },
   "signin": {
     "methods": [

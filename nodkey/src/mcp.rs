@@ -42,8 +42,9 @@ explains what you are about to do. Use what you get only for that task and never
 cleanup_logins proposes moving old saved logins to Recently deleted; the user sees the list and confirms, and \
 nothing is deleted for good. request_payment spends the user's money: use it only for a purchase the user asked \
 for, with the exact amount, and never split a purchase to get under their limit. A login result may say how the \
-user signs in (method) and carry the provider login (via): fill via only on the provider's own pages. If no phone is \
-paired, use the pair tool first.";
+user signs in (method) and carry the provider login (via): fill via only on the provider's own pages. When a result \
+carries quota_warning (the phone showed a notice about many new logins) or paused, tell the user why, do not retry in \
+a loop, and ask for fewer items. If no phone is paired, use the pair tool first.";
 
 /// Shared server state.
 pub struct Server {

@@ -10,7 +10,8 @@ mcp`). The iOS app and the relay live in the private repository `peters/nodkey`;
   `client.rs` (the agent's side of requests and pairing, shared with the browser extension in
   `peters/nodkey-browser`), `passkey.rs` (passkey requests and the client data check), `webauthn.rs`
   (the authenticator data, keys and signatures the phone makes), `signin.rs` (sign-in methods, the
-  provider login, the second step order, `suggest` and `sms_code`), `dh.rs` (HPKE open when X25519 runs in WebCrypto) and the generator of
+  provider login, the second step order, `suggest` and `sms_code`), `quota.rs` (the agent limit:
+  `quota_warning`, `paused` and its numbers), `dh.rs` (HPKE open when X25519 runs in WebCrypto) and the generator of
   `vectors/v1.json`. It builds for `wasm32-unknown-unknown`; keep it free of OS-only dependencies.
 - `nodkey-fake-relay/`: a relay that plays the phone, for tests (library and binary with `/_fake/...`
   control routes). The extension's tests use it too.
@@ -18,7 +19,7 @@ mcp`). The iOS app and the relay live in the private repository `peters/nodkey`;
   folder and profiles, `profile.rs` which agent is asking, `signin.rs` sign-in methods, `suggest` and
   `sms_code`), the MCP server (`mcp.rs`, `tools.rs`), the
   command line (`cli.rs`, `commands.rs`) and `setup.rs`. Tests: `tests/e2e.rs` (MCP),
-  `tests/cli.rs` and `tests/signin.rs` run the real binary against `nodkey-fake-relay`.
+  `tests/cli.rs`, `tests/signin.rs` and `tests/quota.rs` run the real binary against `nodkey-fake-relay`.
 - `skills/nodkey/SKILL.md`: the skill `nodkey setup` installs (compiled into the binary).
 
 ## Rules

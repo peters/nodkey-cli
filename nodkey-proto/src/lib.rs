@@ -16,6 +16,7 @@ pub mod dh;
 pub mod keys;
 pub mod messages;
 pub mod passkey;
+pub mod quota;
 pub mod seal;
 pub mod secret;
 pub mod session;
@@ -33,6 +34,7 @@ pub use messages::*;
 pub use passkey::{
     PasskeyAnswer, PasskeyCreate, PasskeyGet, PasskeyOp, PasskeyRequest, PasskeyUser, Requirement,
 };
+pub use quota::Quota;
 pub use seal::{Purpose, Sealed};
 pub use secret::Secret;
 pub use session::SessionInfo;

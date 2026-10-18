@@ -181,7 +181,11 @@ fn result(checked: &Checked, ex: &Exchanged) -> (Text, u8) {
                 1,
             ),
             Some("paused") => (
-                failure("denied", "The user has paused this agent in Nodkey.", error),
+                failure(
+                    "denied",
+                    "This agent is paused in Nodkey (by the user or by its limit); the user can resume it under Agents.",
+                    error,
+                ),
                 DENIED,
             ),
             Some(e) => (

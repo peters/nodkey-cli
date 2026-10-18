@@ -11,7 +11,7 @@ use serde::Serialize;
 
 use crate::{
     agent::{Agent, Progress, Reported, Text, new_request, text},
-    outcome::{OLD_PROTOCOL, Outcome, PAUSED},
+    outcome::{OLD_PROTOCOL, Outcome, is_paused, limit_note, paused},
 };
 
 /// One code, login or passkey an agent wants: `kind` and `target`.
@@ -182,6 +182,9 @@ pub struct BundleOutcome<'a> {
     attachment_warning: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     error: Option<&'a str>,
+    /// With `quota_warning`, or `paused` by the agent limit: the count behind it.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    quota: Option<&'a nodkey_proto::Quota>,
     message: String,
 }
 
@@ -282,6 +285,8 @@ pub fn outcome<'a>(
                      sign-ins for the approved items go through without asking the user again. Call end_session \
                      when the task is done."
                 ));
+            } else if asked.is_some_and(|b| b.session.is_some()) && a.quota.is_some() {
+                m.push_str(" The phone did not start a task session because of the limit notice; each later request is asked.");
             } else if asked.is_some_and(|b| b.session.is_some()) {
                 m.push_str(" The phone did not start a task session (its app may be older); ask as usual for anything else.");
             }
@@ -292,7 +297,7 @@ pub fn outcome<'a>(
              more than 6 items): ask the user to update Nodkey, or ask for at most 6 code and login items."
                 .to_owned()
         }
-        Decision::Denied if a.error.as_deref() == Some("paused") => PAUSED.to_owned(),
+        Decision::Denied if is_paused(a) => paused(a),
         Decision::Denied
             if matches!(
                 a.error.as_deref(),
@@ -307,7 +312,7 @@ pub fn outcome<'a>(
         }
         Decision::Expired => "The request expired on the phone without an answer.".to_owned(),
         Decision::Queued | Decision::Rejected => crate::outcome::MISFIT.to_owned(),
-    };
+    } + &limit_note(a);
     BundleOutcome {
         decision: a.decision,
         request_id: &a.request_id,
@@ -318,6 +323,7 @@ pub fn outcome<'a>(
         session: a.session.as_ref(),
         attachment_warning,
         error: a.error.as_deref(),
+        quota: a.quota.as_ref(),
         message,
     }
 }

@@ -15,7 +15,12 @@ for 1 day / 7 days / always"); then the phone answers by itself. You never keep 
   messages, memory or tool arguments other than the one field you fill. Do not screenshot a page that
   shows a password in clear text.
 - On `denied` or `expired`, stop and tell the user in one line; do not retry on your own. On a refusal
-  with "paused", the user has paused you (or all agents) under Agents in Nodkey: tell them, do not retry.
+  with "paused", you are paused under Agents in Nodkey (by the user, or by the limit when the answer
+  has `quota`): tell them why, do not retry. They resume you under Agents.
+- **Ask for few new logins.** Nodkey counts the different logins and codes you get that you did not
+  get in the last 30 days. Above the user's limit for you (10 a day unless they chose 5 or 25), or
+  more than 5 in 10 minutes, the phone shows a notice and asks one by one (`error: "quota_warning"`
+  in the answer, with `quota`); above 25 a day it pauses you. See "The limit on new logins".
 - **Plan first, ask once.** Before the first request, list every site the task signs in to and what
   each needs (login, code, passkey). More than one thing: one `request_credentials` with a session
   (see "Plan the task, ask once"). One thing only: `request_login` or `request_code`.
@@ -121,6 +126,24 @@ Without `session_minutes` the plan is answered once, and fresh codes follow for 
 (`follow_up_seconds` up to 600). An older Nodkey app answers without a session, or refuses passkey
 items and plans with more than 6 items (`bad_bundle`): then tell the user to update Nodkey.
 
+## The limit on new logins
+
+Nodkey limits how many different logins and codes one agent gets, so that no agent can take
+everything out of it. Using the same login again does not count; asking for many new ones does.
+
+- **`quota_warning`** (with any decision, also `approved`): the user saw a notice that you have
+  received many new logins and codes today (`quota.new_today`, their limit `quota.limit`;
+  `quota.burst` when it was many in a short time). Use what you got. Then tell the user in one line
+  why they were asked. Until the notice is gone, leases and task sessions do not answer for you,
+  and a plan starts no session: each request waits for the user.
+- **`paused`**: the phone refused at once. With `quota`, you went above 25 new items in 24 hours;
+  without it, the user paused you. Stop, tell the user why, and that they can resume you under
+  Agents in Nodkey.
+- Do not retry in a loop, and do not go through accounts one by one to find the right one. Ask
+  for fewer items: reuse the login you already have for a site, ask `list_accounts` once when you
+  need to know which accounts exist, and ask the user which account to use when you are not sure.
+- The command line exits with 4 when you are paused.
+
 ## Pay for something (spends the user's money)
 
 Only when the user asked you to buy this exact thing. Every payment shows the shop and the amount on
@@ -205,7 +228,7 @@ nodkey sms-code account.example.com --reason "The site sent a code by SMS" --fie
 nodkey phones; nodkey unpair PHONE
 ```
 
-Exit codes: 0 approved or queued, 2 denied or rejected, 3 expired, 1 error, 64 bad arguments; for `pay` also 5 over the
+Exit codes: 0 approved or queued, 2 denied or rejected, 3 expired, 4 paused, 1 error, 64 bad arguments; for `pay` also 5 over the
 user's limit, 6 full card numbers off, 7 cards off or no card. Waiting notes go to stderr.
 Never put a password on a command line, in a file or in a pipe you log; read it from the JSON and fill
 it straight into the field that needs it. `--image FILE`, `--model` and `--effort` work as in the tools.

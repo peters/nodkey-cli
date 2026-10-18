@@ -3,8 +3,8 @@
 use std::time::Duration;
 
 use nodkey_proto::{
-    Account, AccountEntry, Answer, CardEntry, Decision, Kind, Lease, MatchKind, SecondStepOrder,
-    SignInMethod,
+    Account, AccountEntry, Answer, CardEntry, Decision, Kind, Lease, MatchKind, Quota,
+    SecondStepOrder, SignInMethod, quota,
 };
 use serde::Serialize;
 
@@ -48,9 +48,13 @@ pub struct Outcome<'a> {
     attachment_warning: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     insights: Option<&'a serde_json::Value>,
-    /// Why the phone refused without asking (`paused`, `empty_filter`, `unsupported_version`, ...).
+    /// Why the phone refused without asking (`paused`, `empty_filter`, `unsupported_version`, ...),
+    /// or `quota_warning`: the phone asked with the agent limit warning.
     #[serde(skip_serializing_if = "Option::is_none")]
     error: Option<&'a str>,
+    /// With `quota_warning`, or `paused` by the agent limit: the count behind it.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    quota: Option<&'a Quota>,
     message: String,
 }
 
@@ -71,7 +75,6 @@ struct MovedLogin<'a> {
     site: Option<&'a str>,
 }
 
-/// The phone refused without asking because the user paused this agent (or all agents).
 /// How to read and use clean-up insights.
 const INSIGHTS: &str = "The user approved. These are counts and anonymous groups only: sites (d_…) share a site, \
     usernames (u_…) share a user name; spread is how many user names or sites, years are when last used or added. \
@@ -91,8 +94,52 @@ const CHOSEN: &str = " No saved account matched the site you asked for, so the u
 pub(crate) const MISFIT: &str =
     "The phone sent an answer that does not fit this request; nothing came of it.";
 
-pub(crate) const PAUSED: &str = "The user has paused this agent in Nodkey, so the phone refused without asking. \
-    Do not retry; tell them, and they can resume it under Agents.";
+/// The phone refused without asking because the agent is paused: by the user (or all agents), or by
+/// the agent limit (the answer then carries `quota`).
+pub(crate) fn paused(a: &Answer) -> String {
+    match &a.quota {
+        Some(q) => format!(
+            "Nodkey paused this agent: it received {} new logins and codes in the last 24 hours, more than the \
+             phone allows ({}). The phone refused without asking. Do not retry; tell the user why. They can \
+             resume this agent under Agents in Nodkey; after that, ask for fewer items and reuse the logins you \
+             already have.",
+            q.new_today,
+            quota::PAUSE_ABOVE
+        ),
+        None => "The user has paused this agent in Nodkey, so the phone refused without asking. \
+            Do not retry; tell them, and they can resume it under Agents."
+            .to_owned(),
+    }
+}
+
+/// Whether the agent is paused (`error: paused`).
+pub(crate) fn is_paused(a: &Answer) -> bool {
+    a.error.as_deref() == Some(quota::errors::PAUSED)
+}
+
+/// Added to the message when the phone asked with the agent limit warning (`quota_warning`); empty
+/// otherwise.
+pub(crate) fn limit_note(a: &Answer) -> String {
+    if a.error.as_deref() != Some(quota::errors::QUOTA_WARNING) {
+        return String::new();
+    }
+    let count = a.quota.as_ref().map_or_else(String::new, |q| {
+        format!(
+            " ({} in the last 24 hours; the user's limit for this agent is {})",
+            q.new_today, q.limit
+        )
+    });
+    let why = if a.quota.as_ref().is_some_and(|q| q.burst) {
+        "many new logins and codes in a short time"
+    } else {
+        "many new logins and codes today"
+    };
+    format!(
+        " Nodkey showed the user a notice: this agent has received {why}{count}. Tell the user why they were \
+         asked. While the notice is on, leases and task sessions do not answer for you: each request waits for \
+         the user. Ask for fewer items, reuse the logins you already have, and do not retry in a loop."
+    )
+}
 
 impl<'a> Outcome<'a> {
     pub fn from_answer(
@@ -113,7 +160,7 @@ impl<'a> Outcome<'a> {
             }
             Decision::Approved if kind == Kind::Insights => INSIGHTS,
             Decision::Approved => "The user approved.",
-            Decision::Denied if a.error.as_deref() == Some("paused") => PAUSED,
+            Decision::Denied if is_paused(a) => return Self::paused(a, phone),
             Decision::Denied
                 if matches!(
                     a.error.as_deref(),
@@ -138,6 +185,7 @@ impl<'a> Outcome<'a> {
         let via = a.via.as_ref().filter(|_| approved);
         let second_step = a.second_step.as_ref().filter(|_| approved);
         message.push_str(&crate::signin::notes(method, via, second_step));
+        message.push_str(&limit_note(a));
         Outcome {
             decision: a.decision,
             request_id: &a.request_id,
@@ -158,6 +206,49 @@ impl<'a> Outcome<'a> {
             attachment_warning,
             insights: a.insights.as_ref().filter(|_| kind == Kind::Insights),
             error: a.error.as_deref(),
+            quota: a.quota.as_ref(),
+            message,
+        }
+    }
+
+    /// A refusal because the agent is paused: only the decision, the error and why.
+    fn paused(a: &'a Answer, phone: &'a str) -> Self {
+        Outcome {
+            error: a.error.as_deref(),
+            quota: a.quota.as_ref(),
+            ..Self::empty(a.decision, &a.request_id, phone, None, paused(a))
+        }
+    }
+
+    /// A result with only a decision and a message.
+    fn empty(
+        decision: Decision,
+        request_id: &'a str,
+        phone: &'a str,
+        attachment_warning: Option<String>,
+        message: String,
+    ) -> Self {
+        Outcome {
+            decision,
+            request_id,
+            phone,
+            account: None,
+            match_kind: None,
+            code: None,
+            seconds_left: None,
+            username: None,
+            password: None,
+            method: None,
+            via: None,
+            second_step: None,
+            accounts: None,
+            cards: None,
+            moved: None,
+            lease: None,
+            attachment_warning,
+            insights: None,
+            error: None,
+            quota: None,
             message,
         }
     }
@@ -174,7 +265,7 @@ impl<'a> Outcome<'a> {
                  restore them there for 30 days. Nothing was deleted for good.",
                 if moved == 1 { " was" } else { "s were" }
             ),
-            Decision::Denied if a.error.as_deref() == Some("paused") => PAUSED.to_owned(),
+            Decision::Denied if is_paused(a) => return Self::paused(a, phone),
             Decision::Denied if matches!(a.error.as_deref(), Some("unsupported_version" | "unsupported_kind")) => {
                 OLD_PROTOCOL.to_owned()
             }
@@ -226,6 +317,7 @@ impl<'a> Outcome<'a> {
             attachment_warning: None,
             insights: None,
             error: a.error.as_deref(),
+            quota: None,
             message,
         }
     }
@@ -236,31 +328,16 @@ impl<'a> Outcome<'a> {
         after: Duration,
         attachment_warning: Option<String>,
     ) -> Self {
-        Outcome {
-            decision: Decision::Expired,
+        Self::empty(
+            Decision::Expired,
             request_id,
             phone,
-            account: None,
-            match_kind: None,
-            code: None,
-            seconds_left: None,
-            username: None,
-            password: None,
-            method: None,
-            via: None,
-            second_step: None,
-            accounts: None,
-            cards: None,
-            moved: None,
-            lease: None,
             attachment_warning,
-            insights: None,
-            error: None,
-            message: format!(
+            format!(
                 "No answer from the phone within {} s. The user may be away from their iPhone; ask them before trying again.",
                 after.as_secs()
             ),
-        }
+        )
     }
 }
 
@@ -379,5 +456,53 @@ mod tests {
         assert_eq!(v["decision"], "denied");
         assert!(v.get("moved").is_none() && v.get("accounts").is_none());
         assert!(v["message"].as_str().unwrap().contains("no criterion"));
+    }
+
+    #[test]
+    fn limit_warning_and_pause() {
+        let mut a = Answer::decision("rid", Decision::Approved);
+        a.code = Some(nodkey_proto::Secret::new("123456"));
+        a.error = Some("quota_warning".into());
+        a.quota = Some(Quota {
+            new_today: 12,
+            limit: 10,
+            burst: false,
+        });
+        let v: serde_json::Value =
+            serde_json::from_str(&text(&Outcome::from_answer(&a, Kind::Code, "P", None))).unwrap();
+        assert_eq!(v["code"], "123456");
+        assert_eq!(v["quota"], json!({"new_today": 12, "limit": 10}));
+        let m = v["message"].as_str().unwrap();
+        assert!(m.starts_with("The user approved."), "{m}");
+        assert!(m.contains("12 in the last 24 hours; the user's limit for this agent is 10"));
+
+        let mut p = Answer::decision("rid", Decision::Denied);
+        p.error = Some("paused".into());
+        let v: serde_json::Value =
+            serde_json::from_str(&text(&Outcome::from_answer(&p, Kind::Login, "P", None))).unwrap();
+        assert!(v.get("quota").is_none());
+        assert!(
+            v["message"]
+                .as_str()
+                .unwrap()
+                .starts_with("The user has paused")
+        );
+        p.quota = Some(Quota {
+            new_today: 25,
+            limit: 10,
+            burst: false,
+        });
+        for kind in [Kind::Login, Kind::Cleanup] {
+            let v: serde_json::Value =
+                serde_json::from_str(&text(&Outcome::from_answer(&p, kind, "P", None))).unwrap();
+            assert_eq!(v["error"], "paused");
+            assert_eq!(v["quota"]["new_today"], 25);
+            assert!(
+                v["message"]
+                    .as_str()
+                    .unwrap()
+                    .contains("received 25 new logins")
+            );
+        }
     }
 }

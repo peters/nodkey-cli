@@ -6,7 +6,7 @@ use serde_json::{Value, json};
 use crate::{
     agent::{Agent, Reported},
     card::payment,
-    cli::{Args, DENIED, EXPIRED, cleanup_filter, credential_items},
+    cli::{Args, DENIED, EXPIRED, PAUSED, cleanup_filter, credential_items},
 };
 
 /// Prints `note` on stderr the first time a wait reports progress.
@@ -27,11 +27,14 @@ fn print_json(v: &Value) {
     println!("{}", serde_json::to_string_pretty(v).expect("serializable"));
 }
 
-/// The exit code for a request's `decision`.
-fn exit_for(v: &Value) -> u8 {
+/// The exit code for a request's `decision` (and `paused`).
+pub(crate) fn exit_for(v: &Value) -> u8 {
+    if v["error"] == "paused" {
+        return PAUSED;
+    }
     match v["decision"].as_str() {
-        Some("approved") => 0,
-        Some("denied") => DENIED,
+        Some("approved" | "queued") => 0,
+        Some("denied" | "rejected") => DENIED,
         Some("expired") => EXPIRED,
         _ => 1,
     }

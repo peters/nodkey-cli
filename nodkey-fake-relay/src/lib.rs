@@ -14,6 +14,7 @@ pub mod control;
 mod pairing;
 pub mod passkeys;
 mod phone;
+pub mod quota;
 pub mod sessions;
 pub mod signin;
 
@@ -107,6 +108,8 @@ pub struct Fake {
     pub sessions: Mutex<sessions::FakeSessions>,
     /// Sign-in methods, queued suggestions and the SMS a test delivers.
     pub signin: Mutex<signin::FakeSignin>,
+    /// The agent limit a test set: off, the warning or a pause.
+    pub quota: Mutex<quota::FakeQuota>,
     /// Where this relay listens; the phone calls it for the pairing lookup.
     addr: std::sync::OnceLock<SocketAddr>,
     inner: Mutex<Inner>,
@@ -442,7 +445,7 @@ async fn wait_answer(
     if let Err(r) = verify(&headers, &key, &method, &uri, b"") {
         return r;
     }
-    let request = {
+    let mut request = {
         let inner = fake.inner.lock().unwrap();
         match inner.requests.get(&rid) {
             Some(s) if s.agent_id == agent_id => s.request.clone(),
@@ -451,6 +454,10 @@ async fn wait_answer(
         }
     };
     let mode = *fake.mode.lock().unwrap();
+    if let Some(refused) = quota::refuse(&fake, &rid, &request) {
+        return seal_answer(&fake, &agent_id, &rid, &refused);
+    }
+    let warned = quota::warn(&fake, &agent_id, &mut request);
     // The phone refuses an empty clean-up filter by itself, whatever the user would say.
     if request.kind == Kind::Cleanup && request.filter.as_ref().is_none_or(CleanupFilter::is_empty)
     {
@@ -491,6 +498,9 @@ async fn wait_answer(
         phone::approve(&fake, &mut answer, &request);
     }
     sessions::after(&fake, &agent_id, &request, &mut answer);
+    if warned {
+        quota::mark(&fake, &mut answer);
+    }
     seal_answer(&fake, &agent_id, &rid, &answer)
 }
 
@@ -523,6 +533,7 @@ pub fn start_on(bind: &str, claim_on_poll: u32) -> (Shared, SocketAddr) {
         cards: Mutex::new(cards::FakeCards::default()),
         sessions: Mutex::new(sessions::FakeSessions::default()),
         signin: Mutex::new(signin::FakeSignin::default()),
+        quota: Mutex::new(quota::FakeQuota::default()),
         addr: std::sync::OnceLock::new(),
         inner: Mutex::new(Inner::default()),
     });

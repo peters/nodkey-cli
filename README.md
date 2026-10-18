@@ -162,8 +162,8 @@ nodkey agents
 - `suggest` only proposes. The method waits in your suggestion list in Nodkey until you accept it
   with one tap. `sms-code` waits for an SMS that your Shortcuts automation passes to Nodkey, and you
   approve it with Face ID.
-- Exit codes: 0 approved (or queued), 1 error, 2 denied (or rejected), 3 no answer in time, 64 bad
-  arguments. `pay` also has
+- Exit codes: 0 approved (or queued), 1 error, 2 denied (or rejected), 3 no answer in time, 4 the
+  agent is paused, 64 bad arguments. `pay` also has
   5 above your limit, 6 full card numbers off, 7 cards off.
 - `nodkey webauthn` is for browser hosts such as Horizon: it reads one passkey request (sign in or
   create) as JSON on stdin and writes the result as JSON on stdout. Your iPhone shows the site and

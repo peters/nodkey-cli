@@ -81,7 +81,7 @@ Global options:
   -h, --help       -V, --version
 
 Exit codes: 0 approved, queued or done, 1 error, 2 denied or rejected, 3 expired (no answer),
-64 bad arguments;
+4 paused (the user or the agent limit paused this agent; resume it under Agents), 64 bad arguments;
 pay and card-fill: 5 over the user's limit, 6 full card numbers off, 7 cards off or no card,
 8 the page total is higher than the amount.
 Environment: NODKEY_AGENT_DIR (default ~/.config/nodkey-agent), NODKEY_REQUEST_TIMEOUT (120 s),
@@ -90,6 +90,8 @@ NODKEY_PAIR_TIMEOUT (300 s), NODKEY_DEBUG.
 
 pub(crate) const DENIED: u8 = 2;
 pub(crate) const EXPIRED: u8 = 3;
+/// The agent is paused (`error: paused`), by the user or by its limit.
+pub(crate) const PAUSED: u8 = 4;
 const BAD_ARGS: u8 = 64;
 
 const VALUE_FLAGS: [&str; 23] = [

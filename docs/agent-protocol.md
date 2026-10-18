@@ -214,8 +214,8 @@ websites, absent when it has none. Older apps send neither. Vectors: `request_lo
 A `cleanup` answer carries `moved` (how many logins went to Recently deleted) and `accounts` with
 the names of the moved logins (`issuer` = the login's title or host, `name` = user name, `site`;
 never a password). A refusal without asking carries `error`: `empty_filter` (a clean-up without a
-criterion), `paused` (the user paused this agent, or all agents, under Agents; any kind of request,
-answered at once and recorded in the history), `unsupported_version` (the request's `v` is not a
+criterion), `paused` (the user paused this agent, or all agents, under Agents, or the agent limit
+paused it; any kind of request, answered at once and recorded in the history; see "Agent limit"), `unsupported_version` (the request's `v` is not a
 version the app speaks) or `unsupported_kind` (the app does not know the request's `kind` yet; see
 "Versions"). Passkey refusals are listed under "Passkeys":
 
@@ -802,7 +802,82 @@ A lease is `(agent_id, account_id, kind: code|login, until)` (for passkeys see "
 store shared with the notification extensions). While a matching lease is valid the phone answers by
 itself and shows a quiet notification ("Claude got the password for vg.no"). Durations: once (no lease),
 1 day, 7 days, always (until revoked). The user sees and revokes leases under Agents; removing an agent
-removes its leases and calls `DELETE …/agents/{agent_id}`.
+removes its leases and calls `DELETE …/agents/{agent_id}`. While the agent limit warns for an agent, its leases
+do not answer (see "Agent limit").
+
+## Agent limit
+
+The phone limits how many different logins and codes one agent gets, so that an agent cannot take
+everything out of Nodkey. The phone counts and decides; the agent sees the limit only in answers.
+`nodkey_proto::quota` holds the numbers below.
+
+- **What counts:** new items only. An item is one saved login or code account; it is new when this
+  agent has not received it in the last 30 days. An agent that uses the same few logins every day
+  almost never reaches the limit; an agent that goes through many accounts reaches it fast.
+- An item is received when an approved answer gives it: a `code` or `login` answer, an approved
+  `login` or `code` item of a bundle, the provider login in `via`, and answers that a lease, a task
+  session or the follow-up window gave. Passkey signatures (the key never leaves the phone), cards
+  (they have their own limits), `sms_code`, `list`, `insights`, `cleanup`, `save` and `suggest` do
+  not count.
+- The count is per agent, over a rolling 24 hours.
+- The limit is per agent: 5, 10 or 25 (the user picks it under Agents; 10 when they did not).
+
+Before it answers a `code`, `login` or `bundle` request, the phone adds the new items of the request
+to the count of the last 24 hours:
+
+| Count with this request | What the phone does |
+| --- | --- |
+| up to the limit | as usual |
+| above the limit, up to 25 | the warning (below) |
+| above 25 | it pauses the agent and refuses at once: `denied`, `error: "paused"`, with `quota` |
+
+**Burst rule:** when the new items of the last 10 minutes, with this request, are more than 5, the
+phone shows the warning at once, whatever the daily count.
+
+**The warning.** The phone asks the user in the app with a large notice ("Claude Code has received
+12 new logins and codes today. Is this expected?"), and the user holds the button and confirms with
+Face ID. While the warning applies to an agent:
+
+- leases, the follow-up window and task sessions do not answer for it: each `code`, `login` and
+  `bundle` request is asked on its own. A bundle with `session` is asked as a bundle without one and
+  starts no session. The phone ends the running session of that agent; a request with its
+  `session_id` is asked as usual, and the answer carries `session_ended: true`.
+- the notification of its requests offers only Open: the user approves in the app.
+- every answer to its `code`, `login` and `bundle` requests carries `error: "quota_warning"` and
+  `quota`, with the decision the user made (`approved` too). `quota_warning` is informational: it
+  says why the user was asked, not that anything failed.
+
+```json
+{"v":1, "request_id":"…", "decision":"approved", "error":"quota_warning",
+ "quota":{"new_today":12, "limit":10},
+ "account":{"issuer":"GitHub", "name":"alex", "site":"github.com"}, "code":"190274", "seconds_left":12}
+{"v":1, "request_id":"…", "decision":"approved", "error":"quota_warning",
+ "quota":{"new_today":6, "limit":10, "burst":true}, …}
+{"v":1, "request_id":"…", "decision":"denied", "error":"paused", "quota":{"new_today":25, "limit":10}}
+```
+
+`quota`: `new_today` is the count after this answer (an approved answer's new items count, a refused
+one adds nothing), `limit` is the user's limit for this agent, and `burst: true` says the burst rule
+set off the warning (absent otherwise).
+
+**OK for today.** The warning has a second choice, "OK for today" (hold and Face ID). It turns the
+warning off for this agent for 24 hours: leases and task sessions work again. It does not turn off
+the burst rule, and it does not lift a pause.
+
+**Pause.** A paused agent gets every request refused at once with `paused` (`decision: denied`,
+`rejected` for `suggest`; `session_end` is still answered), until the user resumes it under Agents.
+A pause by the limit carries `quota`; a pause by the user has none. Resuming starts the count again
+from zero and ends "OK for today"; items received before still count as received for "new".
+
+**The agent side.** The tools say why in the result and the command line in its message: on
+`quota_warning`, that the user saw a notice about many new logins and codes today; on `paused`, that
+the agent is paused and the user can resume it under Agents. An agent tells the user, does not retry
+in a loop, asks for fewer items and reuses the logins it already has. Older apps send neither
+`quota_warning` nor `quota`.
+
+Vectors: `answer_code_quota_warning`, `answer_login_quota_warning_burst`,
+`answer_bundle_quota_warning`, `answer_paused`, `answer_paused_by_limit`, and the `quota` section
+(the numbers).
 
 ## Versions
 
@@ -849,7 +924,8 @@ change ignore such a request, and the agent sees `expired`.) Requests also carry
   number; `nodkey code`, `login`, `credentials`, `pay`, `suggest`, `sms-code`, `accounts`, `insights`,
   `cleanup`, `phones`, `unpair`. `nodkey suggest SITE --kind KIND [--provider NAME] [--mailbox ADDR]
   [--outcome failed] --reason TEXT`; `nodkey sms-code TARGET --reason TEXT [--wait SECS]`. Exit codes:
-  0 approved (or queued), 1 error, 2 denied (or rejected), 3 expired, 64 bad arguments; for `pay` and `card-fill` also 5
+  0 approved (or queued), 1 error, 2 denied (or rejected), 3 expired, 4 paused (`error: paused`),
+  64 bad arguments; for `pay` and `card-fill` also 5
   `over_limit`, 6 `reveal_off`, 7 `cards_off` or `no_card`, 8 `total_mismatch`. `nodkey pay MERCHANT
   AMOUNT CURRENCY --reason TEXT --reveal` prints the full card, so it requires `--reveal`; without a
   host nothing can fill a card for it. A missing amount is refused before anything is sent.

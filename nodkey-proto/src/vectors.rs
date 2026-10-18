@@ -37,6 +37,7 @@ mod bundle;
 mod card;
 mod matching;
 pub mod passkey;
+mod quota;
 mod save;
 mod session;
 mod signin;
@@ -401,6 +402,7 @@ pub fn build() -> Value {
     let cards = card::add(&mut ctx, &agent, &phone); // Last: earlier bytes stay the same.
     session::add(&mut ctx, &agent, &phone); // After cards: earlier bytes stay the same.
     let (signin, sms_auth) = signin::add(&mut ctx, &agent, &phone); // Last, for the same reason.
+    let quota = quota::add(&mut ctx, &agent, &phone); // After sign-in: earlier bytes stay the same.
 
     // Signed relay calls.
     let agent_info = crate::AgentInfo {
@@ -586,5 +588,6 @@ pub fn build() -> Value {
         "webauthn": webauthn,
         "cards": cards,
         "signin": signin,
+        "quota": quota,
     })
 }

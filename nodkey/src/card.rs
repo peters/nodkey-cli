@@ -12,7 +12,7 @@ use serde_json::{Map, Value};
 
 use crate::{
     agent::{Agent, Progress, Reported, Text, new_request, text},
-    outcome::{OLD_PROTOCOL, Outcome, PAUSED},
+    outcome::{OLD_PROTOCOL, Outcome, paused},
 };
 
 /// The `merchant`, `amount` and `currency` of a `request_payment` call. `amount` may be a
@@ -162,7 +162,7 @@ pub fn outcome<'a>(
         ),
         Decision::Approved => "The phone approved but sent no card.".to_owned(),
         Decision::Denied => match error {
-            Some("paused") => PAUSED.to_owned(),
+            Some("paused") => paused(a),
             Some("unsupported_version" | "unsupported_kind") => OLD_PROTOCOL.to_owned(),
             Some(e) => refusal(e)
                 .unwrap_or("The phone refused the request.")

@@ -18,6 +18,8 @@
 //! - `GET /_fake/suggestions`: the queued suggestions, `[{agent_id, target, reason, suggest}]`.
 //! - `PUT /_fake/sms` with `{"text": "Your code is 482913"}`: a message reaches Nodkey through the
 //!   Shortcuts automation, for the waiting `sms_code` request; `{"expire": true}` ends the wait.
+//! - `PUT /_fake/quota` with `{"state": "off" | "warning" | "paused" | "paused_by_user", "new_today",
+//!   "limit", "burst"}`: the agent limit (see [`crate::quota`]).
 
 use std::sync::Arc;
 
@@ -45,6 +47,15 @@ pub(crate) fn routes() -> Router<Shared> {
         .route("/_fake/methods", axum::routing::put(set_methods))
         .route("/_fake/suggestions", get(suggestions))
         .route("/_fake/sms", axum::routing::put(deliver_sms))
+        .route("/_fake/quota", axum::routing::put(set_quota))
+}
+
+async fn set_quota(
+    State(fake): State<Shared>,
+    Json(quota): Json<crate::quota::FakeQuota>,
+) -> StatusCode {
+    *fake.quota.lock().unwrap() = quota;
+    StatusCode::NO_CONTENT
 }
 
 async fn set_methods(

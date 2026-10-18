@@ -456,7 +456,8 @@ pub struct Answer {
     /// Why the phone refused without asking the user: `empty_filter`, `paused`, `unknown_group`,
     /// `unsupported_version`, `unsupported_kind`, for passkeys `bad_client_data`, `no_passkey`,
     /// `unsupported_algorithm` or `excluded` (see [`crate::passkey::errors`]), and for cards
-    /// [`crate::card::errors`].
+    /// [`crate::card::errors`]. Also `quota_warning`, with any decision: the phone asked with the
+    /// agent limit warning ([`crate::quota::errors`]).
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<String>,
     /// `insights`: counts, age buckets and anonymous groups (docs/agent-protocol.md), passed on as is.
@@ -485,6 +486,9 @@ pub struct Answer {
         skip_serializing_if = "Option::is_none"
     )]
     pub second_step: Option<crate::SecondStepOrder>,
+    /// With `quota_warning`, or `paused` by the agent limit: the count behind it.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub quota: Option<crate::Quota>,
 }
 
 impl Answer {
@@ -517,6 +521,7 @@ impl Answer {
             method: None,
             via: None,
             second_step: None,
+            quota: None,
         }
     }
 }

@@ -14,7 +14,7 @@ use serde_json::{Map, Value};
 use crate::{
     agent::{Agent, Progress, Reported, Text, new_request, text},
     cli::Args,
-    outcome::{OLD_PROTOCOL, Outcome, PAUSED},
+    outcome::{OLD_PROTOCOL, Outcome, paused},
 };
 
 /// The provider login as a result shows it, with the only sites where it may be filled.
@@ -175,7 +175,7 @@ fn suggest_message(a: &Answer) -> String {
             signin::SUGGEST_PER_HOUR,
             signin::SUGGEST_PER_DAY
         ),
-        (Decision::Rejected | Decision::Denied, Some("paused")) => PAUSED.into(),
+        (Decision::Rejected | Decision::Denied, Some("paused")) => paused(a),
         (_, Some("unsupported_kind")) => {
             "Nodkey on the iPhone does not know suggestions yet (the app is older). \
             Nothing to do; do not retry."
@@ -401,12 +401,7 @@ pub async fn run_cli(
             .await?
     };
     let v: Value = serde_json::from_str(&text).map_err(|e| format!("unexpected result: {e}"))?;
-    let code = match v["decision"].as_str() {
-        Some("approved" | "queued") => 0,
-        Some("denied" | "rejected") => crate::cli::DENIED,
-        Some("expired") => crate::cli::EXPIRED,
-        _ => 1,
-    };
+    let code = crate::commands::exit_for(&v);
     Ok((v, code))
 }
 

@@ -403,3 +403,43 @@ fn signin_checks_match() {
     let body: Value = serde_json::from_str(s(post, "body")).unwrap();
     assert_eq!(body["ttl"], 180);
 }
+
+#[test]
+fn quota_vectors() {
+    use nodkey_proto::{Answer, Decision, quota};
+    let v = load();
+    let q = &v["quota"];
+    assert_eq!(q["default_limit"], quota::DEFAULT_LIMIT);
+    assert_eq!(q["pause_above"], quota::PAUSE_ABOVE);
+    assert_eq!(q["limit_choices"], serde_json::json!([5, 10, 25]));
+    assert_eq!(q["errors"], serde_json::json!(["quota_warning", "paused"]));
+    let answer = |name: &str| -> Answer {
+        let h = v["hpke"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .find(|h| h["name"] == name)
+            .unwrap_or_else(|| panic!("{name}"));
+        serde_json::from_str(s(h, "plaintext")).unwrap()
+    };
+    let warned = answer("answer_code_quota_warning");
+    assert_eq!(warned.decision, Decision::Approved);
+    assert_eq!(warned.error.as_deref(), Some("quota_warning"));
+    assert_eq!(warned.quota.as_ref().map(|q| q.new_today), Some(12));
+    assert!(
+        answer("answer_login_quota_warning_burst")
+            .quota
+            .unwrap()
+            .burst
+    );
+    assert_eq!(
+        answer("answer_bundle_quota_warning").items.unwrap().len(),
+        2
+    );
+    let by_user = answer("answer_paused");
+    assert_eq!(by_user.error.as_deref(), Some("paused"));
+    assert!(by_user.quota.is_none());
+    let by_limit = answer("answer_paused_by_limit");
+    assert_eq!(by_limit.decision, Decision::Denied);
+    assert_eq!(by_limit.quota.unwrap().new_today, quota::PAUSE_ABOVE);
+}
