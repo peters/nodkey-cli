@@ -540,6 +540,8 @@ pub fn new_request(kind: Kind, target: &str, reason: &str, client: ClientInfo) -
         save_card: None,
         client: Some(client.tidy()),
         session_id: None,
+        suggest: None,
+        wait_seconds: None,
     }
 }
 

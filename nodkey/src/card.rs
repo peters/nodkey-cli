@@ -170,6 +170,7 @@ pub fn outcome<'a>(
             None => "The user denied the payment. Do not ask again unless they say so.".to_owned(),
         },
         Decision::Expired => "The request expired on the phone without an answer.".to_owned(),
+        Decision::Queued | Decision::Rejected => crate::outcome::MISFIT.to_owned(),
     };
     PaymentOutcome {
         decision: a.decision,

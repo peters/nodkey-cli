@@ -158,6 +158,9 @@ fn result(passkey: &PasskeyRequest, ex: &Exchanged) -> (Value, u8) {
             failure("expired", "The request expired on the phone.", error),
             EXPIRED,
         ),
+        Decision::Queued | Decision::Rejected => {
+            (failure("error", crate::outcome::MISFIT, None), 1)
+        }
         Decision::Denied => {
             let (status, msg, code) = match error {
                 Some(errors::NO_PASSKEY) => (

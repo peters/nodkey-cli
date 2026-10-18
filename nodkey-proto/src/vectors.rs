@@ -39,6 +39,7 @@ mod matching;
 pub mod passkey;
 mod save;
 mod session;
+mod signin;
 fn label32(label: &str) -> [u8; 32] {
     Sha256::digest(label.as_bytes()).into()
 }
@@ -176,6 +177,8 @@ fn request(
         save_card: None,
         client: None,
         session_id: None,
+        suggest: None,
+        wait_seconds: None,
     }
 }
 
@@ -397,6 +400,7 @@ pub fn build() -> Value {
     bundle::add(&mut ctx, &agent, &phone);
     let cards = card::add(&mut ctx, &agent, &phone); // Last: earlier bytes stay the same.
     session::add(&mut ctx, &agent, &phone); // After cards: earlier bytes stay the same.
+    let (signin, sms_auth) = signin::add(&mut ctx, &agent, &phone); // Last, for the same reason.
 
     // Signed relay calls.
     let agent_info = crate::AgentInfo {
@@ -426,6 +430,7 @@ pub fn build() -> Value {
         enc: v["enc"].as_str().expect("enc").to_owned(),
         ct: v["ct"].as_str().expect("ct").to_owned(),
         attachment,
+        ttl: None,
     };
     let env_code = envelope(&req_v, &rid_code, None);
     let env_login = envelope(
@@ -543,6 +548,7 @@ pub fn build() -> Value {
         "header": auth::sign(&agent.keys.signing_key(), &agent.id, "PUT", &att_path, TS + 2, &att_body),
     });
     auth.push(auth_att);
+    auth.push(sms_auth);
 
     json!({
         "version": 1,
@@ -579,5 +585,6 @@ pub fn build() -> Value {
         "auth": auth,
         "webauthn": webauthn,
         "cards": cards,
+        "signin": signin,
     })
 }

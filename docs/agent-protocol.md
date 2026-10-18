@@ -7,7 +7,8 @@ MCP server `nodkey mcp`) and the relay. Test vectors: `vectors/v1.json` (made by
 ## Principles
 
 - The relay forwards ciphertext and public keys. It never sees a code, a password, an account name or a
-  reason. It keeps a request for at most 120 s and stores no IP address.
+  reason. It keeps a request for at most 120 s (an `sms_code` request at most 360 s) and stores no
+  IP address.
 - An agent never receives a TOTP key, only one code at a time, and a password only for the request it
   asked for. The agent tools store no secrets from the phone.
 - Every decision is made on the phone. A lease ("lend for 1 day") is a rule the phone keeps; the agent
@@ -72,12 +73,12 @@ Base URL: `https://relay.nodkey.app`.
 | `GET /v1/pairings/{code}/agent` | phone | → `200 {agent_id, name, sign, kem}` of the agent waiting on a live, unclaimed code, `404` otherwise. The phone needs these keys to seal the grant (and its check number) before it claims. Counts against the phone's 10 claims per hour, so a pairing (lookup + claim) uses two. |
 | `POST /v1/pairings/{code}/claim` | phone | `{enc, ct}` (sealed grant to the agent) → `200 {agent_id, name, sign, kem}`; the phone checks these are the keys the lookup returned |
 | `GET /v1/pairings/{code}?wait=60` | agent | → `{phone_id, sign, kem, enc, ct}` once claimed, `204` on timeout, `404` when expired |
-| `POST /v1/phones/{phone_id}/requests` | agent (paired) | `{request_id, enc, ct, attachment?: true}` → `202`. Rate limit 20 per hour per agent. Sends a push when the phone has an APNs token; with `attachment: true` the push waits until the attachment is uploaded or 5 s have passed. |
+| `POST /v1/phones/{phone_id}/requests` | agent (paired) | `{request_id, enc, ct, attachment?: true, ttl?}` → `202`. Rate limit 20 per hour per agent. Sends a push when the phone has an APNs token; with `attachment: true` the push waits until the attachment is uploaded or 5 s have passed. `ttl` (120 to 360, default 120): how many seconds the relay keeps the request and its answer; the agent sends it only for `sms_code` (see "SMS codes"). A relay that does not know `ttl` keeps the request 120 s, and the agent then sees `expired`. |
 | `PUT /v1/requests/{request_id}/attachment` | agent (the requester) | raw body = `enc` (32 bytes) ‖ ciphertext of the image; the whole body at most 1 MiB (1 048 576 bytes, so the image at most 1 048 528) → `204`, bigger → `413 too_large`; within 120 s of the request. Optional; see Attachments. |
 | `GET /v1/requests/{request_id}/attachment` | phone | → the same bytes (`application/octet-stream`), `404` when there is none |
 | `GET /v1/phones/{phone_id}/requests?wait=25` | phone | → `[{request_id, agent_id, enc, ct, created, has_attachment, ip?, country?}]` pending requests (the app polls while open and when a push arrives); `ip`/`country` are what Cloudflare saw of the agent; a `Nodkey-Push: none` header means the relay holds no push token (APNs refused it), and the phone registers again |
 | `POST /v1/requests/{request_id}/answer` | phone | `{enc, ct}` → `204` |
-| `GET /v1/requests/{request_id}?wait=60` | agent (the requester) | → `{enc, ct}` once answered, `204` on timeout, `410` after 120 s |
+| `GET /v1/requests/{request_id}?wait=60` | agent (the requester) | → `{enc, ct}` once answered, `204` on timeout, `410` after the request's `ttl` (120 s by default) |
 | `DELETE /v1/phones/{phone_id}/agents/{agent_id}` | phone | → `204`; the relay rejects that agent from then on |
 | `DELETE /v1/agents/{agent_id}/phones/{phone_id}` | agent | → `204`; the agent leaves: the relay forgets the pairing and the phone drops the agent the next time it lists pending requests (`GET …/requests` sends the ids of agents that left in a `Nodkey-Revoked: id1,id2` header, once) |
 | `DELETE /v1/phones/{phone_id}` | phone | → `204`; forget the phone and all its agents |
@@ -98,7 +99,7 @@ Pairing grant (phone → agent):
 Request (agent → phone):
 
 ```json
-{"v":1, "request_id":"…", "kind":"code|login|list|insights|cleanup|save|passkey|bundle|card|session_end", "target":"github.com/alex",
+{"v":1, "request_id":"…", "kind":"code|login|list|insights|cleanup|save|passkey|bundle|card|session_end|suggest|sms_code", "target":"github.com/alex",
  "reason":"Merge PR #42", "agent":"Claude · Horizon", "ts":1791620000}
 ```
 
@@ -194,7 +195,9 @@ Answer (phone → agent):
 ```
 
 Only the fields that apply are present. `until` is absent for `once` and `always`. `session`
-means the answer came from a task session (see "Task sessions").
+means the answer came from a task session (see "Task sessions"). `decision` is also `queued` or
+`rejected`, only for `suggest`. `login` and `code` answers may carry `method`, `via` and
+`second_step` (see "Sign-in methods").
 
 A `code` or `login` answer also carries `match`: `direct` (the account's name or site matched the
 target), `alias` (one of its extra websites matched) or `chosen` (nothing matched and the user picked
@@ -598,6 +601,181 @@ Vectors: `request_card_fill`, `request_card_reveal`, `request_card_missing_amoun
 `save_card_cvc`, `request_save_card`, `answer_save_card`, `answer_list_with_cards`, and the `cards`
 section. Test card numbers only.
 
+## Sign-in methods
+
+Many sites are signed in to with "Sign in with Google" (or Apple, GitHub, Microsoft, Facebook), a
+passkey, an e-mail code, the company's single sign-on or an SMS, not with a password. The phone keeps
+for each site how the user signs in, and for each login or code account which second step to choose.
+A method holds no secret. The names are the app's (`SiteMethod.swift`, `SecondStep.swift`); the app's
+`emailCode` is `email_code` on the wire. `nodkey_proto::signin` implements this section.
+
+### The method
+
+```json
+"method":{"kind":"federated", "provider":"google", "certainty":"confirmed"}
+```
+
+| Field | Meaning |
+| --- | --- |
+| `kind` | `password`, `federated` ("Sign in with ..."), `passkey`, `email_code`, `sso` (the company's single sign-on) or `sms` |
+| `provider` | `federated` only: `google`, `apple`, `github`, `microsoft`, `facebook` or `other` |
+| `provider_name` | `provider: other` only: the name of the provider (`Okta`), at most 40 characters |
+| `certainty` | `confirmed` (the user said so, or accepted a suggestion), `seen` (an agent or the extension signed in that way and it worked) or `likely` (found in a list, for example Google's connected apps) |
+| `mailbox` | `email_code` only: the address that gets the code, so the agent knows which mailbox to read |
+| `source` | who added the method: `manual`, `agent`, `extension` or `import` |
+
+Read a method tolerantly, as the app does:
+
+- An unknown `provider` string is `other` with that string as `provider_name` (`"provider":"Okta"`
+  reads as `other` and `Okta`). The phone sends `other` with `provider_name`.
+- An unknown or absent `certainty` is `likely`. An unknown `source` is absent.
+- A method with an unknown `kind` is left out: the answer reads as if it had no `method`.
+
+The `signin.methods` vectors give inputs and how they read.
+
+### Method, provider login and second step in answers
+
+An approved `login` answer carries `method` when the phone knows how the user signs in to the target
+site: the first method of the site (the one to try first). An approved `login` or `code` answer
+carries `second_step`. The same applies to each `login` and `code` item of a bundle answer. Older
+apps send neither field; the agent then uses the default order (see "Second step order").
+
+For a `federated` method, the phone adds `via` when it keeps the provider login (for example the
+user's Google login for "Sign in with Google"). The user approves it with the same Face ID as the
+answer, and the approval sheet names the provider account. `via` has the fields of a login answer:
+
+```json
+{"v":1, "request_id":"…", "decision":"approved", "match":"direct", "lease":{"kind":"once"},
+ "method":{"kind":"federated", "provider":"google", "certainty":"confirmed"},
+ "via":{"account":{"issuer":"Google", "name":"alex@example.com", "site":"accounts.google.com"},
+        "username":"alex@example.com", "password":"…", "code":"190274", "seconds_left":21},
+ "second_step":{"prefer":["passkey","totp"], "avoid":["app_prompt","sms"]}}
+```
+
+- `account`, `username` and `password` at the top level are the login for the target site itself.
+  They are absent when the user has no login for the site and signs in only with the method.
+- `via.code` and `via.next_code` follow the rules of "A code with little time left".
+- **The agent fills `via` only on the sign-in pages of the provider, never on the target site.** The
+  pages of the provider are the hosts at or below its registrable domains: Google `google.com`;
+  Apple `apple.com`, `icloud.com`; GitHub `github.com`; Microsoft `microsoft.com`, `live.com`,
+  `microsoftonline.com`, `outlook.com`, `office.com`; Facebook `facebook.com`, `meta.com`. For
+  `other` it is the site of `via.account`. A host at or below the target site is never a page of the
+  provider. `nodkey_proto::signin::may_fill_via` makes this decision; the `signin.via_fill` vectors
+  give cases. When the target site itself asks for the password of the provider, the agent stops
+  and tells the user.
+- Under a lease or a task session, the phone adds `via` only when the provider login is covered too.
+  If it is not, the answer has `method` without `via`, and the agent asks for the provider login
+  with a normal `login` request (target `accounts.google.com`).
+
+### Second step order
+
+`second_step` is `{"prefer":[...], "avoid":[...]}` with these steps: `passkey` (a passkey that Nodkey
+keeps), `totp` (a code from Nodkey), `app_prompt` ("Tap Yes on your phone" in another app), `sms` and
+`email`. A step in neither list is allowed after the preferred steps. Unknown steps are left out.
+When the user did not change the order, the phone makes it: `passkey` first when it keeps a passkey
+for the site, then `totp` when the login or account has a code; `app_prompt` and `sms` are avoided.
+An answer without `second_step` means `{"prefer":["passkey","totp"], "avoid":["app_prompt","sms"]}`.
+
+At a second-step prompt the agent picks the first preferred step that the site offers, else the
+first step in neither list (in the order above). It moves away from an avoided step ("Try another
+way") when the site offers a different one. When the site offers only avoided steps, the agent asks
+the user. `SecondStepOrder::pick` makes this choice; the `signin.second_step_picks` vectors give
+cases.
+
+### Suggestions
+
+`kind: suggest` proposes a sign-in method for the suggestion list of the user, for example after the
+agent signed in with Google to a site where the phone knew no method:
+
+```json
+{"v":1, "request_id":"…", "kind":"suggest", "target":"renderfarm.example",
+ "reason":"Signed in with Google; Nodkey did not know this method", "agent":"Claude Code @ my-laptop",
+ "ts":1791620000,
+ "suggest":{"method":{"kind":"federated", "provider":"google", "certainty":"seen", "source":"agent"},
+            "outcome":"signed_in"}}
+```
+
+- `target`: the host of the site as `nodkey_proto::signin::site` makes it: lower case, without
+  scheme, user, port, path or `www.` (`renderfarm.example`).
+- `suggest.method`: a method as above. `certainty` is `seen` or absent; `confirmed` is refused,
+  because only the user confirms a method. `source`, when present, is `agent` or `extension`.
+- `suggest.outcome`: `signed_in` (the agent signed in with this method) or `failed` (the agent tried
+  this method and it did not work).
+- `reason`: one short sentence for the user, as in every request.
+
+The rules on the phone:
+
+- There is no Face ID and no secret. A suggestion is never covered by a lease and is never part of a
+  bundle or a task session (the agent tools refuse it with `session_id`). It gives the agent nothing
+  from the vault.
+- A `signed_in` suggestion goes into the suggestion list with the name of the agent, the time and the
+  reason. One tap accepts it; the method is then saved as `confirmed`. The phone leaves out a method
+  that the site already has as `confirmed`, and one that already waits in the list.
+- A `failed` suggestion is shown as a note on that method of the site, or dropped. The phone never
+  removes or moves a method because an agent says so.
+- The answer is the same whether or not the phone knows the site, so a suggestion tells the agent
+  nothing about the vault.
+- Limit: at most 5 suggestions per agent per hour and 20 per 24 hours (`SUGGEST_PER_HOUR`,
+  `SUGGEST_PER_DAY`). The phone rejects more with `rate_limited`. The relay limit of 20 requests per
+  hour per agent applies too.
+- The phone answers at once, also from the notification service extension, with a quiet
+  notification or none. Every scope may send suggestions.
+
+The answer:
+
+```json
+{"v":1, "request_id":"…", "decision":"queued"}
+{"v":1, "request_id":"…", "decision":"rejected", "error":"rate_limited"}
+```
+
+`queued` means the suggestion is in the list; nothing was approved. `rejected` means the phone did not
+queue it, without asking the user; `error` is `rate_limited`, `bad_suggestion` (the suggestion breaks a
+rule above), `paused` or `unsupported_version`. Only `suggest` answers use `queued` and `rejected`. An
+app that does not know `suggest` answers `denied` with `unsupported_kind`.
+
+### SMS codes
+
+`kind: sms_code` asks for a code that the site sends only by SMS. iOS gives apps no access to messages. The user's own Shortcuts
+automation ("When I get a message that contains 'code'", run immediately, action "Send code to
+Nodkey") gives the message to Nodkey. The phone takes the code (4 to 8 digits) from it, drops the
+rest of the text at once and stores nothing.
+
+```json
+{"v":1, "request_id":"…", "kind":"sms_code", "target":"account.example.com",
+ "reason":"The site sent a sign-in code by SMS", "agent":"Claude Code @ my-laptop", "ts":1791620000,
+ "wait_seconds":120}
+```
+
+- `wait_seconds` (optional, 30 to 300, default 120): how long the phone waits for the message.
+- The phone uses a message only for a pending `sms_code` request within its wait. When no request
+  waits, it does nothing. So the agent sends the request right after the site sends the SMS (it
+  clicks "Send code", then asks at once).
+- When a code arrives, the phone asks "Give the SMS code to <agent>?" with Face ID. An `sms_code`
+  request is never covered by a lease and is never part of a bundle, a task session or a follow-up
+  window.
+- The relay keeps the request for `wait_seconds` + 60 s (the time to approve): the envelope carries
+  `ttl` (see "Relay API"), and the agent waits as long.
+- Every scope may ask for an SMS code.
+
+The answer is `approved` with `code` (and `seconds_left` when the phone knows it, else absent);
+`expired` when no code came within the wait or the user did not answer; `denied` when the user said
+no; or a refusal (`paused`, `unsupported_kind`, `unsupported_version`) as for every kind:
+
+```json
+{"v":1, "request_id":"…", "decision":"approved", "code":"482913"}
+{"v":1, "request_id":"…", "decision":"expired"}
+```
+
+An agent asks for an SMS code only when the site offers no passkey and no authenticator code.
+
+Vectors: `request_login_federated`, `answer_login_federated`, `answer_login_with_method`,
+`answer_code_second_step`, `request_suggest`, `request_suggest_failed`, `answer_suggest_queued`,
+`answer_suggest_rejected`, `request_sms_code`, `answer_sms_code`, `answer_sms_code_expired`, the
+signed call `post_request_sms_code` (an envelope with `ttl`), and the `signin` section: how methods
+read (`methods`), which suggestions pass (`suggestions`), second step choices
+(`second_step_picks`), where `via` may be filled (`via_fill`), site names (`sites`), the sites of
+each provider (`provider_sites`) and the limits (`sms_wait`, `suggest_limits`).
+
 ## Opening with the X25519 step elsewhere
 
 An agent may keep its X25519 private key where it cannot be read out, for example as a
@@ -619,8 +797,8 @@ long as the request (120 s). Without a picture everything works the same.
 
 ## Leases
 
-A lease is `(agent_id, account_id, kind: code|login, until)` (for passkeys see "Passkeys"; cards
-never have one), kept only on the phone (keychain-backed
+A lease is `(agent_id, account_id, kind: code|login, until)` (for passkeys see "Passkeys"; cards,
+`suggest` and `sms_code` never have one), kept only on the phone (keychain-backed
 store shared with the notification extensions). While a matching lease is valid the phone answers by
 itself and shows a quiet notification ("Claude got the password for vg.no"). Durations: once (no lease),
 1 day, 7 days, always (until revoked). The user sees and revokes leases under Agents; removing an agent

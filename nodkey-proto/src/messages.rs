@@ -3,6 +3,7 @@
 //! Binary values are b64u strings; times are Unix seconds.
 
 use crate::Secret;
+pub use crate::client_info::ClientInfo;
 use serde::{Deserialize, Serialize};
 
 use crate::Error;
@@ -76,6 +77,10 @@ pub struct RequestEnvelope {
     /// `true` when an attachment follows (the relay holds the push for it up to 5 s).
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub attachment: Option<bool>,
+    /// How long the relay keeps the request and its answer, in seconds (120 to 360; absent means
+    /// 120). Only `sms_code` requests send it ([`crate::signin::SMS_APPROVE_MARGIN`]).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub ttl: Option<u32>,
 }
 
 /// One entry of `GET /v1/phones/{phone_id}/requests`.
@@ -150,6 +155,13 @@ pub enum Kind {
     /// Ends a task session ([`Request::session_id`]); answered at once, without asking.
     #[serde(rename = "session_end")]
     SessionEnd,
+    /// A sign-in method for the user's suggestion list ([`crate::Suggestion`]); no secret, no Face
+    /// ID, answered at once with `queued` or `rejected`. Never covered by a lease or a bundle.
+    Suggest,
+    /// A code the site sends only by SMS, passed to Nodkey by the user's Shortcuts automation
+    /// within [`Request::wait_seconds`]. Never covered by a lease, a bundle or a session.
+    #[serde(rename = "sms_code")]
+    SmsCode,
 }
 
 /// The login a `save` request asks the phone to keep.
@@ -312,57 +324,12 @@ pub struct Request {
     /// The task session this request belongs to (see "Task sessions").
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub session_id: Option<String>,
-}
-
-/// What the agent says about itself, for the history on the phone. Self-reported: the phone shows
-/// it as such and never decides anything on it.
-#[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
-pub struct ClientInfo {
-    /// The MCP client, e.g. "Claude Code".
+    /// What a `suggest` request proposes; absent for the other kinds.
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub app: Option<String>,
+    pub suggest: Option<crate::Suggestion>,
+    /// `sms_code`: how long the phone waits for the SMS (30 to 300 s; absent means 120).
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub app_version: Option<String>,
-    /// The model the agent runs on, as it says, e.g. "claude-opus-5-5".
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub model: Option<String>,
-    /// Reasoning effort, as the agent says, e.g. "high".
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub effort: Option<String>,
-    /// Operating system and version, e.g. "linux 7.0.0 x86_64".
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub os: Option<String>,
-    /// The computer's name.
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub host: Option<String>,
-    /// The last component of the working directory (the project), never the full path.
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub workdir: Option<String>,
-    /// nodkey-mcp's version.
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub mcp_version: Option<String>,
-}
-
-impl ClientInfo {
-    /// Trims every field to at most 80 characters and drops empty ones.
-    pub fn tidy(mut self) -> Self {
-        for field in [
-            &mut self.app,
-            &mut self.app_version,
-            &mut self.model,
-            &mut self.effort,
-            &mut self.os,
-            &mut self.host,
-            &mut self.workdir,
-            &mut self.mcp_version,
-        ] {
-            *field = field
-                .take()
-                .map(|v| v.trim().chars().take(80).collect::<String>())
-                .filter(|v| !v.is_empty());
-        }
-        self
-    }
+    pub wait_seconds: Option<u32>,
 }
 
 /// the user's decision.
@@ -372,6 +339,10 @@ pub enum Decision {
     Approved,
     Denied,
     Expired,
+    /// `suggest`: the suggestion is in the user's list (nothing was approved).
+    Queued,
+    /// `suggest`: the phone did not queue it, without asking the user (`error` says why).
+    Rejected,
 }
 
 /// How long the phone answers by itself.
@@ -497,6 +468,23 @@ pub struct Answer {
     /// The request named a session that is unknown or has ended.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub session_ended: Option<bool>,
+    /// `login`: how the user signs in to the target site, when the phone knows.
+    #[serde(
+        default,
+        deserialize_with = "crate::signin::lenient",
+        skip_serializing_if = "Option::is_none"
+    )]
+    pub method: Option<crate::SignInMethod>,
+    /// `login` with a `federated` method: the provider login, for the provider's own pages only.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub via: Option<crate::Via>,
+    /// `login` and `code`: which second step to choose and which to avoid.
+    #[serde(
+        default,
+        deserialize_with = "crate::signin::lenient",
+        skip_serializing_if = "Option::is_none"
+    )]
+    pub second_step: Option<crate::SecondStepOrder>,
 }
 
 impl Answer {
@@ -526,6 +514,9 @@ impl Answer {
             insights: None,
             session: None,
             session_ended: None,
+            method: None,
+            via: None,
+            second_step: None,
         }
     }
 }

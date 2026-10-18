@@ -76,6 +76,10 @@ pub(crate) const OLD_PROTOCOL: &str = "The phone could not read this request: No
 const CHOSEN: &str = " No saved account matched the site you asked for, so the user picked this one by hand \
     (account.site may differ). Use it for this sign-in only.";
 
+/// A `queued` or `rejected` answer to anything but a `suggest` request.
+pub(crate) const MISFIT: &str =
+    "The phone sent an answer that does not fit this request; nothing came of it.";
+
 pub(crate) const PAUSED: &str = "The user has paused this agent in Nodkey, so the phone refused without asking. \
     Do not retry; tell them, and they can resume it under Agents.";
 
@@ -111,6 +115,7 @@ impl<'a> Outcome<'a> {
                 "The user denied the request. Do not ask again for the same thing unless they say so."
             }
             Decision::Expired => "The request expired on the phone without an answer.",
+            Decision::Queued | Decision::Rejected => MISFIT,
         }
         .to_owned();
         if a.decision == Decision::Approved && a.match_kind == Some(MatchKind::Chosen) {
@@ -164,6 +169,7 @@ impl<'a> Outcome<'a> {
             Decision::Expired => {
                 "The request expired on the phone without an answer. Nothing was moved.".to_owned()
             }
+            Decision::Queued | Decision::Rejected => MISFIT.to_owned(),
         };
         let accounts = a
             .accounts

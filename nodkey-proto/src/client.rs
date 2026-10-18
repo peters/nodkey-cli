@@ -30,7 +30,13 @@ pub fn sealed_ct_len(r: &Request) -> usize {
 pub fn check_request(r: &Request) -> Result<(), String> {
     let needs_target = matches!(
         r.kind,
-        Kind::Code | Kind::Login | Kind::Save | Kind::Passkey | Kind::Card
+        Kind::Code
+            | Kind::Login
+            | Kind::Save
+            | Kind::Passkey
+            | Kind::Card
+            | Kind::Suggest
+            | Kind::SmsCode
     );
     if needs_target && r.target.trim().is_empty() {
         return Err(
@@ -90,6 +96,7 @@ pub fn check_request(r: &Request) -> Result<(), String> {
         (_, Some(_)) => Err("only a card request carries card data".into()),
         _ => Ok(()),
     }?;
+    check_signin(r)?;
     check_session(r)?;
     if sealed_ct_len(r) > REQUEST_CT_MAX {
         return Err(
@@ -98,6 +105,31 @@ pub fn check_request(r: &Request) -> Result<(), String> {
         );
     }
     Ok(())
+}
+
+/// The `suggest` and `sms_code` rules: a suggestion names a clean site and a valid method, and
+/// `wait_seconds` belongs to `sms_code` only, within its range.
+fn check_signin(r: &Request) -> Result<(), String> {
+    match (r.kind, &r.suggest) {
+        (Kind::Suggest, None) => Err("a suggest request needs the method and the outcome".into()),
+        (Kind::Suggest, Some(_))
+            if crate::signin::site(&r.target).as_deref() != Some(r.target.as_str()) =>
+        {
+            Err("a suggestion's target is the site's host, for example example.com".into())
+        }
+        (Kind::Suggest, Some(s)) => s.check(),
+        (_, Some(_)) => Err("only a suggest request carries a suggestion".into()),
+        _ => Ok(()),
+    }?;
+    match (r.kind, r.wait_seconds) {
+        (Kind::SmsCode, w) if crate::signin::sms_wait(w).is_none() => Err(format!(
+            "wait_seconds must be {} to {}",
+            crate::signin::SMS_WAIT_MIN,
+            crate::signin::SMS_WAIT_MAX
+        )),
+        (Kind::SmsCode, _) | (_, None) => Ok(()),
+        (_, Some(_)) => Err("only an sms_code request carries wait_seconds".into()),
+    }
 }
 
 /// The task session rules: `session_end` names a session and nothing else; a session id has the
@@ -131,6 +163,16 @@ pub fn seal_request(
         enc: b64u::encode(&sealed.enc),
         ct: b64u::encode(&sealed.ct),
         attachment: attachment.then_some(true),
+        ttl: relay_ttl(request),
+    })
+}
+
+/// The envelope's `ttl`: an `sms_code` request stays at the relay for its wait plus the time to
+/// approve; every other request keeps the relay's 120 s.
+pub fn relay_ttl(request: &Request) -> Option<u32> {
+    (request.kind == Kind::SmsCode).then(|| {
+        crate::signin::sms_wait(request.wait_seconds).unwrap_or(crate::signin::SMS_WAIT_DEFAULT)
+            + crate::signin::SMS_APPROVE_MARGIN
     })
 }
 
@@ -235,6 +277,8 @@ mod tests {
             save_card: None,
             client: None,
             session_id: None,
+            suggest: None,
+            wait_seconds: None,
         }
     }
 
@@ -349,6 +393,53 @@ mod tests {
         assert!(check_request(&p).is_err());
         p.kind = Kind::Code;
         assert!(check_request(&p).is_err());
+    }
+
+    #[test]
+    fn signin_checks() {
+        let mut s = request(Kind::Suggest, "renderfarm.example", "Signed in with Google");
+        assert!(
+            check_request(&s)
+                .unwrap_err()
+                .contains("method and the outcome")
+        );
+        s.suggest = Some(crate::Suggestion {
+            method: crate::SignInMethod::federated(crate::Provider::Google, None),
+            outcome: crate::SuggestOutcome::SignedIn,
+        });
+        assert!(check_request(&s).is_ok());
+        s.target = "https://renderfarm.example/login".into();
+        assert!(check_request(&s).unwrap_err().contains("host"));
+        s.target = "renderfarm.example".into();
+        s.session_id = Some("Qm9vdHN0cmFwU2Vzc2lvbg".into());
+        assert!(
+            check_request(&s)
+                .unwrap_err()
+                .contains("belong to a session")
+        );
+        s.session_id = None;
+        s.suggest.as_mut().unwrap().method.provider = None;
+        assert!(check_request(&s).unwrap_err().contains("provider"));
+        let mut l = request(Kind::Login, "vg.no", "Sign in");
+        l.suggest = s.suggest.clone();
+        assert!(check_request(&l).unwrap_err().contains("only a suggest"));
+
+        let mut m = request(
+            Kind::SmsCode,
+            "appleid.example",
+            "The site sent a code by SMS",
+        );
+        assert!(check_request(&m).is_ok());
+        m.wait_seconds = Some(300);
+        assert!(check_request(&m).is_ok());
+        m.wait_seconds = Some(301);
+        assert!(check_request(&m).unwrap_err().contains("30 to 300"));
+        m.target = String::new();
+        m.wait_seconds = None;
+        assert!(check_request(&m).unwrap_err().contains("target"));
+        let mut c = request(Kind::Code, "github.com", "Merge");
+        c.wait_seconds = Some(120);
+        assert!(check_request(&c).unwrap_err().contains("only an sms_code"));
     }
 
     #[test]

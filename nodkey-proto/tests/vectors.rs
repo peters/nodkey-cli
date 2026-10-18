@@ -328,3 +328,78 @@ fn card_checks_match() {
         assert_eq!(card::last4(number).as_deref(), n["last4"].as_str());
     }
 }
+
+#[test]
+fn signin_checks_match() {
+    use nodkey_proto::{SecondStep, SecondStepOrder, SignInMethod, Suggestion, Via, signin};
+    let v = load();
+    let c = &v["signin"];
+    for m in c["methods"].as_array().unwrap() {
+        let read = serde_json::from_str::<SignInMethod>(s(m, "input")).ok();
+        assert_eq!(serde_json::to_value(&read).unwrap(), m["reads_as"], "{m}");
+    }
+    for case in c["suggestions"].as_array().unwrap() {
+        let sug: Suggestion = serde_json::from_value(case["suggest"].clone()).unwrap();
+        let target = s(case, "target");
+        let ok = signin::site(target).as_deref() == Some(target) && sug.check().is_ok();
+        assert_eq!(ok, case["ok"].as_bool().unwrap(), "{}", s(case, "name"));
+    }
+    for p in c["second_step_picks"].as_array().unwrap() {
+        let order: SecondStepOrder = serde_json::from_value(p["order"].clone()).unwrap();
+        let offered: Vec<SecondStep> = serde_json::from_value(p["offered"].clone()).unwrap();
+        assert_eq!(
+            serde_json::to_value(order.pick(&offered)).unwrap(),
+            p["pick"],
+            "{p}"
+        );
+    }
+    for f in c["via_fill"].as_array().unwrap() {
+        let method: SignInMethod = serde_json::from_value(f["method"].clone()).unwrap();
+        let via: Via = serde_json::from_value(serde_json::json!({
+            "account": {"issuer": "Provider", "name": "alex@example.com", "site": f["via_site"]}
+        }))
+        .unwrap();
+        assert_eq!(
+            signin::may_fill_via(s(f, "host"), s(f, "target"), &method, &via),
+            f["allowed"].as_bool().unwrap(),
+            "{f}"
+        );
+    }
+    for x in c["sites"].as_array().unwrap() {
+        assert_eq!(signin::site(s(x, "input")).as_deref(), x["site"].as_str());
+    }
+    // The answers read with every new field, and the sms_code envelope carries its ttl.
+    let plaintext = |name: &str| -> Value {
+        let h = v["hpke"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .find(|h| h["name"] == name)
+            .unwrap_or_else(|| panic!("{name}"));
+        serde_json::from_str(s(h, "plaintext")).unwrap()
+    };
+    let a: nodkey_proto::Answer =
+        serde_json::from_value(plaintext("answer_login_federated")).unwrap();
+    assert_eq!(
+        a.method.unwrap().provider,
+        Some(nodkey_proto::Provider::Google)
+    );
+    assert_eq!(
+        a.via.unwrap().account.site.as_deref(),
+        Some("accounts.google.com")
+    );
+    assert_eq!(a.second_step, Some(SecondStepOrder::default()));
+    let q: nodkey_proto::Answer =
+        serde_json::from_value(plaintext("answer_suggest_queued")).unwrap();
+    assert_eq!(q.decision, nodkey_proto::Decision::Queued);
+    let r: nodkey_proto::Request = serde_json::from_value(plaintext("request_sms_code")).unwrap();
+    assert_eq!(r.kind, nodkey_proto::Kind::SmsCode);
+    let post = v["auth"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .find(|a| a["name"] == "post_request_sms_code")
+        .unwrap();
+    let body: Value = serde_json::from_str(s(post, "body")).unwrap();
+    assert_eq!(body["ttl"], 180);
+}

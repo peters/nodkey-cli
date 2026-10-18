@@ -190,6 +190,8 @@ pub(super) fn add(ctx: &mut Ctx, agent: &Side, phone: &Side) -> Value {
         save_card: None,
         client: None,
         session_id: None,
+        suggest: None,
+        wait_seconds: None,
     };
     let r_create = request(
         "passkey_create",

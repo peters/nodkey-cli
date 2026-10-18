@@ -10,6 +10,7 @@ pub mod bundle;
 pub mod card;
 pub mod check;
 pub mod client;
+mod client_info;
 pub mod code;
 pub mod dh;
 pub mod keys;
@@ -18,6 +19,7 @@ pub mod passkey;
 pub mod seal;
 pub mod secret;
 pub mod session;
+pub mod signin;
 #[doc(hidden)]
 pub mod testing;
 #[doc(hidden)]
@@ -34,6 +36,10 @@ pub use passkey::{
 pub use seal::{Purpose, Sealed};
 pub use secret::Secret;
 pub use session::SessionInfo;
+pub use signin::{
+    Certainty, MethodSource, Provider, SecondStep, SecondStepOrder, SignInKind, SignInMethod,
+    SuggestOutcome, Suggestion, Via,
+};
 
 /// Protocol version carried in every plaintext message (`"v": 1`).
 pub const VERSION: u8 = 1;

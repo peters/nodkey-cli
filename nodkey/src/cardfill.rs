@@ -164,6 +164,9 @@ fn result(checked: &Checked, ex: &Exchanged) -> (Text, u8) {
             failure("error", "The phone approved but sent no card.", None),
             1,
         ),
+        (Decision::Queued | Decision::Rejected, _) => {
+            (failure("error", crate::outcome::MISFIT, None), 1)
+        }
         (Decision::Expired, _) => (
             failure("expired", "The request expired on the phone.", error),
             EXPIRED,

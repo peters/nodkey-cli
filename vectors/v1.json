@@ -144,6 +144,18 @@
       "path": "/v1/requests/DjEzC-6pdiLjv71vyq2Rag/attachment",
       "sign_pk": "bOp7Vh4eecFjmSW9F1BoO_BAhHKC4mrGJXQb6K3A-j0",
       "ts": 1791620002
+    },
+    {
+      "body": "{\"request_id\":\"VxtMtq8GAjL_Fm4sFoPpQA\",\"enc\":\"9rlS0e4EpUNAInlLeWkdMtlzd6unLvW1TKiZk4msz1g\",\"ct\":\"Mew7mJ_g_ySn3KJI4rrwKmbnd7hJW7CRyLNDzDsZHlgKQ4Nt43wZyzUsX4IKg4crWiPLEEVjgPCBmY74_5IeFqiOxa_CyModKKhu7c6jHgIo93bSUY5SrG0vDRWzKUm6Kw57ASMe-d9FMsExWeoitkEsVOG-dZkZnp5dWYaYNXy44Z7IlG1nhQ9QKx5lznN_XtqCJ0lY3KQkQtMPZbOcPvJTJJEEBKTug5flU_q2JC6Ey4DT39vCXyLPNpeXt700kjI1bqYUthhF2ekGtBgGEBc_3PrcDvu_kEka\",\"ttl\":180}",
+      "body_sha256": "82ad35c4bec0fdf90e6bfd01af647c589e9e94de3e3188bbff0687fc2df964d4",
+      "header": "IdQP77UDyu6DAF-4aCs1-Q.1791620002.1C7-FTnUg00LzsUQEo12kVemhMDLqAaar20hbP5bU3y450EFoqfwsnj9Wk8BzBCrnFFhh_Twnx4l-2G_JTOoAA",
+      "id": "IdQP77UDyu6DAF-4aCs1-Q",
+      "message": "nodkey/v1\nPOST\n/v1/phones/0g0Bt23Hxsm5z-wpZp2lpA/requests\n1791620002\n82ad35c4bec0fdf90e6bfd01af647c589e9e94de3e3188bbff0687fc2df964d4",
+      "method": "POST",
+      "name": "post_request_sms_code",
+      "path": "/v1/phones/0g0Bt23Hxsm5z-wpZp2lpA/requests",
+      "sign_pk": "bOp7Vh4eecFjmSW9F1BoO_BAhHKC4mrGJXQb6K3A-j0",
+      "ts": 1791620002
     }
   ],
   "cards": {
@@ -1102,6 +1114,160 @@
       "recipient_kem_pk": "Td-3-HXWLqROvCB5uulMNssHXo3O2K_LQIby38T-z28",
       "recipient_kem_sk": "vazvVwr6Ybz3fJM8Ey3EblV_Ow4P6yCovbNOvWY7IiI",
       "sender": "agent"
+    },
+    {
+      "aad": "2_xsoTnzvtV2XYxhY21bmAIdQP77UDyu6DAF-4aCs1-Q",
+      "ct": "KeafVcNhmTt6YWYiYoKuODFRqx7u51hdJkx9fkaVKR0H9s05Itnwvss9lRbInlF4bKeNbY2_44e3eQ8ZnGeDucBJ8VG0GjwqyHS6mgEBnd9MyqMDCWUDM0PZUUMRKgAcbDJM0hbFt7I1hewm0pkLLz_DZNqbAqIwK3wlIIumXl3KB-hIeEwATk7Bos-83vamtqvYZ89Z3_8BgLJWl3Q6bjgEZL8dcPWnsGOGUeQsP3GU3KOttz_zY8DXfxfwhfqisgLFiAqp1tAD5KrR",
+      "enc": "rFTZRzeqy1kS6Bzrr79LjMyDBILoM7jExrKn4lBBq1A",
+      "ikm_e": "cxs-jiXi4v_i_GjvII7d6cHjcXqkJL_H_y0cVqSmB0w",
+      "info": "nodkey/v1/request",
+      "name": "request_login_federated",
+      "plaintext": "{\"v\":1,\"request_id\":\"2_xsoTnzvtV2XYxhY21bmA\",\"kind\":\"login\",\"target\":\"renderfarm.example\",\"reason\":\"Sign in to the render farm to start the job\",\"agent\":\"Agent · Horizon\",\"ts\":1791620000}",
+      "plaintext_b64u": "eyJ2IjoxLCJyZXF1ZXN0X2lkIjoiMl94c29Ubnp2dFYyWFl4aFkyMWJtQSIsImtpbmQiOiJsb2dpbiIsInRhcmdldCI6InJlbmRlcmZhcm0uZXhhbXBsZSIsInJlYXNvbiI6IlNpZ24gaW4gdG8gdGhlIHJlbmRlciBmYXJtIHRvIHN0YXJ0IHRoZSBqb2IiLCJhZ2VudCI6IkFnZW50IMK3IEhvcml6b24iLCJ0cyI6MTc5MTYyMDAwMH0",
+      "purpose": "request",
+      "recipient_kem_pk": "Td-3-HXWLqROvCB5uulMNssHXo3O2K_LQIby38T-z28",
+      "recipient_kem_sk": "vazvVwr6Ybz3fJM8Ey3EblV_Ow4P6yCovbNOvWY7IiI",
+      "sender": "agent"
+    },
+    {
+      "aad": "fJ4Stnnj4wOPMOP1-8razQIdQP77UDyu6DAF-4aCs1-Q",
+      "ct": "AXEXMHP27aJgRYVayWBibS9KFZhEnLIx10KjwbzbBXvSsuDJrDvX-Xd-ec-VWLvBYg6JJgWvKifaDcnToO0fzXNAImz-eDb_a7evd0_j_bZQ6t2sEVPKz3fugVQyYE2j5JzT6VV5LvgfoFrTNAQdO4tngpdIHJQENB3AZLafuTggHsk3Ep8csTPrplk19utgAttFKeF_jFidSP0irto-68xUdZpVUnoxA7KFLKX-m0ksOEAPAcSykDV1FA8n6_zJfo2wKbJ-MIYN1MOHs76gIqb39cH-wqxCjsRv7rhHbIwYAL9X5tKSVU8yG_5DVmWMFxZAm2izpDgx1_7Rg_iDikcaJy1JPSVCu9FwFtNIx4V5yA8pDYYO8D01blk5TodnOay87AWPR9yOHgPHevZHNjIbb03RoNw9RS2EN5QvHU9l9SpSdNgZtWBm5Ef3V3eOyw",
+      "enc": "wJ5_0ZZUeR96g9tJZAIPZ5dy1U-UONsj9vasILTMUis",
+      "ikm_e": "cUebp-0OPSGPa6byYbc7uI8-6iwR97gaRDNuvXy9gkc",
+      "info": "nodkey/v1/request",
+      "name": "request_suggest",
+      "plaintext": "{\"v\":1,\"request_id\":\"fJ4Stnnj4wOPMOP1-8razQ\",\"kind\":\"suggest\",\"target\":\"renderfarm.example\",\"reason\":\"Signed in with Google; Nodkey did not know this method\",\"agent\":\"Agent · Horizon\",\"ts\":1791620000,\"suggest\":{\"method\":{\"kind\":\"federated\",\"provider\":\"google\",\"certainty\":\"seen\",\"source\":\"agent\"},\"outcome\":\"signed_in\"}}",
+      "plaintext_b64u": "eyJ2IjoxLCJyZXF1ZXN0X2lkIjoiZko0U3Rubmo0d09QTU9QMS04cmF6USIsImtpbmQiOiJzdWdnZXN0IiwidGFyZ2V0IjoicmVuZGVyZmFybS5leGFtcGxlIiwicmVhc29uIjoiU2lnbmVkIGluIHdpdGggR29vZ2xlOyBOb2RrZXkgZGlkIG5vdCBrbm93IHRoaXMgbWV0aG9kIiwiYWdlbnQiOiJBZ2VudCDCtyBIb3Jpem9uIiwidHMiOjE3OTE2MjAwMDAsInN1Z2dlc3QiOnsibWV0aG9kIjp7ImtpbmQiOiJmZWRlcmF0ZWQiLCJwcm92aWRlciI6Imdvb2dsZSIsImNlcnRhaW50eSI6InNlZW4iLCJzb3VyY2UiOiJhZ2VudCJ9LCJvdXRjb21lIjoic2lnbmVkX2luIn19",
+      "purpose": "request",
+      "recipient_kem_pk": "Td-3-HXWLqROvCB5uulMNssHXo3O2K_LQIby38T-z28",
+      "recipient_kem_sk": "vazvVwr6Ybz3fJM8Ey3EblV_Ow4P6yCovbNOvWY7IiI",
+      "sender": "agent"
+    },
+    {
+      "aad": "88FicNkqqzqkZjKpyqsmawIdQP77UDyu6DAF-4aCs1-Q",
+      "ct": "3-EUBhu35LFvTeH9y_Cfp967vmsPcKUmSExZ2ox-XGUN9Vgq-X1WTWCbnoO7tiDa5XpNzgkGsKfmnBQtzyd12KeEYNwNTFVjj1y8bfGgYFW8DG3X_BqBQ2hbUK0AOyjOJmrGJRkRUpvQLMgFgm5hai_rC4FbaRRHEWxxMpnSznfMGYRwgfUK-yddA7YGJy1sS3GrUyza46x-HINiYT7c-TZ53ljKCcXlLwsGog8WWKqs3I4b79D7KSjT8bMLwzJjr2EZMCvABDme3R-Gz-hvtzfaRFoF7sFK9oDG-UhIMQ1rCLJexYn3dPus4aYnOFrSMhRv0W2q563tUMexcVJpTL0JPLLUyVW8lF807lRVeIfEKtmiUw",
+      "enc": "_cGxEj_Y8PvmbmjE6MigMKTA_t3rcE8LApQqeFnXQgM",
+      "ikm_e": "lPbAIzJqIlhEXUO8WzZPf8da1OuOV4A4VHGU4rSWKtg",
+      "info": "nodkey/v1/request",
+      "name": "request_suggest_failed",
+      "plaintext": "{\"v\":1,\"request_id\":\"88FicNkqqzqkZjKpyqsmaw\",\"kind\":\"suggest\",\"target\":\"mail.example.com\",\"reason\":\"The password failed; the site now sends a code by e-mail\",\"agent\":\"Agent · Horizon\",\"ts\":1791620000,\"suggest\":{\"method\":{\"kind\":\"password\"},\"outcome\":\"failed\"}}",
+      "plaintext_b64u": "eyJ2IjoxLCJyZXF1ZXN0X2lkIjoiODhGaWNOa3FxenFrWmpLcHlxc21hdyIsImtpbmQiOiJzdWdnZXN0IiwidGFyZ2V0IjoibWFpbC5leGFtcGxlLmNvbSIsInJlYXNvbiI6IlRoZSBwYXNzd29yZCBmYWlsZWQ7IHRoZSBzaXRlIG5vdyBzZW5kcyBhIGNvZGUgYnkgZS1tYWlsIiwiYWdlbnQiOiJBZ2VudCDCtyBIb3Jpem9uIiwidHMiOjE3OTE2MjAwMDAsInN1Z2dlc3QiOnsibWV0aG9kIjp7ImtpbmQiOiJwYXNzd29yZCJ9LCJvdXRjb21lIjoiZmFpbGVkIn19",
+      "purpose": "request",
+      "recipient_kem_pk": "Td-3-HXWLqROvCB5uulMNssHXo3O2K_LQIby38T-z28",
+      "recipient_kem_sk": "vazvVwr6Ybz3fJM8Ey3EblV_Ow4P6yCovbNOvWY7IiI",
+      "sender": "agent"
+    },
+    {
+      "aad": "VxtMtq8GAjL_Fm4sFoPpQAIdQP77UDyu6DAF-4aCs1-Q",
+      "ct": "Mew7mJ_g_ySn3KJI4rrwKmbnd7hJW7CRyLNDzDsZHlgKQ4Nt43wZyzUsX4IKg4crWiPLEEVjgPCBmY74_5IeFqiOxa_CyModKKhu7c6jHgIo93bSUY5SrG0vDRWzKUm6Kw57ASMe-d9FMsExWeoitkEsVOG-dZkZnp5dWYaYNXy44Z7IlG1nhQ9QKx5lznN_XtqCJ0lY3KQkQtMPZbOcPvJTJJEEBKTug5flU_q2JC6Ey4DT39vCXyLPNpeXt700kjI1bqYUthhF2ekGtBgGEBc_3PrcDvu_kEka",
+      "enc": "9rlS0e4EpUNAInlLeWkdMtlzd6unLvW1TKiZk4msz1g",
+      "ikm_e": "lpUUKMHB1yA81skuraF1ot2indkRu0KlsiX2uKfTdCA",
+      "info": "nodkey/v1/request",
+      "name": "request_sms_code",
+      "plaintext": "{\"v\":1,\"request_id\":\"VxtMtq8GAjL_Fm4sFoPpQA\",\"kind\":\"sms_code\",\"target\":\"account.example.com\",\"reason\":\"The site sent a sign-in code by SMS\",\"agent\":\"Agent · Horizon\",\"ts\":1791620000,\"wait_seconds\":120}",
+      "plaintext_b64u": "eyJ2IjoxLCJyZXF1ZXN0X2lkIjoiVnh0TXRxOEdBakxfRm00c0ZvUHBRQSIsImtpbmQiOiJzbXNfY29kZSIsInRhcmdldCI6ImFjY291bnQuZXhhbXBsZS5jb20iLCJyZWFzb24iOiJUaGUgc2l0ZSBzZW50IGEgc2lnbi1pbiBjb2RlIGJ5IFNNUyIsImFnZW50IjoiQWdlbnQgwrcgSG9yaXpvbiIsInRzIjoxNzkxNjIwMDAwLCJ3YWl0X3NlY29uZHMiOjEyMH0",
+      "purpose": "request",
+      "recipient_kem_pk": "Td-3-HXWLqROvCB5uulMNssHXo3O2K_LQIby38T-z28",
+      "recipient_kem_sk": "vazvVwr6Ybz3fJM8Ey3EblV_Ow4P6yCovbNOvWY7IiI",
+      "sender": "agent"
+    },
+    {
+      "aad": "2_xsoTnzvtV2XYxhY21bmA0g0Bt23Hxsm5z-wpZp2lpA",
+      "ct": "TO4EGNlgEGQknq7bw5plMPxcvvetslq5OXJec4BccKOHXLentWofusYF8NtnlUTNrBMZDjUXNlDov2mJoxzAorRVhFrBtEQQlDGtPN-05qPGNU08Rkt-Z3kzxblDQclLlqxraUituNAiivYjHnwSDYM67boUJa5yz8J-KwsLILkedOK1aaxgdsGiGjbRqp2smiO1IDZLhJ2jKDBCiASR2egkNm09QUg3IjnGKUsdKvzNuPUYyamPgxvUtsTwALTARMXF0AX3JuMf5Q9Ra2fJClxO9NXITdxMAr3FSoHttg_UQwIZ_mtj2Ikakq5T6WwKtnLhh5q0l_eSjYZqMHA6UX1o9hLt8OV96D19WQy91umOPtbc0GcGT3_yeIsiGohfDp4xDNSzShhTHwoMK2O0ynjtuhXqKFFt_yB2qxAUAE6c_-YIs7fPTAFq7vwaPmGZPxp4EbiyiwYuQDXVuJhI8DUpltYQs2GcRFCCgLpGrI_rAD82cXqQaeBLpQzmocZUKKGsffTNAscHtLZaatIwdowXzrGE8G5k3y_7ylYAPZSdDGEkFwuqUqpkpAI-5pUOINOX4mi0K1o_8e6Z2driRoliXkvACyTwUD70FEfCd9RvvaTS3R0",
+      "enc": "M9kmhfTnC7L0qJ4p7AfvXFWNmgr-m7z8yZMtz85uPhc",
+      "ikm_e": "9TRe_q3phE9149tDbG2wcVQB-55UTu1z3LHTKfqsym0",
+      "info": "nodkey/v1/answer",
+      "name": "answer_login_federated",
+      "plaintext": "{\"v\":1,\"request_id\":\"2_xsoTnzvtV2XYxhY21bmA\",\"decision\":\"approved\",\"lease\":{\"kind\":\"once\"},\"match\":\"direct\",\"method\":{\"kind\":\"federated\",\"provider\":\"google\",\"certainty\":\"confirmed\"},\"via\":{\"account\":{\"issuer\":\"Google\",\"name\":\"alex@example.com\",\"site\":\"accounts.google.com\"},\"username\":\"alex@example.com\",\"password\":\"correct horse battery staple\",\"code\":\"190274\",\"seconds_left\":21},\"second_step\":{\"prefer\":[\"passkey\",\"totp\"],\"avoid\":[\"app_prompt\",\"sms\"]}}",
+      "plaintext_b64u": "eyJ2IjoxLCJyZXF1ZXN0X2lkIjoiMl94c29Ubnp2dFYyWFl4aFkyMWJtQSIsImRlY2lzaW9uIjoiYXBwcm92ZWQiLCJsZWFzZSI6eyJraW5kIjoib25jZSJ9LCJtYXRjaCI6ImRpcmVjdCIsIm1ldGhvZCI6eyJraW5kIjoiZmVkZXJhdGVkIiwicHJvdmlkZXIiOiJnb29nbGUiLCJjZXJ0YWludHkiOiJjb25maXJtZWQifSwidmlhIjp7ImFjY291bnQiOnsiaXNzdWVyIjoiR29vZ2xlIiwibmFtZSI6ImFsZXhAZXhhbXBsZS5jb20iLCJzaXRlIjoiYWNjb3VudHMuZ29vZ2xlLmNvbSJ9LCJ1c2VybmFtZSI6ImFsZXhAZXhhbXBsZS5jb20iLCJwYXNzd29yZCI6ImNvcnJlY3QgaG9yc2UgYmF0dGVyeSBzdGFwbGUiLCJjb2RlIjoiMTkwMjc0Iiwic2Vjb25kc19sZWZ0IjoyMX0sInNlY29uZF9zdGVwIjp7InByZWZlciI6WyJwYXNza2V5IiwidG90cCJdLCJhdm9pZCI6WyJhcHBfcHJvbXB0Iiwic21zIl19fQ",
+      "purpose": "answer",
+      "recipient_kem_pk": "fE5zmodqNC-MJSk500yxJtz4i2vlbx3Hpg2qO712pTQ",
+      "recipient_kem_sk": "WVg29q7eTJuYsXMJkPAqAx2veoBDBCceAKKxCEs90KU",
+      "sender": "phone"
+    },
+    {
+      "aad": "DjEzC-6pdiLjv71vyq2Rag0g0Bt23Hxsm5z-wpZp2lpA",
+      "ct": "5lk8VqRwgOV8flMUgHmvmhB7iddht0GDtj7PEp1VB4ajYF_4RIVL7gHAa2GG_ycq5kHnDEidHRX8QcIZbsrMiZ9UzDJTeNwAWq-ghYESBaIoW-RbnSrz_TCaDeHlj97aUC2ERQpSVXpd0FZ1YJcm6Ixamv0sBBzoDI4sS4-hxSr0prZE9mS7ISq6d5Ho7WEiAcDc6p1jbpdmOGsKk4mt0ngnD4icOVByripzr1DcZMUqeT8WqF6J7tQQ_JnqtIUZ7mULeIXzeUoWSvkyvN2-QdW-mP6l9DsVNRRETiohTS2fL5WsC9JmSrOYGQ5bqybmS_Xdk1sHOX0wjMHGI-46W4im_vJdqHJFBSdxiA-BshUrjM_mi2XbDLetjIt37sIparhCVGg7C_UJpuNl2rBQ9oCcNfLZ4F0n2_6DfbjuKN5P4nQBZcky5JZNapakFcjOakjHMtutJ9-YmlCax9Vt5Ay0gWdcTRS8o8XYjjLIjusANw",
+      "enc": "n3WQcvlPWkQNM00B7GDxv64h_AXHdo0S_gicHGzu2gQ",
+      "ikm_e": "3UKC5o4tE7j0MVT9lvapfTbxBptZ64rQ-Cg2PyGALmw",
+      "info": "nodkey/v1/answer",
+      "name": "answer_login_with_method",
+      "plaintext": "{\"v\":1,\"request_id\":\"DjEzC-6pdiLjv71vyq2Rag\",\"decision\":\"approved\",\"account\":{\"issuer\":\"VG\",\"name\":\"alex@example.com\",\"site\":\"vg.no\"},\"match\":\"direct\",\"username\":\"alex@example.com\",\"password\":\"correct horse battery staple\",\"method\":{\"kind\":\"password\",\"certainty\":\"confirmed\",\"source\":\"manual\"},\"second_step\":{\"prefer\":[\"totp\",\"passkey\"],\"avoid\":[\"sms\"]}}",
+      "plaintext_b64u": "eyJ2IjoxLCJyZXF1ZXN0X2lkIjoiRGpFekMtNnBkaUxqdjcxdnlxMlJhZyIsImRlY2lzaW9uIjoiYXBwcm92ZWQiLCJhY2NvdW50Ijp7Imlzc3VlciI6IlZHIiwibmFtZSI6ImFsZXhAZXhhbXBsZS5jb20iLCJzaXRlIjoidmcubm8ifSwibWF0Y2giOiJkaXJlY3QiLCJ1c2VybmFtZSI6ImFsZXhAZXhhbXBsZS5jb20iLCJwYXNzd29yZCI6ImNvcnJlY3QgaG9yc2UgYmF0dGVyeSBzdGFwbGUiLCJtZXRob2QiOnsia2luZCI6InBhc3N3b3JkIiwiY2VydGFpbnR5IjoiY29uZmlybWVkIiwic291cmNlIjoibWFudWFsIn0sInNlY29uZF9zdGVwIjp7InByZWZlciI6WyJ0b3RwIiwicGFzc2tleSJdLCJhdm9pZCI6WyJzbXMiXX19",
+      "purpose": "answer",
+      "recipient_kem_pk": "fE5zmodqNC-MJSk500yxJtz4i2vlbx3Hpg2qO712pTQ",
+      "recipient_kem_sk": "WVg29q7eTJuYsXMJkPAqAx2veoBDBCceAKKxCEs90KU",
+      "sender": "phone"
+    },
+    {
+      "aad": "0PZ7shU1xUPoSfWHlWVJcA0g0Bt23Hxsm5z-wpZp2lpA",
+      "ct": "aEgE37UR7z7akk961sGm-8SNpVPw_DmDjlj8WsBwA-vJRacaK5M_MQb51Neij36_2jlV_Yk3KVwHwDYuFTTbJ-Z-y-ndxWeUpPyrDN6z9C_Jh-z4LRRpjhWX-M7fPjbt5WIxv1yLKd6G9aEGWAc9sia8k0XyV58qz2CoIKFAYjzFPIxTjXezD2CZakkxBLXe6Y3sckkqArfvJ9hwgRieZ0b-9h1UBFes1vO3rv79hUmWtkeqh2Yfq_O-p0noYfsNnwPzs3MhxddK2pbqiObKAQ8jDZbLvDJcFPtckoygWRiBWgElSkUBSa1QWl7NgJnFvOvZN7U5ixukKRjLP2_gpLHsITu5eDLlco-44NG0ZA",
+      "enc": "CB2khH5XxcKnq9BIms1TA6YoeRVbwRfAtWWUbRMb2GE",
+      "ikm_e": "KRQLbJPdOeKQchsieJxZCwCTuE2qI8IANjoBX7DwIMI",
+      "info": "nodkey/v1/answer",
+      "name": "answer_code_second_step",
+      "plaintext": "{\"v\":1,\"request_id\":\"0PZ7shU1xUPoSfWHlWVJcA\",\"decision\":\"approved\",\"account\":{\"issuer\":\"GitHub\",\"name\":\"alex\",\"site\":\"github.com\"},\"match\":\"direct\",\"code\":\"190274\",\"seconds_left\":12,\"second_step\":{\"prefer\":[\"passkey\",\"totp\"],\"avoid\":[\"app_prompt\",\"sms\"]}}",
+      "plaintext_b64u": "eyJ2IjoxLCJyZXF1ZXN0X2lkIjoiMFBaN3NoVTF4VVBvU2ZXSGxXVkpjQSIsImRlY2lzaW9uIjoiYXBwcm92ZWQiLCJhY2NvdW50Ijp7Imlzc3VlciI6IkdpdEh1YiIsIm5hbWUiOiJhbGV4Iiwic2l0ZSI6ImdpdGh1Yi5jb20ifSwibWF0Y2giOiJkaXJlY3QiLCJjb2RlIjoiMTkwMjc0Iiwic2Vjb25kc19sZWZ0IjoxMiwic2Vjb25kX3N0ZXAiOnsicHJlZmVyIjpbInBhc3NrZXkiLCJ0b3RwIl0sImF2b2lkIjpbImFwcF9wcm9tcHQiLCJzbXMiXX19",
+      "purpose": "answer",
+      "recipient_kem_pk": "fE5zmodqNC-MJSk500yxJtz4i2vlbx3Hpg2qO712pTQ",
+      "recipient_kem_sk": "WVg29q7eTJuYsXMJkPAqAx2veoBDBCceAKKxCEs90KU",
+      "sender": "phone"
+    },
+    {
+      "aad": "fJ4Stnnj4wOPMOP1-8razQ0g0Bt23Hxsm5z-wpZp2lpA",
+      "ct": "tL_zFbcCRd2piN97NcykIQwBT5cPiibZlWCaEYOJYhhECM1tnZbgBOiI3b_-4fOx1EmdPuiyaXMwaC6k4Cg3EXhl_ppo_APoNj7Xn2JmjUv4",
+      "enc": "WPGjXWfPzvMCCl7b-qd3-mgNrQLGuk-d02BhOkul518",
+      "ikm_e": "5Hz0nhNAmR3nscojcldGsPUd4qckQ7K3fnW2Mjxfvgg",
+      "info": "nodkey/v1/answer",
+      "name": "answer_suggest_queued",
+      "plaintext": "{\"v\":1,\"request_id\":\"fJ4Stnnj4wOPMOP1-8razQ\",\"decision\":\"queued\"}",
+      "plaintext_b64u": "eyJ2IjoxLCJyZXF1ZXN0X2lkIjoiZko0U3Rubmo0d09QTU9QMS04cmF6USIsImRlY2lzaW9uIjoicXVldWVkIn0",
+      "purpose": "answer",
+      "recipient_kem_pk": "fE5zmodqNC-MJSk500yxJtz4i2vlbx3Hpg2qO712pTQ",
+      "recipient_kem_sk": "WVg29q7eTJuYsXMJkPAqAx2veoBDBCceAKKxCEs90KU",
+      "sender": "phone"
+    },
+    {
+      "aad": "fJ4Stnnj4wOPMOP1-8razQ0g0Bt23Hxsm5z-wpZp2lpA",
+      "ct": "3PDoiZADhiBo59bygYNFlLslkmSH9oFZMwJGPp7tzWrlBQALM24GJ0ue9zCcekoyPdZ1rUO1WrdmEoSj85I8HMxtsHc21F6JznJ3ZWjCDxlLcuyuT842C-Y2nMU-ZjW4Dax6hEXLgzujzQ",
+      "enc": "a6AvSR6wFPQ1vk7MMvaWYWKnM3QtLmTJ8eu179lIJBY",
+      "ikm_e": "2kkXeN2hLe9S_VaYgeW_T515wv4CVDnzz4lviEbnhxo",
+      "info": "nodkey/v1/answer",
+      "name": "answer_suggest_rejected",
+      "plaintext": "{\"v\":1,\"request_id\":\"fJ4Stnnj4wOPMOP1-8razQ\",\"decision\":\"rejected\",\"error\":\"rate_limited\"}",
+      "plaintext_b64u": "eyJ2IjoxLCJyZXF1ZXN0X2lkIjoiZko0U3Rubmo0d09QTU9QMS04cmF6USIsImRlY2lzaW9uIjoicmVqZWN0ZWQiLCJlcnJvciI6InJhdGVfbGltaXRlZCJ9",
+      "purpose": "answer",
+      "recipient_kem_pk": "fE5zmodqNC-MJSk500yxJtz4i2vlbx3Hpg2qO712pTQ",
+      "recipient_kem_sk": "WVg29q7eTJuYsXMJkPAqAx2veoBDBCceAKKxCEs90KU",
+      "sender": "phone"
+    },
+    {
+      "aad": "VxtMtq8GAjL_Fm4sFoPpQA0g0Bt23Hxsm5z-wpZp2lpA",
+      "ct": "VsPAPQk4Mf_mX8udv2qMrlPoWNswdzHfAfw4K26ZGoQ86L4sfHkFAtAHzfy61DO3oZ62XZWBgV68d7e0NLR2pvG5A9PGIpa52azRygEeaYzAIAOtqARlsFg7umnbTQppQmpN",
+      "enc": "-yzMeCq5lrrDQ0umFgpqs2BNcUlo0wK3vWY9TPERPmM",
+      "ikm_e": "Ng5iZGyojdGENOwki9gJ8G-WXHodeEZQLOe96-_qxIA",
+      "info": "nodkey/v1/answer",
+      "name": "answer_sms_code",
+      "plaintext": "{\"v\":1,\"request_id\":\"VxtMtq8GAjL_Fm4sFoPpQA\",\"decision\":\"approved\",\"code\":\"482913\"}",
+      "plaintext_b64u": "eyJ2IjoxLCJyZXF1ZXN0X2lkIjoiVnh0TXRxOEdBakxfRm00c0ZvUHBRQSIsImRlY2lzaW9uIjoiYXBwcm92ZWQiLCJjb2RlIjoiNDgyOTEzIn0",
+      "purpose": "answer",
+      "recipient_kem_pk": "fE5zmodqNC-MJSk500yxJtz4i2vlbx3Hpg2qO712pTQ",
+      "recipient_kem_sk": "WVg29q7eTJuYsXMJkPAqAx2veoBDBCceAKKxCEs90KU",
+      "sender": "phone"
+    },
+    {
+      "aad": "VxtMtq8GAjL_Fm4sFoPpQA0g0Bt23Hxsm5z-wpZp2lpA",
+      "ct": "bOPbKRGpZH5Qk8W-e8l6o8O1BrPHvLg1ogD7UkZAPAZJr8TBcQaj2HNbArGV1xvqcPVZOirG6NZeppbPkTOSE5IJAUx5nxzDBbgk2AAwKdV5Kw",
+      "enc": "Q7tBM9tYK9LZ-KmtPt_cXbU78GtJ6hy1XL2-J5gk2kM",
+      "ikm_e": "ggE3YirJFd8bP0cPMSDw0k6ydK6AGcR1TOdD4il65mc",
+      "info": "nodkey/v1/answer",
+      "name": "answer_sms_code_expired",
+      "plaintext": "{\"v\":1,\"request_id\":\"VxtMtq8GAjL_Fm4sFoPpQA\",\"decision\":\"expired\"}",
+      "plaintext_b64u": "eyJ2IjoxLCJyZXF1ZXN0X2lkIjoiVnh0TXRxOEdBakxfRm00c0ZvUHBRQSIsImRlY2lzaW9uIjoiZXhwaXJlZCJ9",
+      "purpose": "answer",
+      "recipient_kem_pk": "fE5zmodqNC-MJSk500yxJtz4i2vlbx3Hpg2qO712pTQ",
+      "recipient_kem_sk": "WVg29q7eTJuYsXMJkPAqAx2veoBDBCceAKKxCEs90KU",
+      "sender": "phone"
     }
   ],
   "keys": {
@@ -1141,6 +1307,359 @@
       {
         "code": "011ABC",
         "input": "OIL-abc"
+      }
+    ]
+  },
+  "signin": {
+    "methods": [
+      {
+        "input": "{\"kind\":\"federated\",\"provider\":\"google\",\"certainty\":\"confirmed\"}",
+        "reads_as": {
+          "certainty": "confirmed",
+          "kind": "federated",
+          "provider": "google"
+        }
+      },
+      {
+        "input": "{\"kind\":\"federated\",\"provider\":\"Okta\",\"certainty\":\"seen\"}",
+        "reads_as": {
+          "certainty": "seen",
+          "kind": "federated",
+          "provider": "other",
+          "provider_name": "Okta"
+        }
+      },
+      {
+        "input": "{\"kind\":\"federated\",\"provider\":\"other\",\"provider_name\":\"Okta\"}",
+        "reads_as": {
+          "kind": "federated",
+          "provider": "other",
+          "provider_name": "Okta"
+        }
+      },
+      {
+        "input": "{\"kind\":\"email_code\",\"mailbox\":\"alex@example.com\",\"certainty\":\"sure\"}",
+        "reads_as": {
+          "certainty": "likely",
+          "kind": "email_code",
+          "mailbox": "alex@example.com"
+        }
+      },
+      {
+        "input": "{\"kind\":\"passkey\",\"source\":\"robot\"}",
+        "reads_as": {
+          "kind": "passkey"
+        }
+      },
+      {
+        "input": "{\"kind\":\"magic_link\"}",
+        "reads_as": null
+      }
+    ],
+    "provider_sites": [
+      {
+        "provider": "google",
+        "sites": [
+          "google.com"
+        ]
+      },
+      {
+        "provider": "apple",
+        "sites": [
+          "apple.com",
+          "icloud.com"
+        ]
+      },
+      {
+        "provider": "github",
+        "sites": [
+          "github.com"
+        ]
+      },
+      {
+        "provider": "microsoft",
+        "sites": [
+          "microsoft.com",
+          "live.com",
+          "microsoftonline.com",
+          "outlook.com",
+          "office.com"
+        ]
+      },
+      {
+        "provider": "facebook",
+        "sites": [
+          "facebook.com",
+          "meta.com"
+        ]
+      }
+    ],
+    "second_step_picks": [
+      {
+        "offered": [
+          "sms",
+          "totp",
+          "passkey"
+        ],
+        "order": {
+          "avoid": [
+            "app_prompt",
+            "sms"
+          ],
+          "prefer": [
+            "passkey",
+            "totp"
+          ]
+        },
+        "pick": "passkey"
+      },
+      {
+        "offered": [
+          "app_prompt",
+          "totp"
+        ],
+        "order": {
+          "avoid": [
+            "app_prompt",
+            "sms"
+          ],
+          "prefer": [
+            "passkey",
+            "totp"
+          ]
+        },
+        "pick": "totp"
+      },
+      {
+        "offered": [
+          "app_prompt",
+          "email"
+        ],
+        "order": {
+          "avoid": [
+            "app_prompt",
+            "sms"
+          ],
+          "prefer": [
+            "passkey",
+            "totp"
+          ]
+        },
+        "pick": "email"
+      },
+      {
+        "offered": [
+          "app_prompt",
+          "sms"
+        ],
+        "order": {
+          "avoid": [
+            "app_prompt",
+            "sms"
+          ],
+          "prefer": [
+            "passkey",
+            "totp"
+          ]
+        },
+        "pick": null
+      }
+    ],
+    "sites": [
+      {
+        "input": "https://www.Example.com/login?x=1",
+        "site": "example.com"
+      },
+      {
+        "input": "alex@accounts.example.com:8443",
+        "site": "accounts.example.com"
+      },
+      {
+        "input": "localhost:3000",
+        "site": "localhost"
+      },
+      {
+        "input": "Example",
+        "site": null
+      },
+      {
+        "input": "a..b",
+        "site": null
+      }
+    ],
+    "sms_wait": {
+      "approve_margin": 60,
+      "default": 120,
+      "max": 300,
+      "min": 30
+    },
+    "suggest_limits": {
+      "per_day": 20,
+      "per_hour": 5
+    },
+    "suggestions": [
+      {
+        "name": "google_seen",
+        "ok": true,
+        "suggest": {
+          "method": {
+            "certainty": "seen",
+            "kind": "federated",
+            "provider": "google"
+          },
+          "outcome": "signed_in"
+        },
+        "target": "renderfarm.example"
+      },
+      {
+        "name": "confirmed",
+        "ok": false,
+        "suggest": {
+          "method": {
+            "certainty": "confirmed",
+            "kind": "federated",
+            "provider": "google"
+          },
+          "outcome": "signed_in"
+        },
+        "target": "renderfarm.example"
+      },
+      {
+        "name": "no_provider",
+        "ok": false,
+        "suggest": {
+          "method": {
+            "certainty": "seen",
+            "kind": "federated"
+          },
+          "outcome": "signed_in"
+        },
+        "target": "renderfarm.example"
+      },
+      {
+        "name": "other_without_name",
+        "ok": false,
+        "suggest": {
+          "method": {
+            "kind": "federated",
+            "provider": "other"
+          },
+          "outcome": "signed_in"
+        },
+        "target": "tools.example.com"
+      },
+      {
+        "name": "mailbox_on_sms",
+        "ok": false,
+        "suggest": {
+          "method": {
+            "kind": "sms",
+            "mailbox": "alex@example.com"
+          },
+          "outcome": "signed_in"
+        },
+        "target": "bank.example"
+      },
+      {
+        "name": "target_with_path",
+        "ok": false,
+        "suggest": {
+          "method": {
+            "certainty": "seen",
+            "kind": "federated",
+            "provider": "google"
+          },
+          "outcome": "signed_in"
+        },
+        "target": "https://renderfarm.example/login"
+      },
+      {
+        "name": "import_source",
+        "ok": false,
+        "suggest": {
+          "method": {
+            "certainty": "likely",
+            "kind": "federated",
+            "provider": "google",
+            "source": "import"
+          },
+          "outcome": "signed_in"
+        },
+        "target": "renderfarm.example"
+      }
+    ],
+    "via_fill": [
+      {
+        "allowed": true,
+        "host": "accounts.google.com",
+        "method": {
+          "kind": "federated",
+          "provider": "google"
+        },
+        "target": "renderfarm.example",
+        "via_site": "accounts.google.com"
+      },
+      {
+        "allowed": false,
+        "host": "renderfarm.example",
+        "method": {
+          "kind": "federated",
+          "provider": "google"
+        },
+        "target": "renderfarm.example",
+        "via_site": "accounts.google.com"
+      },
+      {
+        "allowed": false,
+        "host": "accounts.google.com.evil.example",
+        "method": {
+          "kind": "federated",
+          "provider": "google"
+        },
+        "target": "renderfarm.example",
+        "via_site": "accounts.google.com"
+      },
+      {
+        "allowed": true,
+        "host": "login.microsoftonline.com",
+        "method": {
+          "kind": "federated",
+          "provider": "microsoft"
+        },
+        "target": "tools.example.com",
+        "via_site": "login.live.com"
+      },
+      {
+        "allowed": false,
+        "host": "appleid.apple.com",
+        "method": {
+          "kind": "federated",
+          "provider": "github"
+        },
+        "target": "tools.example.com",
+        "via_site": "github.com"
+      },
+      {
+        "allowed": true,
+        "host": "acme.okta.example",
+        "method": {
+          "kind": "federated",
+          "provider": "other",
+          "provider_name": "Okta"
+        },
+        "target": "tools.example.com",
+        "via_site": "acme.okta.example"
+      },
+      {
+        "allowed": false,
+        "host": "okta.example",
+        "method": {
+          "kind": "federated",
+          "provider": "other",
+          "provider_name": "Okta"
+        },
+        "target": "tools.example.com",
+        "via_site": "acme.okta.example"
       }
     ]
   },

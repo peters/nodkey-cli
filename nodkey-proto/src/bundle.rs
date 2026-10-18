@@ -118,6 +118,21 @@ pub struct BundleItemAnswer {
     /// Why the phone left the item out without asking (`not_allowed`: the agent's scope).
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<String>,
+    /// As in a single answer: the sign-in method, the provider login and the second step order.
+    #[serde(
+        default,
+        deserialize_with = "crate::signin::lenient",
+        skip_serializing_if = "Option::is_none"
+    )]
+    pub method: Option<crate::SignInMethod>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub via: Option<crate::Via>,
+    #[serde(
+        default,
+        deserialize_with = "crate::signin::lenient",
+        skip_serializing_if = "Option::is_none"
+    )]
+    pub second_step: Option<crate::SecondStepOrder>,
 }
 
 impl BundleItemAnswer {
@@ -136,6 +151,9 @@ impl BundleItemAnswer {
             password: None,
             lease: None,
             error: None,
+            method: None,
+            via: None,
+            second_step: None,
         }
     }
 }
