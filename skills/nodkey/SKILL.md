@@ -45,7 +45,24 @@ opened (payment.schibsted.no, not login.schibsted.com), sign in there; the saved
 When the answer says `match: "chosen"`, no saved account matched the site and the user picked
 one by hand (a login saved for openai.com used on chatgpt.com); use it for this site as given.
 `account.sites` lists more websites the account is used on. Two-step pages may split the code into one box per digit: fill them one by one. When a site offers an
-app prompt instead of a code (Google, Microsoft), choose "another way" and the authenticator code.
+app prompt instead of a code (Google, Microsoft), choose "another way" and the authenticator code
+(see "Second step: passkey, then code").
+
+## Second step: passkey, then code
+
+At a second-step prompt, choose in this order:
+
+1. A passkey from Nodkey.
+2. A one-time code from Nodkey (`request_code`).
+3. Avoid app prompts ("tap Yes on your phone") and SMS. Use them only when the user tells you to.
+
+Use the switch path in the provider's guide ("Try another way", "Other ways to sign in"). The
+guides also show where the user sees which sites use "Sign in with" that provider, and how to add
+a passkey or an authenticator code that Nodkey can keep:
+https://github.com/peters/nodkey-cli/tree/main/skills/nodkey/guides (Google, Apple, Microsoft,
+Meta, GitHub, Amazon). Every change to a sign-in method needs the user's explicit yes first. Never
+turn off two-step sign-in, remove the last method, delete recovery codes or change a password on
+your own.
 
 ## Plan the task, ask once
 
