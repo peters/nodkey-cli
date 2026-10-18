@@ -208,6 +208,7 @@ pub(super) fn add(ctx: &mut Ctx, agent: &Side, phone: &Side) -> Value {
             exclude_credentials: vec![],
             resident_key: Requirement::Required,
             user_verification: Requirement::Required,
+            prf: None,
         }),
         "Create a passkey for webauthn.io",
     );
@@ -218,6 +219,7 @@ pub(super) fn add(ctx: &mut Ctx, agent: &Side, phone: &Side) -> Value {
             client_data_json: b64u::encode(cd_get.as_bytes()),
             allow_credentials: vec![b64u::encode(&credential_id)],
             user_verification: Requirement::Required,
+            prf: None,
         }),
         "Sign in to webauthn.io",
     );
@@ -246,6 +248,7 @@ pub(super) fn add(ctx: &mut Ctx, agent: &Side, phone: &Side) -> Value {
         user_name: Some("alex".into()),
         public_key: None,
         public_key_algorithm: None,
+        prf: None,
     });
     let mut a_create = Answer::decision(&r_create.request_id, Decision::Approved);
     a_create.passkey = Some(PasskeyAnswer {
@@ -257,6 +260,7 @@ pub(super) fn add(ctx: &mut Ctx, agent: &Side, phone: &Side) -> Value {
         user_name: None,
         public_key: Some(b64u::encode(&spki)),
         public_key_algorithm: Some(ES256),
+        prf: None,
     });
     for (name, a) in [
         ("answer_passkey_get", &a_get),

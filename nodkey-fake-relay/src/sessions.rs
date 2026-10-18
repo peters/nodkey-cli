@@ -66,8 +66,13 @@ fn covers(item: &(Kind, String), request: &Request) -> bool {
     let wanted = site(&request.target);
     match (request.kind, item.0) {
         (Kind::Code, Kind::Code | Kind::Login) | (Kind::Login, Kind::Login) => item.1 == wanted,
+        // A get with PRF inputs is never covered: Face ID every time.
         (Kind::Passkey, Kind::Passkey) => {
-            matches!(request.passkey, Some(PasskeyRequest::Get(_))) && item.1 == wanted
+            request
+                .passkey
+                .as_ref()
+                .is_some_and(|p| matches!(p, PasskeyRequest::Get(_)) && !p.needs_prf_output())
+                && item.1 == wanted
         }
         _ => false,
     }
@@ -184,5 +189,42 @@ fn set_item_clock(item: &mut BundleItemAnswer, seconds_left: u32, next: bool) {
             item.next_code = Some(Secret::new(NEXT_CODE));
             item.next_seconds_left = Some(seconds_left + 30);
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use nodkey_proto::{PasskeyGet, PrfInput, PrfValues, Requirement};
+
+    use super::*;
+
+    #[test]
+    fn a_session_never_covers_prf() {
+        let mut get = PasskeyGet {
+            rp_id: "webauthn.io".into(),
+            client_data_json: String::new(),
+            allow_credentials: vec![],
+            user_verification: Requirement::Preferred,
+            prf: None,
+        };
+        let request = |g: &PasskeyGet| {
+            let mut r: Request = serde_json::from_value(serde_json::json!({
+                "v": 1, "request_id": "r", "kind": "passkey", "target": "webauthn.io",
+                "reason": "x", "agent": "a", "ts": 1
+            }))
+            .unwrap();
+            r.passkey = Some(PasskeyRequest::Get(g.clone()));
+            r
+        };
+        let item = (Kind::Passkey, "webauthn.io".to_owned());
+        assert!(covers(&item, &request(&get)));
+        get.prf = Some(PrfInput {
+            eval: Some(PrfValues {
+                first: "AQ".into(),
+                second: None,
+            }),
+            ..Default::default()
+        });
+        assert!(!covers(&item, &request(&get)));
     }
 }

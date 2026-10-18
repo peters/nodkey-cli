@@ -82,6 +82,7 @@ fn answer_check() {
         client_data_json: b64u::encode(cd.as_bytes()),
         allow_credentials: vec![],
         user_verification: Requirement::Required,
+        prf: None,
     });
     let auth = authenticator_data("webauthn.io", None);
     let mut answer = PasskeyAnswer {
@@ -93,6 +94,7 @@ fn answer_check() {
         user_name: Some("alex".into()),
         public_key: None,
         public_key_algorithm: None,
+        prf: None,
     };
     check_answer(&request, &answer).unwrap();
     answer.authenticator_data = b64u::encode(&authenticator_data("other.example", None));

@@ -326,13 +326,14 @@ belongs to the same agent, and the request asks for an approved item:
 | --- | --- |
 | `code` | it matches the account of an approved `code` or `login` item (also the code account linked to an approved login: same site and user name) |
 | `login` | it matches the account of an approved `login` item |
-| `passkey` with `op: get` | its `rp_id` is the relying party of an approved `passkey` item, or a site below it, with the same passkey |
+| `passkey` with `op: get` | its `rp_id` is the relying party of an approved `passkey` item, or a site below it, with the same passkey, and it has no PRF inputs (see "PRF") |
 
 An account the user picked by hand for an item (no saved account matched its site) covers later
 requests for that site in the session, as in the follow-up window.
 
 Such an answer carries `lease: {"kind":"session", "until":…}`. Anything else is asked as usual,
-with or without `session_id`: another site or account, a passkey create, `save`, `save_card`,
+with or without `session_id`: another site or account, a passkey create, a passkey get with PRF
+inputs, `save`, `save_card`,
 `card`, `list`, `insights`, `cleanup` and `bundle`. A request with an unknown or ended `session_id`
 is also asked as usual; its answer carries `session_ended: true`, so the agent stops sending the id.
 
@@ -435,6 +436,7 @@ A new passkey (`op: create`):
 | `algorithms` | create: COSE algorithm ids the site accepts, in its order |
 | `exclude_credentials` | create, optional: credential ids (b64u) the site already has for this user |
 | `resident_key`, `user_verification` | `required`, `preferred` or `discouraged`; absent means `preferred`. The phone always makes a discoverable passkey and always asks for Face ID, so these change nothing it does. |
+| `prf` | optional: the WebAuthn PRF extension (see "PRF") |
 
 The host that talks to the page (Horizon, the browser extension) makes `client_data_json` itself
 from the origin of the calling frame, never from the page or the model:
@@ -497,11 +499,12 @@ A get answer may carry `lease` as a login answer does. Refusals are `decision: d
 | `no_passkey` | no passkey for `rp_id`, or none of those in a non-empty `allow_credentials`; at once |
 | `unsupported_algorithm` | create without `-7` in `algorithms`; at once |
 | `excluded` | create when the phone holds a passkey in `exclude_credentials`; answered **after** the user approved, as WebAuthn asks, so a site cannot probe for passkeys without the user |
+| `prf_unsupported` | get with PRF inputs when no passkey for `rp_id` (or in a non-empty `allow_credentials`) supports PRF; at once (see "PRF") |
 | `paused`, `unsupported_kind`, `unsupported_version` | as for every kind; an older app answers `unsupported_kind` |
 
 Leases: a get may be covered by a lease of kind `passkey`, `(agent_id, passkey_id, passkey,
-until)`, once, 1 day, 7 days or always, as for logins. **A create is never covered by a lease**:
-Face ID every time. A get under a lease is answered by the notification service extension with a
+until)`, once, 1 day, 7 days or always, as for logins. **A create and a get with PRF inputs are
+never covered by a lease**: Face ID every time. A get under a lease is answered by the notification service extension with a
 quiet notification ("Claude Code signed in to webauthn.io with a passkey"), and the history marks
 it as a lease answer. Scopes: allowed for `selected`, `logins` and `all`, refused for `codes`.
 
@@ -511,6 +514,73 @@ Vectors: `request_passkey_get`, `request_passkey_create`, `answer_passkey_get`,
 and create the `client_data_json` (text and b64u), its hash, the expected `authenticator_data`,
 the `attestation_object` (create), and `signed_data` and a `signature` that verifies with the public
 key (get; RFC 6979 nonces, so the file stays the same).
+
+### PRF
+
+The WebAuthn PRF extension (CTAP2 `hmac-secret`) lets a site or a program get a secret key from a
+passkey: the same passkey and the same input always give the same 32 bytes. `nodkey_proto::prf`
+implements it.
+
+Each passkey that the phone makes holds `credRandom`, 32 random bytes made with the passkey. The
+phone keeps it with the private key: in the keychain, in the end-to-end encrypted iCloud backup and
+in a vault export, so a restored phone gives the same output. For each input the phone answers
+
+```
+salt   = SHA-256("WebAuthn PRF" || 0x00 || input)
+output = HMAC-SHA256(credRandom, salt)
+```
+
+as WebAuthn Level 3 says. A passkey made before PRF support has no `credRandom`; the phone does not
+add one later (an older backup would not have it), so such a passkey answers `prf_unsupported`.
+
+`prf` in the request (the WebAuthn names in snake case; inputs b64u, 0 to 256 bytes each):
+
+```json
+"passkey":{"op":"create", …, "prf":{}}
+"passkey":{"op":"create", …, "prf":{"eval":{"first":"<b64u>"}}}
+"passkey":{"op":"get", …, "allow_credentials":["<id>"],
+           "prf":{"eval":{"first":"<b64u>", "second":"<b64u>"},
+                  "eval_by_credential":{"<id>":{"first":"<b64u>"}}}}
+```
+
+- create: `{}` asks for a passkey with PRF (every new passkey has it). `eval` also asks for the
+  outputs at once. `eval_by_credential` is not allowed.
+- get: `eval` and/or `eval_by_credential` is required. Each key of `eval_by_credential` is a
+  credential id (b64u) in `allow_credentials` (so that list is not empty). For the passkey that
+  signs, its entry in `eval_by_credential` is used, else `eval`. `second` is optional.
+
+The agent checks these rules before it sends; the vector section `prf.input_checks` lists cases.
+
+`prf` in the answer:
+
+```json
+"passkey":{"credential_id":"<b64u>", …, "prf":{"enabled":true, "results":{"first":"<b64u>"}}}
+"passkey":{"credential_id":"<b64u>", …, "prf":{"results":{"first":"<b64u>", "second":"<b64u>"}}}
+```
+
+`enabled` is only in a create answer. `results` holds the outputs (32 bytes each) when the request
+had inputs for the passkey that answered; `second` exactly when it was asked. The authenticator data
+does not change (no extension data, no ED flag).
+
+Rules on the phone:
+
+- A get with PRF inputs is shown as unlocking a key: "Unlock a key for <rp_id>", with the origin
+  and the passkey's user name. It always needs Face ID. A lease, a task session, a bundle item or a
+  notification action without Face ID in the app never answers it, and its answer carries no
+  `lease`. The agent refuses a PRF answer with a lease other than `once`.
+- When the user can pick between passkeys, only passkeys with PRF are offered. When none has PRF,
+  the phone answers `prf_unsupported` at once.
+- An older app does not know `prf`: it answers a create without `prf` (so `enabled` is false) and a
+  get without `results`. The agent treats that get as `prf_unsupported`.
+
+The outputs are secret keys: an agent passes them on only to the program that asked and never logs
+or stores them in clear.
+
+Vectors: `request_passkey_create_prf`, `request_passkey_get_prf`,
+`request_passkey_get_prf_by_credential`, `answer_passkey_create_prf`, `answer_passkey_get_prf`,
+`answer_passkey_get_prf_by_credential`, `answer_passkey_prf_unsupported`, and the `prf` section: a
+fixed `cred_random` for the vectors' passkey, `derivations` (input, salt, output) and
+`input_checks`.
 
 ## Payment cards
 
@@ -945,8 +1015,8 @@ stdout, also when it fails (waiting notes go to stderr). Sign in:
 ```
 
 `op: create` adds `rp_name`, `user`, `algorithms`, `exclude_credentials` and `resident_key`, as in
-the request. `reason` is optional ("Sign in to webauthn.io with a passkey" or "Create a passkey for
-webauthn.io"); `requester` is optional and self-reported, and goes to the phone's history as
+the request. `reason` is optional ("Sign in to webauthn.io with a passkey", "Unlock a key for
+webauthn.io" for a get with PRF inputs, or "Create a passkey for webauthn.io"); `requester` is optional and self-reported, and goes to the phone's history as
 `client.app` ("Horizon (Claude Code)"). Before it sends anything the command checks that `origin` is
 the origin inside `client_data_json` and runs the client data check. Results:
 
@@ -960,6 +1030,7 @@ the origin inside `client_data_json` and runs the client data check. Results:
 | `status` | Exit | When |
 | --- | --- | --- |
 | `ok` | 0 | the phone signed (get) or made a passkey (create) |
+| `prf_unsupported` | 2 | a get with PRF inputs, and the passkey (or the app) has no PRF |
 | `denied` | 2 | the user said no, the agent is paused, or the phone refused the client data or the algorithms |
 | `not_found` | 2 | the phone has no matching passkey (`no_passkey`) |
 | `excluded` | 2 | the phone already holds a passkey in `exclude_credentials` |
@@ -969,6 +1040,26 @@ the origin inside `client_data_json` and runs the client data check. Results:
 
 A failure from the phone also carries the phone's `error` code. A bridge turns `excluded` into
 `InvalidStateError` and every other failure into `NotAllowedError`.
+
+PRF: the request may have `extensions.prf` in the WebAuthn JSON form, as a page gives it to
+`navigator.credentials` (`eval`, `evalByCredential`; inputs b64u). Other extensions are ignored. The
+command sends it as `prf` (see "PRF") and puts the answer in `clientExtensionResults.prf`, as
+`PublicKeyCredential.toJSON()` has it, so a host can copy both objects as they are:
+
+```json
+{"version":1, "op":"get", "rp_id":"example.com", "origin":"https://example.com",
+ "client_data_json":"<b64u>", "allow_credentials":["<b64u>"],
+ "extensions":{"prf":{"eval":{"first":"<b64u>", "second":"<b64u>"}}}}
+{"version":1, "status":"ok", "credential_id":"…", "authenticator_data":"…", "signature":"…", "user_handle":"…",
+ "clientExtensionResults":{"prf":{"results":{"first":"<b64u>", "second":"<b64u>"}}}}
+{"version":1, "status":"ok", "credential_id":"…", "attestation_object":"…", …,
+ "clientExtensionResults":{"prf":{"enabled":true, "results":{"first":"<b64u>"}}}}
+```
+
+`clientExtensionResults` is there only when the request had `extensions.prf`. `nodkey webauthn
+--help` prints the whole contract. The RP ID rule is the client data check above: `rp_id` is a
+domain name with a dot or `localhost`, and the host of the origin is `rp_id` or ends with `"." +
+rp_id`. There is no public suffix check.
 
 ## The card fill command
 

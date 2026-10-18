@@ -16,6 +16,7 @@ pub mod dh;
 pub mod keys;
 pub mod messages;
 pub mod passkey;
+pub mod prf;
 pub mod quota;
 pub mod seal;
 pub mod secret;
@@ -34,6 +35,7 @@ pub use messages::*;
 pub use passkey::{
     PasskeyAnswer, PasskeyCreate, PasskeyGet, PasskeyOp, PasskeyRequest, PasskeyUser, Requirement,
 };
+pub use prf::{PrfInput, PrfOutput, PrfResults, PrfValues};
 pub use quota::Quota;
 pub use seal::{Purpose, Sealed};
 pub use secret::Secret;

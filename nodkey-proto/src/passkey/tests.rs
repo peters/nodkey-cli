@@ -100,6 +100,7 @@ fn request_json_shape() {
         exclude_credentials: vec![],
         resident_key: Requirement::Required,
         user_verification: Requirement::Required,
+        prf: None,
     });
     assert!(create.check("webauthn.io").is_ok());
     assert!(create.check("other.example").is_err());

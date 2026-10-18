@@ -14,6 +14,8 @@ ed25519-dalek = { version = "3.0.0", default-features = false, features = ["fast
 sha2 = { version = "0.11", default-features = false }
 # Both already come with hpke; used directly by dh.rs (HPKE open when X25519 runs in WebCrypto).
 hkdf = { version = "0.13", default-features = false }
+# Already comes with hkdf; the WebAuthn PRF output is HMAC-SHA256 (prf.rs).
+hmac = { version = "0.13", default-features = false }
 chacha20poly1305 = { version = "0.11", default-features = false }
 getrandom = "0.4"
 # ES256 for passkeys: the authenticator data, signatures and keys the phone makes (webauthn.rs).

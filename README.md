@@ -167,7 +167,9 @@ nodkey agents
   5 above your limit, 6 full card numbers off, 7 cards off.
 - `nodkey webauthn` is for browser hosts such as Horizon: it reads one passkey request (sign in or
   create) as JSON on stdin and writes the result as JSON on stdout. Your iPhone shows the site and
-  signs with a passkey that never leaves it. `nodkey card-fill` gives such a host your card to fill
+  signs with a passkey that never leaves it. It can also get a secret key from a passkey (the
+  WebAuthn PRF extension), for example to unlock a backup; your iPhone asks with Face ID every time
+  (`nodkey webauthn --help`). `nodkey card-fill` gives such a host your card to fill
   a checkout form, so the agent never sees the number. See `docs/agent-protocol.md`.
 
 `nodkey --help` lists every option.

@@ -419,3 +419,109 @@ fn not_paired_is_an_error() {
     assert_eq!((v["status"].as_str(), code), (Some("error"), 1), "{v}");
     assert!(v["message"].as_str().unwrap().contains("not paired"), "{v}");
 }
+
+/// `extensions.prf` with `eval` (`first`, and `second` when given).
+fn with_prf(request: &str, first: &[u8], second: Option<&[u8]>) -> String {
+    let mut v: Value = serde_json::from_str(request).unwrap();
+    let mut eval = json!({"first": b64u::encode(first)});
+    if let Some(second) = second {
+        eval["second"] = json!(b64u::encode(second));
+    }
+    v["extensions"] = json!({"prf": {"eval": eval}});
+    v.to_string()
+}
+
+#[test]
+fn prf_gives_the_same_key_for_the_same_salt() {
+    use nodkey_proto::{prf, vectors::prf::cred_random};
+    let (fake, addr) = fake_relay::start(1);
+    let cli = Cli::new(addr);
+    let out = cli
+        .command(&["pair", "--agent", "claude-code"])
+        .output()
+        .unwrap();
+    assert!(out.status.success(), "{}", stderr(&out));
+    let expected = |salt: &[u8]| b64u::encode(&*prf::evaluate(&cred_random(), salt));
+
+    // A new passkey with PRF; the output for the salt comes at once.
+    let cd = client_data(PasskeyOp::Create, ORIGIN);
+    let (made, code) = cli.webauthn(&with_prf(
+        &create(&cd, &[9; 16], &[-7], &[]),
+        b"salt one",
+        None,
+    ));
+    assert_eq!(code, 0, "{made}");
+    let prf_made = &made["clientExtensionResults"]["prf"];
+    assert_eq!(prf_made["enabled"], true, "{made}");
+    assert_eq!(prf_made["results"]["first"], expected(b"salt one"));
+    let credential = made["credential_id"].as_str().unwrap().to_owned();
+    let sent = fake.seen().last().unwrap().request.clone();
+    assert!(sent.passkey.unwrap().prf().is_some());
+
+    // Sign in twice with the same salt: the same output. Another salt: another output.
+    let unlock = |salt: &[u8], second: Option<&[u8]>| {
+        let cd = client_data(PasskeyOp::Get, ORIGIN);
+        let (v, code) = cli.webauthn(&with_prf(
+            &get("webauthn.io", &cd, &[&credential]),
+            salt,
+            second,
+        ));
+        assert_eq!(code, 0, "{v}");
+        v["clientExtensionResults"]["prf"]["results"].clone()
+    };
+    let one = unlock(b"salt one", None);
+    assert_eq!(one, unlock(b"salt one", None));
+    assert_eq!(one["first"], expected(b"salt one"));
+    assert!(one.get("second").is_none());
+    let two = unlock(b"salt two", Some(b"salt one"));
+    assert_ne!(two["first"], one["first"]);
+    assert_eq!(two["second"], one["first"]);
+    let sent = fake.seen().last().unwrap().request.clone();
+    assert_eq!(sent.reason, "Sign in to webauthn.io in a browser panel");
+
+    // Without a reason the phone gets "Unlock a key for ...".
+    let cd = client_data(PasskeyOp::Get, ORIGIN);
+    let mut v: Value = serde_json::from_str(&with_prf(
+        &get("webauthn.io", &cd, &[&credential]),
+        b"x",
+        None,
+    ))
+    .unwrap();
+    v.as_object_mut().unwrap().remove("reason");
+    let (_, code) = cli.webauthn(&v.to_string());
+    assert_eq!(code, 0);
+    let sent = fake.seen().last().unwrap().request.clone();
+    assert_eq!(sent.reason, "Unlock a key for webauthn.io");
+
+    // The test passkey is from before PRF support: prf_unsupported, at once.
+    let test = fake
+        .passkeys()
+        .into_iter()
+        .find(|p| p.user_name == fake_relay::passkeys::USER_NAME)
+        .unwrap();
+    assert!(!test.prf);
+    let cd = client_data(PasskeyOp::Get, ORIGIN);
+    let (v, code) = cli.webauthn(&with_prf(
+        &get("webauthn.io", &cd, &[&test.credential_id]),
+        b"salt one",
+        None,
+    ));
+    assert_eq!(
+        (v["status"].as_str(), code),
+        (Some("prf_unsupported"), 2),
+        "{v}"
+    );
+    assert_eq!(v["error"], "prf_unsupported");
+
+    // The help documents the contract.
+    let out = cli.run(&["webauthn", "--help"]);
+    let help = stdout(&out);
+    for part in [
+        "evalByCredential",
+        "clientExtensionResults",
+        "RP ID rule",
+        "\".\" + rp_id",
+    ] {
+        assert!(help.contains(part), "{part}");
+    }
+}

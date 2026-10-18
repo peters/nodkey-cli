@@ -5,7 +5,10 @@
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
 
-use crate::b64u;
+use crate::{
+    b64u,
+    prf::{PrfInput, PrfOutput},
+};
 
 /// COSE algorithm ES256 (ECDSA P-256 with SHA-256), the only one the phone makes.
 pub const ES256: i64 = -7;
@@ -27,6 +30,9 @@ pub mod errors {
     /// A create request where the phone already holds a passkey in `exclude_credentials`
     /// (answered after the user approved, as WebAuthn asks).
     pub const EXCLUDED: &str = "excluded";
+    /// A get with PRF inputs where no passkey for the `rp_id` (or in `allow_credentials`)
+    /// supports PRF: they were made before PRF support and have no `credRandom`.
+    pub const PRF_UNSUPPORTED: &str = "prf_unsupported";
 }
 
 /// WebAuthn's `required`, `preferred` or `discouraged` (user verification, resident key).
@@ -78,6 +84,9 @@ pub struct PasskeyGet {
     pub allow_credentials: Vec<String>,
     #[serde(default)]
     pub user_verification: Requirement,
+    /// WebAuthn PRF inputs ([`PrfInput`]). The phone always asks with Face ID for them.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub prf: Option<PrfInput>,
 }
 
 /// `op: create`: make a new passkey.
@@ -97,6 +106,9 @@ pub struct PasskeyCreate {
     pub resident_key: Requirement,
     #[serde(default)]
     pub user_verification: Requirement,
+    /// WebAuthn PRF: `{}` or `{"eval": …}` ([`PrfInput`]).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub prf: Option<PrfInput>,
 }
 
 /// The `passkey` of a request (`kind: passkey`). `target` of the request is the `rp_id`.
@@ -120,6 +132,20 @@ impl PasskeyRequest {
             PasskeyRequest::Get(g) => &g.rp_id,
             PasskeyRequest::Create(c) => &c.rp_id,
         }
+    }
+
+    /// The PRF inputs, if the request has the extension.
+    pub fn prf(&self) -> Option<&PrfInput> {
+        match self {
+            PasskeyRequest::Get(g) => g.prf.as_ref(),
+            PasskeyRequest::Create(c) => c.prf.as_ref(),
+        }
+    }
+
+    /// True for a get with PRF inputs: the phone answers it only with Face ID, never from a
+    /// lease or a task session.
+    pub fn needs_prf_output(&self) -> bool {
+        matches!(self, PasskeyRequest::Get(g) if g.prf.as_ref().is_some_and(PrfInput::has_inputs))
     }
 
     /// `client_data_json` as sent (b64u).
@@ -172,6 +198,13 @@ impl PasskeyRequest {
                 return Err("rp_name or a user name is too long".into());
             }
         }
+        if let Some(prf) = self.prf() {
+            let allowed = match self {
+                PasskeyRequest::Get(g) => &g.allow_credentials[..],
+                PasskeyRequest::Create(_) => &[],
+            };
+            prf.check(self.op() == PasskeyOp::Create, allowed)?;
+        }
         if self.client_data_json().len() > b64u::encoded_len(MAX_CLIENT_DATA) {
             return Err("client_data_json is too long".into());
         }
@@ -181,7 +214,7 @@ impl PasskeyRequest {
 
 /// What the phone answers to an approved passkey request. A get answer carries `signature`,
 /// `user_handle` and `user_name`; a create answer `attestation_object`, `public_key` and
-/// `public_key_algorithm`. Binary values are b64u.
+/// `public_key_algorithm`. Either carries `prf` when the request had it. Binary values are b64u.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct PasskeyAnswer {
     pub credential_id: String,
@@ -204,6 +237,9 @@ pub struct PasskeyAnswer {
     /// COSE algorithm of the new key, `-7` (create).
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub public_key_algorithm: Option<i64>,
+    /// The PRF outputs ([`PrfOutput`]), when the request had `prf`.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub prf: Option<PrfOutput>,
 }
 
 /// What a checked `client_data_json` says.

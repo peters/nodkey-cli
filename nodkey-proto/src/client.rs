@@ -387,6 +387,7 @@ mod tests {
             client_data_json: b64u::encode(cd.as_bytes()),
             allow_credentials: vec![],
             user_verification: crate::Requirement::Preferred,
+            prf: None,
         }));
         assert!(check_request(&p).is_ok());
         p.target = "evil.example".into();

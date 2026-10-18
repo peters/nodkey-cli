@@ -41,8 +41,9 @@ Usage:
   nodkey phones                            the phones this agent is paired with
   nodkey unpair PHONE                      leave a phone (phone name or id)
   nodkey agents                            the agents paired on this computer
-  nodkey webauthn [--phone PHONE]          sign in with a passkey or make one: one JSON request
-                                           on stdin, one JSON result on stdout (for browser hosts)
+  nodkey webauthn [--phone PHONE]          sign in with a passkey or make one, also with PRF: one
+                                           JSON request on stdin, one JSON result on stdout (for
+                                           browser hosts and scripts; nodkey webauthn --help)
   nodkey card-fill [--phone PHONE]         a card for a browser host to fill a checkout form: one
                                            JSON request on stdin, one JSON result on stdout
   nodkey mcp                               run the MCP server on stdio
@@ -214,6 +215,10 @@ pub fn main(raw: Vec<String>) -> ExitCode {
         _ => {}
     }
     if rest.iter().any(|a| a == "-h" || a == "--help") {
+        if command == "webauthn" {
+            print!("{}", crate::webauthn::HELP);
+            return ExitCode::SUCCESS;
+        }
         print!("{USAGE}");
         return ExitCode::SUCCESS;
     }

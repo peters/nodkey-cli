@@ -13,7 +13,7 @@ pub use p256::ecdsa::{SigningKey, VerifyingKey};
 
 use crate::{
     Error, b64u,
-    passkey::{ES256, PasskeyAnswer, PasskeyRequest, client_data_hash},
+    passkey::{ES256, PasskeyAnswer, PasskeyOp, PasskeyRequest, client_data_hash},
 };
 
 /// Nodkey's authenticator id: 97531e9d-ff39-4e63-aaec-b1d68400c3c9.
@@ -148,7 +148,8 @@ pub fn signed_data(authenticator_data: &[u8], client_data_json: &[u8]) -> Vec<u8
 
 /// The agent's check of an approved answer before it hands it on: every value is b64u, the
 /// authenticator data is for `rp_id` with the user present, and the answer has the fields of
-/// its operation (a signature for get; an attestation object and an ES256 key for create).
+/// its operation (a signature for get; an attestation object and an ES256 key for create), and
+/// PRF results only for inputs the request had ([`crate::prf::check_output`]).
 pub fn check_answer(request: &PasskeyRequest, answer: &PasskeyAnswer) -> Result<(), String> {
     let decode = |name: &str, v: &str| {
         b64u::decode(v)
@@ -187,6 +188,15 @@ pub fn check_answer(request: &PasskeyRequest, answer: &PasskeyAnswer) -> Result<
             if answer.public_key_algorithm != Some(ES256) || auth[32] & FLAG_AT == 0 {
                 return Err("the phone's new passkey is not an ES256 key".into());
             }
+        }
+    }
+    if let Some(out) = &answer.prf {
+        let asked = request
+            .prf()
+            .and_then(|p| p.values_for(&answer.credential_id));
+        crate::prf::check_output(asked, out)?;
+        if request.op() == PasskeyOp::Get && out.enabled.is_some() {
+            return Err("the phone sent prf.enabled for a sign in".into());
         }
     }
     Ok(())

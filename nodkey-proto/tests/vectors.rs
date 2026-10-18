@@ -443,3 +443,76 @@ fn quota_vectors() {
     assert_eq!(by_limit.decision, Decision::Denied);
     assert_eq!(by_limit.quota.unwrap().new_today, quota::PAUSE_ABOVE);
 }
+
+#[test]
+fn prf_vectors() {
+    use nodkey_proto::{Answer, PrfInput, Request, prf};
+    let v = load();
+    let p = &v["prf"];
+    assert_eq!(s(p, "label").as_bytes(), prf::LABEL);
+    let cred = arr32(p, "cred_random");
+    let d = |x: &Value, k: &str| b64u::decode(s(x, k)).unwrap();
+    let mut outputs = Vec::new();
+    for c in p["derivations"].as_array().unwrap() {
+        let input = d(c, "input");
+        assert_eq!(
+            &prf::salt(&input)[..],
+            &d(c, "salt")[..],
+            "{}",
+            s(c, "name")
+        );
+        assert_eq!(&prf::evaluate(&cred, &input)[..], &d(c, "output")[..]);
+        if let Some(text) = c["input_text"].as_str() {
+            assert_eq!(text.as_bytes(), &input[..]);
+        }
+        outputs.push(s(c, "output").to_owned());
+    }
+    // Other inputs give other outputs.
+    outputs.sort();
+    outputs.dedup();
+    assert_eq!(outputs.len(), p["derivations"].as_array().unwrap().len());
+    for c in p["input_checks"].as_array().unwrap() {
+        let input: PrfInput = serde_json::from_value(c["prf"].clone()).unwrap();
+        let allow: Vec<String> = serde_json::from_value(c["allow_credentials"].clone()).unwrap();
+        let create = c["op"] == "create";
+        assert_eq!(
+            input.check(create, &allow).is_ok(),
+            c["ok"].as_bool().unwrap(),
+            "{}",
+            s(c, "name")
+        );
+    }
+
+    let plain = |name: &str| -> String {
+        let h = v["hpke"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .find(|h| h["name"] == name)
+            .unwrap_or_else(|| panic!("{name}"));
+        s(h, "plaintext").to_owned()
+    };
+    for (request, answer) in [
+        ("request_passkey_create_prf", "answer_passkey_create_prf"),
+        ("request_passkey_get_prf", "answer_passkey_get_prf"),
+        (
+            "request_passkey_get_prf_by_credential",
+            "answer_passkey_get_prf_by_credential",
+        ),
+    ] {
+        let r: Request = serde_json::from_str(&plain(request)).unwrap();
+        let a: Answer = serde_json::from_str(&plain(answer)).unwrap();
+        let (r, a) = (r.passkey.unwrap(), a.passkey.unwrap());
+        nodkey_proto::webauthn::check_answer(&r, &a).unwrap();
+        let asked = r.prf().unwrap().values_for(&a.credential_id).unwrap();
+        let results = a.prf.unwrap().results.unwrap();
+        let out = |input: &str| b64u::encode(&*prf::evaluate(&cred, &b64u::decode(input).unwrap()));
+        assert_eq!(results.first.expose(), out(&asked.first), "{answer}");
+        assert_eq!(
+            results.second.as_ref().map(|s| s.expose().to_owned()),
+            asked.second.as_deref().map(out)
+        );
+    }
+    let refused: Answer = serde_json::from_str(&plain("answer_passkey_prf_unsupported")).unwrap();
+    assert_eq!(refused.error.as_deref(), Some("prf_unsupported"));
+}
