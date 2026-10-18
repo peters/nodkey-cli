@@ -836,14 +836,20 @@ change ignore such a request, and the agent sees `expired`.) Requests also carry
   session_minutes?, image_path?)`, `end_session()`, `request_payment(merchant, amount, currency, reason, image_path?)` (`mode: reveal`;
   its description starts with "Spends the user's money."), `list_accounts()`, `cleanup_insights()`,
   `cleanup_logins(filter, reason)` (dates as Unix seconds or `YYYY-MM-DD`; an unknown filter key is an
-  error, so a typo cannot widen the filter). `image_path` is an optional PNG/JPEG/GIF file (for example
+  error, so a typo cannot widen the filter), `suggest_sign_in_method(target, kind, provider?, mailbox?,
+  outcome, reason)` (`provider` is a known name or the provider's own; a `signed_in` suggestion
+  goes as `seen`, a `failed` one without `certainty`) and `request_sms_code(target, reason,
+  wait_seconds?)`. A `request_login` result shows `via` with `fill_only_on` (`via_sites`), and its
+  message says what to do with `method`, `via` and `second_step`. `image_path` is an optional PNG/JPEG/GIF file (for example
   a browser screenshot) sent as the attachment. Results go to the model; the server keeps no secret.
   A running task session (its id, end, phone and the approved items, never a secret) is kept in
   `agents/<profile>/session.json`, so the MCP server, the command line and `nodkey webauthn` of one
   profile share it; `end_session()` and `nodkey end-session` end it.
 - The command line does the same in one process: `nodkey pair` shows the code and then the check
-  number; `nodkey code`, `login`, `credentials`, `pay`, `accounts`, `insights`, `cleanup`, `phones`, `unpair`. Exit codes:
-  0 approved, 1 error, 2 denied, 3 expired, 64 bad arguments; for `pay` and `card-fill` also 5
+  number; `nodkey code`, `login`, `credentials`, `pay`, `suggest`, `sms-code`, `accounts`, `insights`,
+  `cleanup`, `phones`, `unpair`. `nodkey suggest SITE --kind KIND [--provider NAME] [--mailbox ADDR]
+  [--outcome failed] --reason TEXT`; `nodkey sms-code TARGET --reason TEXT [--wait SECS]`. Exit codes:
+  0 approved (or queued), 1 error, 2 denied (or rejected), 3 expired, 64 bad arguments; for `pay` and `card-fill` also 5
   `over_limit`, 6 `reveal_off`, 7 `cards_off` or `no_card`, 8 `total_mismatch`. `nodkey pay MERCHANT
   AMOUNT CURRENCY --reason TEXT --reveal` prints the full card, so it requires `--reveal`; without a
   host nothing can fill a card for it. A missing amount is refused before anything is sent.

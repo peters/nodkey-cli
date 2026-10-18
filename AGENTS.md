@@ -15,9 +15,10 @@ mcp`). The iOS app and the relay live in the private repository `peters/nodkey`;
 - `nodkey-fake-relay/`: a relay that plays the phone, for tests (library and binary with `/_fake/...`
   control routes). The extension's tests use it too.
 - `nodkey/`: the library (`agent.rs` what the tools do, `relay.rs` relay calls, `store.rs` the agent
-  folder and profiles, `profile.rs` which agent is asking), the MCP server (`mcp.rs`, `tools.rs`), the
-  command line (`cli.rs`, `commands.rs`) and `setup.rs`. Tests: `tests/e2e.rs` (MCP) and
-  `tests/cli.rs` run the real binary against `nodkey-fake-relay`.
+  folder and profiles, `profile.rs` which agent is asking, `signin.rs` sign-in methods, `suggest` and
+  `sms_code`), the MCP server (`mcp.rs`, `tools.rs`), the
+  command line (`cli.rs`, `commands.rs`) and `setup.rs`. Tests: `tests/e2e.rs` (MCP),
+  `tests/cli.rs` and `tests/signin.rs` run the real binary against `nodkey-fake-relay`.
 - `skills/nodkey/SKILL.md`: the skill `nodkey setup` installs (compiled into the binary).
 
 ## Rules

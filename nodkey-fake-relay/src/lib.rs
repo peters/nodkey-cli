@@ -11,9 +11,11 @@
 mod bundle;
 pub mod cards;
 pub mod control;
+mod pairing;
 pub mod passkeys;
 mod phone;
 pub mod sessions;
+pub mod signin;
 
 pub use phone::{SAVED_LOGINS, cleanup_matches};
 
@@ -103,6 +105,8 @@ pub struct Fake {
     pub cards: Mutex<cards::FakeCards>,
     /// Running task sessions and the code clock.
     pub sessions: Mutex<sessions::FakeSessions>,
+    /// Sign-in methods, queued suggestions and the SMS a test delivers.
+    pub signin: Mutex<signin::FakeSignin>,
     /// Where this relay listens; the phone calls it for the pairing lookup.
     addr: std::sync::OnceLock<SocketAddr>,
     inner: Mutex<Inner>,
@@ -300,7 +304,7 @@ async fn wait_pairing(
     if claim_now {
         // The phone claims the way Nodkey does: it looks up the waiting agent's keys with a signed
         // GET /v1/pairings/{code}/agent and seals the grant (with the check number) to those.
-        let keys = match phone_looks_up(&fake, &code).await {
+        let keys = match pairing::phone_looks_up(&fake, &code).await {
             Ok(k) => k,
             Err(status) => return fail(status, "phone lookup failed"),
         };
@@ -336,55 +340,6 @@ async fn wait_pairing(
         Some(c) => Json(c.clone()).into_response(),
         None => StatusCode::NO_CONTENT.into_response(),
     }
-}
-
-/// `GET /v1/pairings/{code}/agent`, signed by the phone: the waiting agent's keys while the code
-/// is unclaimed, 404 otherwise.
-async fn pairing_agent(
-    State(fake): State<Shared>,
-    Path(code): Path<String>,
-    method: Method,
-    uri: Uri,
-    headers: HeaderMap,
-) -> Response {
-    if claimed_id(&headers).as_deref() != Some(fake.phone_id.as_str()) {
-        return fail(StatusCode::UNAUTHORIZED, "bad_signature");
-    }
-    if let Err(r) = verify(&headers, &fake.phone.public(), &method, &uri, b"") {
-        return r;
-    }
-    let mut inner = fake.inner.lock().unwrap();
-    inner.lookups += 1;
-    match inner.pairings.get(&code) {
-        Some(p) if p.claimed.is_none() => Json(p.agent.clone()).into_response(),
-        _ => fail(StatusCode::NOT_FOUND, "not_found"),
-    }
-}
-
-/// The phone's side of the lookup: a real signed HTTP call to this relay.
-async fn phone_looks_up(fake: &Fake, code: &str) -> Result<PublicKeys, StatusCode> {
-    let addr = *fake.addr.get().ok_or(StatusCode::INTERNAL_SERVER_ERROR)?;
-    let path = format!("/v1/pairings/{code}/agent");
-    let header = auth::sign(
-        &fake.phone.signing_key(),
-        &fake.phone_id,
-        "GET",
-        &path,
-        nodkey_proto::unix_now(),
-        b"",
-    );
-    let resp = reqwest::Client::new()
-        .get(format!("http://{addr}{path}"))
-        .header(auth::HEADER, header)
-        .send()
-        .await
-        .map_err(|_| StatusCode::BAD_GATEWAY)?;
-    if resp.status() != reqwest::StatusCode::OK {
-        return Err(StatusCode::from_u16(resp.status().as_u16()).unwrap_or(StatusCode::BAD_GATEWAY));
-    }
-    let bytes = resp.bytes().await.map_err(|_| StatusCode::BAD_GATEWAY)?;
-    let agent: AgentInfo = serde_json::from_slice(&bytes).map_err(|_| StatusCode::BAD_GATEWAY)?;
-    PublicKeys::from_b64u(&agent.sign, &agent.kem).map_err(|_| StatusCode::BAD_GATEWAY)
 }
 
 async fn post_request(
@@ -518,6 +473,11 @@ async fn wait_answer(
         sessions::after(&fake, &agent_id, &request, &mut covered);
         return seal_answer(&fake, &agent_id, &rid, &covered);
     }
+    if let Some(answer) = signin::answer(&fake, &agent_id, &rid, &request, mode, q.wait).await {
+        return answer.map_or(StatusCode::NO_CONTENT.into_response(), |a| {
+            seal_answer(&fake, &agent_id, &rid, &a)
+        });
+    }
     let mut answer = match mode {
         Mode::Silent => {
             tokio::time::sleep(Duration::from_secs(q.wait.unwrap_or(1).min(60))).await;
@@ -562,6 +522,7 @@ pub fn start_on(bind: &str, claim_on_poll: u32) -> (Shared, SocketAddr) {
         passkeys: Mutex::new(vec![passkeys::FakePasskey::test()]),
         cards: Mutex::new(cards::FakeCards::default()),
         sessions: Mutex::new(sessions::FakeSessions::default()),
+        signin: Mutex::new(signin::FakeSignin::default()),
         addr: std::sync::OnceLock::new(),
         inner: Mutex::new(Inner::default()),
     });
@@ -572,7 +533,7 @@ pub fn start_on(bind: &str, claim_on_poll: u32) -> (Shared, SocketAddr) {
             axum::routing::delete(agent_leaves),
         )
         .route("/v1/pairings/{code}", get(wait_pairing))
-        .route("/v1/pairings/{code}/agent", get(pairing_agent))
+        .route("/v1/pairings/{code}/agent", get(pairing::pairing_agent))
         .route("/v1/phones/{phone_id}/requests", post(post_request))
         .route("/v1/requests/{rid}/attachment", put(put_attachment))
         .route("/v1/requests/{rid}", get(wait_answer))

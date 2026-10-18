@@ -12,6 +12,12 @@
 //! - `GET /_fake/sessions`: the running task sessions, `[{id, agent_id, until, items, used}]`.
 //! - `PUT /_fake/seconds_left` with a number: the seconds left of every code from now on (17 by
 //!   default); below 8 the answer also carries the next code.
+//! - `PUT /_fake/methods` with `{"<site>": <method>}`: the sign-in method the phone knows for each
+//!   site (replaces the defaults: Google for `renderfarm.example`, an e-mail code for
+//!   `mail.example.com`, a password for `vg.no`).
+//! - `GET /_fake/suggestions`: the queued suggestions, `[{agent_id, target, reason, suggest}]`.
+//! - `PUT /_fake/sms` with `{"text": "Your code is 482913"}`: a message reaches Nodkey through the
+//!   Shortcuts automation, for the waiting `sms_code` request; `{"expire": true}` ends the wait.
 
 use std::sync::Arc;
 
@@ -36,6 +42,29 @@ pub(crate) fn routes() -> Router<Shared> {
         .route("/_fake/cards", axum::routing::put(set_cards))
         .route("/_fake/sessions", get(sessions))
         .route("/_fake/seconds_left", axum::routing::put(set_seconds_left))
+        .route("/_fake/methods", axum::routing::put(set_methods))
+        .route("/_fake/suggestions", get(suggestions))
+        .route("/_fake/sms", axum::routing::put(deliver_sms))
+}
+
+async fn set_methods(
+    State(fake): State<Shared>,
+    Json(methods): Json<std::collections::HashMap<String, nodkey_proto::SignInMethod>>,
+) -> StatusCode {
+    fake.signin.lock().unwrap().methods = methods;
+    StatusCode::NO_CONTENT
+}
+
+async fn suggestions(State(fake): State<Shared>) -> Response {
+    Json(fake.signin.lock().unwrap().suggestions.clone()).into_response()
+}
+
+async fn deliver_sms(
+    State(fake): State<Shared>,
+    Json(sms): Json<crate::signin::Sms>,
+) -> StatusCode {
+    fake.signin.lock().unwrap().sms = Some(sms);
+    StatusCode::NO_CONTENT
 }
 
 async fn sessions(State(fake): State<Shared>) -> Response {

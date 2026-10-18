@@ -95,6 +95,11 @@ pub async fn settle(answer: &mut Answer) {
             wait = wait.max(left);
         }
     }
+    if let Some(via) = &answer.via
+        && let (Some(left), Some(_)) = (via.seconds_left, &via.next_code)
+    {
+        wait = wait.max(left);
+    }
     if wait == 0 && !has_next(answer) {
         return;
     }
@@ -103,6 +108,15 @@ pub async fn settle(answer: &mut Answer) {
     if let Some(next) = answer.next_code.take() {
         answer.code = Some(next);
         answer.seconds_left = answer
+            .next_seconds_left
+            .take()
+            .map(|s| s.saturating_sub(passed));
+    }
+    if let Some(via) = answer.via.as_mut()
+        && let Some(next) = via.next_code.take()
+    {
+        via.code = Some(next);
+        via.seconds_left = via
             .next_seconds_left
             .take()
             .map(|s| s.saturating_sub(passed));
@@ -119,7 +133,9 @@ pub async fn settle(answer: &mut Answer) {
 }
 
 fn has_next(answer: &Answer) -> bool {
-    answer.next_code.is_some() || answer.items.iter().flatten().any(|i| i.next_code.is_some())
+    answer.next_code.is_some()
+        || answer.via.as_ref().is_some_and(|v| v.next_code.is_some())
+        || answer.items.iter().flatten().any(|i| i.next_code.is_some())
 }
 
 impl Agent {

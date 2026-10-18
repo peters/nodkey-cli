@@ -6,9 +6,9 @@ use nodkey_proto::{
     Account, Answer, BundleItemAnswer, Decision, Kind, Lease, LeaseKind, MatchKind, Request, Secret,
 };
 
-use crate::{CODE, PASSWORD, USERNAME};
+use crate::{CODE, Fake, PASSWORD, USERNAME};
 
-pub fn answer(request: &Request, rid: &str) -> Answer {
+pub fn answer(fake: &Fake, request: &Request, rid: &str) -> Answer {
     let items: Vec<BundleItemAnswer> = request
         .bundle
         .iter()
@@ -37,6 +37,7 @@ pub fn answer(request: &Request, rid: &str) -> Answer {
                 a.code = Some(Secret::new(CODE));
                 a.seconds_left = Some(17);
             }
+            (a.method, a.via, a.second_step) = crate::signin::extras(fake, item.kind, &item.target);
             a
         })
         .collect();

@@ -2,7 +2,10 @@
 
 use std::time::Duration;
 
-use nodkey_proto::{Account, AccountEntry, Answer, CardEntry, Decision, Kind, Lease, MatchKind};
+use nodkey_proto::{
+    Account, AccountEntry, Answer, CardEntry, Decision, Kind, Lease, MatchKind, SecondStepOrder,
+    SignInMethod,
+};
 use serde::Serialize;
 
 /// What a request tool returns.
@@ -24,6 +27,14 @@ pub struct Outcome<'a> {
     username: Option<&'a str>,
     #[serde(skip_serializing_if = "Option::is_none")]
     password: Option<&'a str>,
+    /// `login`: how the user signs in to the site, when the phone knows.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    method: Option<&'a SignInMethod>,
+    /// `login` with "Sign in with ...": the provider login and where it may be filled.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    via: Option<crate::signin::ViaOut<'a>>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    second_step: Option<&'a SecondStepOrder>,
     #[serde(skip_serializing_if = "Option::is_none")]
     accounts: Option<Accounts<'a>>,
     /// `list_accounts`: the cards this agent may use (no numbers), when cards are on for it.
@@ -94,7 +105,7 @@ impl<'a> Outcome<'a> {
             return Self::from_cleanup(a, phone);
         }
         let mut message = match a.decision {
-            Decision::Approved if a.password.is_some() => {
+            Decision::Approved if a.password.is_some() || a.via.is_some() => {
                 "The user approved. Use these credentials for this sign-in only; do not store, log or repeat them."
             }
             Decision::Approved if a.code.is_some() => {
@@ -114,6 +125,7 @@ impl<'a> Outcome<'a> {
             Decision::Denied => {
                 "The user denied the request. Do not ask again for the same thing unless they say so."
             }
+            Decision::Expired if kind == Kind::SmsCode => crate::signin::SMS_EXPIRED,
             Decision::Expired => "The request expired on the phone without an answer.",
             Decision::Queued | Decision::Rejected => MISFIT,
         }
@@ -121,6 +133,11 @@ impl<'a> Outcome<'a> {
         if a.decision == Decision::Approved && a.match_kind == Some(MatchKind::Chosen) {
             message.push_str(CHOSEN);
         }
+        let approved = a.decision == Decision::Approved;
+        let method = a.method.as_ref().filter(|_| approved);
+        let via = a.via.as_ref().filter(|_| approved);
+        let second_step = a.second_step.as_ref().filter(|_| approved);
+        message.push_str(&crate::signin::notes(method, via, second_step));
         Outcome {
             decision: a.decision,
             request_id: &a.request_id,
@@ -131,6 +148,9 @@ impl<'a> Outcome<'a> {
             seconds_left: a.seconds_left,
             username: a.username.as_deref(),
             password: a.password.as_ref().map(|p| p.expose()),
+            method,
+            via: crate::signin::via_out(method, via),
+            second_step,
             accounts: a.accounts.as_deref().map(Accounts::Names),
             cards: a.cards.as_deref().filter(|_| kind == Kind::List),
             moved: None,
@@ -196,6 +216,9 @@ impl<'a> Outcome<'a> {
             seconds_left: None,
             username: None,
             password: None,
+            method: None,
+            via: None,
+            second_step: None,
             accounts,
             cards: None,
             moved: (a.decision == Decision::Approved).then_some(moved),
@@ -223,6 +246,9 @@ impl<'a> Outcome<'a> {
             seconds_left: None,
             username: None,
             password: None,
+            method: None,
+            via: None,
+            second_step: None,
             accounts: None,
             cards: None,
             moved: None,
@@ -235,6 +261,14 @@ impl<'a> Outcome<'a> {
                 after.as_secs()
             ),
         }
+    }
+}
+
+impl Outcome<'_> {
+    /// The same result with another message.
+    pub fn with_message(mut self, message: String) -> Self {
+        self.message = message;
+        self
     }
 }
 

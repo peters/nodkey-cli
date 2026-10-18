@@ -1,6 +1,6 @@
 ---
 name: nodkey
-description: Use the user's logins, one-time codes and saved passwords from Nodkey on their iPhone, each request approved by them with Face ID; sign in to websites, fetch a two-step code, see which accounts exist, tidy up old saved logins, and pay a purchase the user asked for with their card. Use when a task needs a login or a two-step code, when asked to sign in to a site (for example in a Horizon browser panel), when the user asks which accounts they have, or when they ask to clean up, review or remove stale or old saved passwords, or when they ask you to buy something. Uses the nodkey MCP server (request_login, request_code, request_credentials, end_session, request_payment, cleanup_insights, list_accounts, cleanup_logins, pair, list_phones, unpair) or the nodkey command.
+description: Use the user's logins, one-time codes and saved passwords from Nodkey on their iPhone, each request approved by them with Face ID; sign in to websites, fetch a two-step code, see which accounts exist, tidy up old saved logins, and pay a purchase the user asked for with their card. Use when a task needs a login or a two-step code, when asked to sign in to a site (for example in a Horizon browser panel), when the user asks which accounts they have, or when they ask to clean up, review or remove stale or old saved passwords, or when they ask you to buy something. Uses the nodkey MCP server (request_login, request_code, request_credentials, request_sms_code, suggest_sign_in_method, end_session, request_payment, cleanup_insights, list_accounts, cleanup_logins, pair, list_phones, unpair) or the nodkey command.
 ---
 
 # Nodkey
@@ -48,13 +48,46 @@ one by hand (a login saved for openai.com used on chatgpt.com); use it for this 
 app prompt instead of a code (Google, Microsoft), choose "another way" and the authenticator code
 (see "Second step: passkey, then code").
 
+## How the user signs in: method and via
+
+Many sites are signed in to with "Sign in with Google" (or Apple, GitHub, Microsoft, Facebook), a
+passkey, an e-mail code or the company's single sign-on, not a password. A `request_login` answer
+then says so:
+
+- `method.kind`: `password`, `federated` ("Sign in with" `method.provider`), `passkey`,
+  `email_code`, `sso` or `sms`. Try that method first.
+- `via` (with `federated`): the provider login, for example the user's Google login, approved with the
+  same Face ID. **Fill `via` only on the provider's own sign-in pages, the sites in
+  `via.fill_only_on` or below them (accounts.google.com for Google). Never fill it on the target site.**
+  If the target site itself shows a form for the provider's password, stop and tell the user.
+  Without `via`, ask for the provider login with `request_login` on the provider's own site when its
+  page asks for it.
+- `email_code`: read only the newest mail from that site (the last 5 minutes) with your own mail
+  tool, if you have one (`method.mailbox` is the address). Else ask the user for the code. Nodkey
+  never reads mail.
+- No `method`: the phone does not know. Sign in the way the page offers.
+
+**Tell the phone what you learned** with `suggest_sign_in_method(target, kind, provider, outcome,
+reason)`. It holds no secret and needs no Face ID; the user accepts it with one tap.
+
+- You signed in with a method the phone did not know (no `method`, or a different one): send it
+  with `outcome: "signed_in"`.
+- The known method failed: try the next one the site offers. When that works, suggest it
+  (`signed_in`), and suggest the one that failed with `outcome: "failed"`.
+- One suggestion per site and method; at most 5 per hour. On `rejected` do not retry.
+
 ## Second step: passkey, then code
 
-At a second-step prompt, choose in this order:
+At a second-step prompt, follow the answer's `second_step` (`prefer` in order, never `avoid`). Without
+it, choose in this order:
 
 1. A passkey from Nodkey.
-2. A one-time code from Nodkey (`request_code`).
+2. A one-time code from Nodkey (`request_code`, or `via.code` on the provider's page).
 3. Avoid app prompts ("tap Yes on your phone") and SMS. Use them only when the user tells you to.
+
+When a site sends its code only by SMS and offers nothing better, click its "Send code" and call
+`request_sms_code(target, reason)` at once: the user's Shortcuts automation passes the SMS to
+Nodkey, and they approve with Face ID. On `expired`, ask the user to type the code; do not loop.
 
 Use the switch path in the provider's guide ("Try another way", "Other ways to sign in"). The
 guides also show where the user sees which sites use "Sign in with" that provider, and how to add
@@ -167,10 +200,12 @@ nodkey insights
 nodkey cleanup --ip-only --reason "Remove logins for old router addresses"
 nodkey cleanup --query '*.old-company.example' --last-used-before 2022-01-01 --reason "Old employer"
 nodkey pay shop.example.com 499 NOK --reveal --reason "Buy the cable you asked for"   # full card (JSON)
+nodkey suggest example.com --kind federated --provider google --reason "Signed in with Google"
+nodkey sms-code account.example.com --reason "The site sent a code by SMS" --field code
 nodkey phones; nodkey unpair PHONE
 ```
 
-Exit codes: 0 approved, 2 denied, 3 expired, 1 error, 64 bad arguments; for `pay` also 5 over the
+Exit codes: 0 approved or queued, 2 denied or rejected, 3 expired, 1 error, 64 bad arguments; for `pay` also 5 over the
 user's limit, 6 full card numbers off, 7 cards off or no card. Waiting notes go to stderr.
 Never put a password on a command line, in a file or in a pipe you log; read it from the JSON and fill
 it straight into the field that needs it. `--image FILE`, `--model` and `--effort` work as in the tools.

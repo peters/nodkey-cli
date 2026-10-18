@@ -2,13 +2,15 @@
 
 use serde_json::{Value, json};
 
-pub const TOOL_NAMES: [&str; 11] = [
+pub const TOOL_NAMES: [&str; 13] = [
     "pair",
     "list_phones",
     "unpair",
     "request_code",
     "request_login",
     "request_credentials",
+    "request_sms_code",
+    "suggest_sign_in_method",
     "end_session",
     "request_payment",
     "list_accounts",
@@ -22,6 +24,12 @@ const APPROVAL: &str = "The user approves or denies every request on their iPhon
 const MATCH: &str = "account.sites lists more websites the account is used on; match says how the phone found \
 it: direct (its name or site), alias (one of its extra websites) or chosen (nothing matched and the user picked it \
 by hand).";
+
+const METHOD: &str = "When the phone knows how the user signs in to the site, the result has method (kind: \
+password, federated = \"Sign in with\" a provider, passkey, email_code, sso or sms; provider; certainty) and, for \
+federated, via: the provider login (for example the Google login) with fill_only_on. Fill via ONLY on those \
+provider sites, never on the target site. second_step says which second step to choose (prefer) and which to \
+avoid; the message says how.";
 
 /// The tool definitions.
 pub fn tools() -> Value {
@@ -60,7 +68,8 @@ pub fn tools() -> Value {
             "title": "Ask the user's iPhone for a one-time code",
             "description": format!("Ask Nodkey on the user's iPhone for one current one-time code (TOTP) for an account. \
                 {APPROVAL} Always explain the reason. Returns JSON with decision (approved, denied or expired) and, \
-                when approved, code and seconds_left. Use the code at once; never store or log it. {MATCH}"),
+                when approved, code and seconds_left. Use the code at once; never store or log it. {MATCH} The result may \
+                carry second_step (which second step to choose)."),
             "inputSchema": {
                 "type": "object",
                 "properties": { "target": target, "reason": reason, "image_path": image, "phone": phone, "model": model, "effort": effort },
@@ -75,7 +84,7 @@ pub fn tools() -> Value {
             "description": format!("Ask Nodkey on the user's iPhone for the user name and password of an account (and a \
                 one-time code when the login has one). {APPROVAL} Always explain the reason. Returns JSON with decision \
                 and, when approved, username, password and possibly code. Use them only for this sign-in; never store, \
-                log or repeat the password. {MATCH}"),
+                log or repeat the password. {MATCH} {METHOD}"),
             "inputSchema": {
                 "type": "object",
                 "properties": { "target": target, "reason": reason, "image_path": image, "phone": phone, "model": model, "effort": effort },
@@ -140,6 +149,52 @@ pub fn tools() -> Value {
                 "additionalProperties": false
             },
             "annotations": { "readOnlyHint": true, "openWorldHint": true }
+        },
+        {
+            "name": "request_sms_code",
+            "title": "Ask the user's iPhone for a code the site sent by SMS",
+            "description": format!("Ask Nodkey on the user's iPhone for a sign-in code that the site sends only by SMS. \
+                Use it only when the site offers no passkey and no authenticator code (prefer request_code). Click the \
+                site's \"Send code\" first, then call this at once: the user's Shortcuts automation passes the SMS to \
+                Nodkey. {APPROVAL} The call waits up to wait_seconds plus 60 seconds. Always explain the reason. Returns \
+                JSON with decision (approved, denied or expired) and, when approved, code. Type the code at once; \
+                never store or log it. On expired, ask the user to type the code; do not loop."),
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "target": { "type": "string", "description": "The site that sent the SMS, e.g. \"account.example.com\"." },
+                    "reason": reason,
+                    "wait_seconds": { "type": "integer", "minimum": 30, "maximum": 300, "description": "Optional: how long the phone waits for the SMS (default 120)." },
+                    "image_path": image, "phone": phone, "model": model, "effort": effort
+                },
+                "required": ["target", "reason"],
+                "additionalProperties": false
+            },
+            "annotations": { "readOnlyHint": true, "openWorldHint": true }
+        },
+        {
+            "name": "suggest_sign_in_method",
+            "title": "Suggest a sign-in method for a site",
+            "description": "Propose how the user signs in to a site, for their suggestion list in Nodkey; they accept it \
+                with one tap. No Face ID and nothing secret; the phone answers at once. Send one after you signed in \
+                with a method the phone did not know (outcome signed_in), or when the known method failed (outcome \
+                failed; then also suggest the one that worked). At most 5 per hour. Returns JSON with decision queued \
+                (in the list) or rejected (with error, e.g. rate_limited); do not retry a rejected one.",
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "target": { "type": "string", "description": "The site, e.g. \"example.com\" (a URL is cut down to its host)." },
+                    "kind": { "type": "string", "enum": ["password", "federated", "passkey", "email_code", "sso", "sms"], "description": "How you signed in: federated is \"Sign in with\" a provider." },
+                    "provider": { "type": "string", "description": "federated only: google, apple, github, microsoft, facebook, or the provider's own name (e.g. Okta)." },
+                    "mailbox": { "type": "string", "description": "email_code only, optional: the address the code went to." },
+                    "outcome": { "type": "string", "enum": ["signed_in", "failed"], "description": "signed_in: you signed in with it; failed: you tried it and it did not work." },
+                    "reason": { "type": "string", "description": "One short sentence for the user, e.g. \"Signed in with Google; Nodkey had no method for this site\"." },
+                    "phone": phone, "model": model, "effort": effort
+                },
+                "required": ["target", "kind", "outcome", "reason"],
+                "additionalProperties": false
+            },
+            "annotations": { "readOnlyHint": false, "destructiveHint": false, "idempotentHint": false, "openWorldHint": true }
         },
         {
             "name": "end_session",

@@ -41,8 +41,9 @@ lease they set answers for them), so a call can wait up to 2 minutes. Always pas
 explains what you are about to do. Use what you get only for that task and never store or repeat secrets. \
 cleanup_logins proposes moving old saved logins to Recently deleted; the user sees the list and confirms, and \
 nothing is deleted for good. request_payment spends the user's money: use it only for a purchase the user asked \
-for, with the exact amount, and never split a purchase to get under their limit. If no phone is paired, use the \
-pair tool first.";
+for, with the exact amount, and never split a purchase to get under their limit. A login result may say how the \
+user signs in (method) and carry the provider login (via): fill via only on the provider's own pages. If no phone is \
+paired, use the pair tool first.";
 
 /// Shared server state.
 pub struct Server {
@@ -388,6 +389,9 @@ impl Server {
                 )
                 .await
             }
+            "suggest_sign_in_method" | "request_sms_code" => {
+                crate::signin::call(a, name, args, reported(args)?, &progress).await
+            }
             "end_session" => {
                 a.end_session(opt_str(args, "reason")?, reported(args)?, &progress)
                     .await
@@ -418,7 +422,10 @@ fn reported(args: &Map<String, Value>) -> Result<crate::agent::Reported<'_>, Str
     })
 }
 
-fn opt_str<'a>(args: &'a Map<String, Value>, key: &str) -> Result<Option<&'a str>, String> {
+pub(crate) fn opt_str<'a>(
+    args: &'a Map<String, Value>,
+    key: &str,
+) -> Result<Option<&'a str>, String> {
     match args.get(key) {
         None | Some(Value::Null) => Ok(None),
         Some(Value::String(s)) if s.trim().is_empty() => Ok(None),
@@ -427,7 +434,7 @@ fn opt_str<'a>(args: &'a Map<String, Value>, key: &str) -> Result<Option<&'a str
     }
 }
 
-fn req_str<'a>(args: &'a Map<String, Value>, key: &str) -> Result<&'a str, String> {
+pub(crate) fn req_str<'a>(args: &'a Map<String, Value>, key: &str) -> Result<&'a str, String> {
     opt_str(args, key)?.ok_or_else(|| format!("{key} is required"))
 }
 
@@ -509,6 +516,8 @@ mod tests {
                 "request_code",
                 "request_login",
                 "request_credentials",
+                "request_sms_code",
+                "suggest_sign_in_method",
                 "end_session",
                 "request_payment",
                 "cleanup_insights",

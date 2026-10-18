@@ -24,6 +24,13 @@ Usage:
                                            ITEM is login:TARGET, code:TARGET or passkey:SITE
                                            (passkey items need --session)
   nodkey end-session [--reason TEXT]       end this agent's task session (from --session)
+  nodkey sms-code TARGET --reason TEXT [--wait SECS] [--image FILE]
+                                           a code the site sent by SMS, passed to Nodkey by your
+                                           Shortcuts automation (wait 30-300 s, default 120)
+  nodkey suggest SITE --kind KIND [--provider NAME] [--mailbox ADDR] [--outcome failed]
+                   --reason TEXT           propose a sign-in method for your suggestion list
+                                           (KIND: password, federated, passkey, email_code, sso,
+                                           sms; no Face ID, nothing secret)
   nodkey pay MERCHANT AMOUNT CURRENCY --reason TEXT --reveal
                                            the full payment card for ONE purchase (spends money;
                                            only when the user turned full card numbers on for
@@ -73,7 +80,8 @@ Global options:
   --json           print JSON for accounts, cleanup, phones, agents, unpair and pair
   -h, --help       -V, --version
 
-Exit codes: 0 approved or done, 1 error, 2 denied, 3 expired (no answer), 64 bad arguments;
+Exit codes: 0 approved, queued or done, 1 error, 2 denied or rejected, 3 expired (no answer),
+64 bad arguments;
 pay and card-fill: 5 over the user's limit, 6 full card numbers off, 7 cards off or no card,
 8 the page total is higher than the amount.
 Environment: NODKEY_AGENT_DIR (default ~/.config/nodkey-agent), NODKEY_REQUEST_TIMEOUT (120 s),
@@ -84,8 +92,13 @@ pub(crate) const DENIED: u8 = 2;
 pub(crate) const EXPIRED: u8 = 3;
 const BAD_ARGS: u8 = 64;
 
-const VALUE_FLAGS: [&str; 18] = [
+const VALUE_FLAGS: [&str; 23] = [
     "agent",
+    "kind",
+    "provider",
+    "mailbox",
+    "outcome",
+    "wait",
     "follow-up",
     "session",
     "relay",
@@ -173,7 +186,7 @@ impl Args {
         Ok(())
     }
 
-    fn positionals(&self, command: &str, n: usize, what: &str) -> Result<(), String> {
+    pub(crate) fn positionals(&self, command: &str, n: usize, what: &str) -> Result<(), String> {
         if self.positional.len() != n {
             return Err(format!("nodkey {command} takes {what}"));
         }
@@ -227,6 +240,7 @@ pub fn main(raw: Vec<String>) -> ExitCode {
         "card-fill" => return crate::cardfill::main(&args, agent(&args, profile::TERMINAL)),
         "pair" | "code" | "login" | "credentials" | "pay" | "accounts" | "insights" | "cleanup"
         | "phones" | "unpair" | "agents" | "end-session" => check(command, &args),
+        "suggest" | "sms-code" => crate::signin::check_cli(command, &args),
         other => Err(format!("unknown command {other:?}; see nodkey --help")),
     };
     if let Err(e) = result {

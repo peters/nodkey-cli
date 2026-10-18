@@ -26,11 +26,17 @@ page before you click, and use the label that the page shows.
 
 ## The second-step rule
 
-When a site asks for a second step, choose the method in this order:
+When a site asks for a second step, follow `second_step` in the Nodkey answer (`prefer` in order,
+never `avoid`). Without it, choose the method in this order:
 
 1. A passkey from Nodkey.
 2. A one-time code from Nodkey (`request_code`).
-3. Only if the user tells you to: an app prompt ("tap Yes on your phone") or an SMS code.
+3. Only if the user tells you to: an app prompt ("tap Yes on your phone") or an SMS code. When the
+   site offers nothing else, use `request_sms_code` for the SMS code.
+
+When the user signs in to a site with "Sign in with" a provider, the Nodkey answer can carry the
+provider login as `via`. Fill it only on the provider's own sign-in pages (`via.fill_only_on`), never
+on the site that sent you there.
 
 Use the switch path in section 4 of the guide ("Try another way", "Other ways to sign in").
 

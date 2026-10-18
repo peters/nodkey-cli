@@ -234,6 +234,25 @@ pub async fn run(command: &str, a: &Args, agent: &Agent) -> Result<u8, String> {
             Ok(0)
         }
         "agents" => agents(a, agent),
+        "suggest" | "sms-code" => {
+            let (v, code) = crate::signin::run_cli(command, a, agent, reported).await?;
+            if code != 0 {
+                eprintln!(
+                    "nodkey: {}",
+                    v["message"].as_str().unwrap_or("not approved")
+                );
+            }
+            match a.value("field") {
+                Some(field) if code == 0 => match &v[field] {
+                    Value::String(s) => println!("{s}"),
+                    Value::Null => return Err(format!("the answer has no {field}")),
+                    other => println!("{other}"),
+                },
+                Some(_) => {}
+                None => print_json(&v),
+            }
+            Ok(code)
+        }
         "end-session" => {
             let v = parse(
                 &agent

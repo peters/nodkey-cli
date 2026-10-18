@@ -159,3 +159,22 @@ fn image_sniffing() {
         r#"{"type":"image/jpeg","bytes":3}"#
     );
 }
+
+#[test]
+fn answers_from_newer_apps_still_read() {
+    // A method kind or a second step this version does not know: the answer reads without them.
+    let a: Answer = parse_plaintext(
+        br#"{"v":1, "request_id":"x", "decision":"approved", "username":"alex", "password":"pw",
+            "method":{"kind":"magic_link"}, "second_step":{"prefer":["hardware_key","totp"]}}"#,
+    )
+    .unwrap();
+    assert_eq!(a.method, None);
+    assert_eq!(a.second_step.unwrap().prefer, vec![crate::SecondStep::Totp]);
+    let a: Answer = parse_plaintext(
+        br#"{"v":1, "request_id":"x", "decision":"approved", "second_step":"passkey first"}"#,
+    )
+    .unwrap();
+    assert_eq!(a.second_step, None);
+    let q: Answer = parse_plaintext(br#"{"v":1, "request_id":"x", "decision":"queued"}"#).unwrap();
+    assert_eq!(q.decision, Decision::Queued);
+}

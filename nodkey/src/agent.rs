@@ -476,7 +476,8 @@ impl Agent {
             ));
         }
 
-        let remaining = self.timing.request.saturating_sub(started.elapsed());
+        let total = self.timing.request + crate::signin::extra_wait(&request);
+        let remaining = total.saturating_sub(started.elapsed());
         let answer_box = poll_until(
             remaining,
             self.timing.max_wait,

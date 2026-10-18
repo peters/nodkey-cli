@@ -206,6 +206,12 @@ struct ItemOutcome<'a> {
     #[serde(skip_serializing_if = "Option::is_none")]
     password: Option<&'a str>,
     #[serde(skip_serializing_if = "Option::is_none")]
+    method: Option<&'a nodkey_proto::SignInMethod>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    via: Option<crate::signin::ViaOut<'a>>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    second_step: Option<&'a nodkey_proto::SecondStepOrder>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     lease: Option<&'a Lease>,
     #[serde(skip_serializing_if = "Option::is_none")]
     error: Option<&'a str>,
@@ -235,6 +241,9 @@ pub fn outcome<'a>(
                 seconds_left: i.seconds_left,
                 username: i.username.as_deref(),
                 password: i.password.as_ref().map(|p| p.expose()),
+                method: i.method.as_ref(),
+                via: crate::signin::via_out(i.method.as_ref(), i.via.as_ref()),
+                second_step: i.second_step.as_ref(),
                 lease: i.lease.as_ref(),
                 error: i.error.as_deref(),
             }
@@ -261,6 +270,10 @@ pub fn outcome<'a>(
             }
             if chosen {
                 m.push_str(" Items with match chosen: nothing matched that site and the user picked the account by hand.");
+            }
+            if items.iter().any(|i| i.method.is_some() || i.via.is_some()) {
+                m.push_str(" An item's method says how the user signs in to its site; fill an item's via (the provider \
+                    login) only on its fill_only_on sites, never on the item's own site.");
             }
             if let Some(info) = &a.session {
                 let minutes = info.until.saturating_sub(nodkey_proto::unix_now()).div_ceil(60);

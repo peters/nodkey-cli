@@ -141,6 +141,8 @@ An agent pairs the same way with its `pair` tool: it shows you the code, then th
 nodkey code github.com/alex --reason "Merge PR #42" --field code
 nodkey login vg.no --reason "Check my subscription"
 nodkey pay shop.example.com 499 NOK --reveal --reason "Buy the cable I asked for"
+nodkey suggest example.com --kind federated --provider google --reason "Signed in with Google"
+nodkey sms-code account.example.com --reason "The site sent a code by SMS" --field code
 nodkey accounts
 nodkey cleanup --ip-only --reason "Remove logins for old router addresses"
 nodkey cleanup --query '*.old-company.example' --last-used-before 2022-01-01 --reason "Old job"
@@ -157,7 +159,11 @@ nodkey agents
 - `pay` spends money: it asks your iPhone for your card for one purchase, and your iPhone shows the
   shop and the amount. It works only if you turned on "full card number" for that agent in Nodkey,
   and never above the limit you set for it.
-- Exit codes: 0 approved, 1 error, 2 denied, 3 no answer in time, 64 bad arguments. `pay` also has
+- `suggest` only proposes. The method waits in your suggestion list in Nodkey until you accept it
+  with one tap. `sms-code` waits for an SMS that your Shortcuts automation passes to Nodkey, and you
+  approve it with Face ID.
+- Exit codes: 0 approved (or queued), 1 error, 2 denied (or rejected), 3 no answer in time, 64 bad
+  arguments. `pay` also has
   5 above your limit, 6 full card numbers off, 7 cards off.
 - `nodkey webauthn` is for browser hosts such as Horizon: it reads one passkey request (sign in or
   create) as JSON on stdin and writes the result as JSON on stdout. Your iPhone shows the site and
@@ -171,8 +177,10 @@ nodkey agents
 | Tool | What it does |
 | --- | --- |
 | `request_code` | one current one-time code for an account |
-| `request_login` | user name and password (and a code, if the login has one) |
+| `request_login` | user name and password (and a code, if the login has one); says how you sign in to the site ("Sign in with Google") and can bring that Google login, for Google's own page only |
 | `request_credentials` | everything a task needs in one request: up to 10 logins, codes and passkeys; with a session, the rest of the task does not ask again |
+| `request_sms_code` | a code the site sent by SMS, passed to Nodkey by your own Shortcuts automation |
+| `suggest_sign_in_method` | tell Nodkey how you sign in to a site; it waits in your suggestion list for one tap, no secret |
 | `end_session` | end the task session when the task is done |
 | `request_payment` | spends money: your card for one purchase at a shop, for an exact amount |
 | `list_accounts` | the accounts this agent may ask for, without secrets |
