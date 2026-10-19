@@ -121,7 +121,7 @@ pub fn nearest(dir: &Path) -> Result<Option<KeyFile>, String> {
 /// A path as the user reads it: the home folder as `~`.
 pub fn shown(path: &Path) -> String {
     match crate::store::home_dir().and_then(|h| path.strip_prefix(h).ok().map(Path::to_owned)) {
-        Some(rest) => format!("~/{}", rest.display()),
+        Some(rest) => format!("~{}{}", std::path::MAIN_SEPARATOR, rest.display()),
         None => path.display().to_string(),
     }
 }
