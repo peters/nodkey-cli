@@ -280,12 +280,13 @@ fn prepare(
         ));
     }
     args.only("card-fill", &["phone"]).map_err(plain)?;
-    let agent = agent.map_err(plain)?;
+    // Read the request before the profile check, so a host that is refused can always write it.
     let mut bytes = Vec::new();
     std::io::stdin()
         .take(MAX_INPUT + 1)
         .read_to_end(&mut bytes)
         .map_err(|e| plain(format!("cannot read stdin: {e}")))?;
+    let agent = agent.map_err(plain)?;
     if bytes.len() as u64 > MAX_INPUT {
         return Err(plain("the request is larger than 16 KiB".into()));
     }

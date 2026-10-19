@@ -385,12 +385,13 @@ fn prepare(args: &Args, agent: Result<Agent, String>) -> Result<(Agent, Checked)
         return Err("nodkey webauthn takes no arguments; it reads the request on stdin".into());
     }
     args.only("webauthn", &["phone"])?;
-    let agent = agent?;
+    // Read the request before the profile check, so a refused host can always write it.
     let mut bytes = Vec::new();
     std::io::stdin()
         .take(MAX_INPUT + 1)
         .read_to_end(&mut bytes)
         .map_err(|e| format!("cannot read stdin: {e}"))?;
+    let agent = agent?;
     if bytes.len() as u64 > MAX_INPUT {
         return Err("the request is larger than 64 KiB".into());
     }
