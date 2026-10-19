@@ -206,7 +206,8 @@ nodkey agents
   in another project, `--secret NAME` adds a key, and `global/NAME` takes only the global key.
 - Exit codes: 0 approved (or queued), 1 error, 2 denied (or rejected), 3 no answer in time, 4 the
   agent is paused, 64 bad arguments. `pay` also has
-  5 above your limit, 6 full card numbers off, 7 cards off. `run` exits with the code of the
+  5 above your limit, 6 full card numbers off, 7 cards off; `card-fill` also 8 for a page total
+  above the amount and 9 for cards for later payments that are off. `run` exits with the code of the
   command it ran.
 - `nodkey webauthn` is for browser hosts such as Horizon: it reads one passkey request (sign in or
   create) as JSON on stdin and writes the result as JSON on stdout. Your iPhone shows the site and
@@ -217,7 +218,10 @@ nodkey agents
   `nodkey card-fill --agent horizon` gives such a host your card to
   fill a checkout form, so the number goes to the host and not into the agent's conversation. The
   host has its own identity (`nodkey pair --agent horizon`): turn cards on for the host in Nodkey,
-  not for the agent. See `docs/agent-protocol.md`.
+  not for the agent. On a page that keeps your card for later payments (a billing page with no
+  total), the host can ask to add the card there: your iPhone shows the site and asks with Face ID,
+  and only if you turned on "add cards for later payments" for that host. An agent can never do
+  this. See `docs/agent-protocol.md`.
 
 `nodkey --help` lists every option.
 

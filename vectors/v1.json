@@ -475,6 +475,164 @@
         "name": "reveal_with_page_total",
         "ok": false,
         "target": "shop.example.com"
+      },
+      {
+        "card": {
+          "merchant": "shop.example.com",
+          "mode": "fill",
+          "origin": "https://js.pay.example",
+          "purpose": "setup",
+          "via": "js.pay.example"
+        },
+        "error": null,
+        "name": "setup",
+        "ok": true,
+        "target": "shop.example.com"
+      },
+      {
+        "card": {
+          "merchant": "shop.example.com",
+          "mode": "fill",
+          "origin": "https://www.shop.example.com",
+          "purpose": "setup"
+        },
+        "error": null,
+        "name": "setup_on_the_shop_site",
+        "ok": true,
+        "target": "shop.example.com"
+      },
+      {
+        "card": {
+          "amount": {
+            "currency": "NOK",
+            "value": "499.00"
+          },
+          "merchant": "shop.example.com",
+          "mode": "fill",
+          "origin": "https://js.pay.example",
+          "page_total": {
+            "currency": "NOK",
+            "value": "499.00"
+          },
+          "total_source": "page",
+          "via": "js.pay.example"
+        },
+        "error": null,
+        "name": "fill_via",
+        "ok": true,
+        "target": "shop.example.com"
+      },
+      {
+        "card": {
+          "amount": {
+            "currency": "NOK",
+            "value": "499.00"
+          },
+          "merchant": "shop.example.com",
+          "mode": "fill",
+          "origin": "https://js.pay.example",
+          "purpose": "setup",
+          "via": "js.pay.example"
+        },
+        "error": null,
+        "name": "setup_with_amount",
+        "ok": false,
+        "target": "shop.example.com"
+      },
+      {
+        "card": {
+          "merchant": "shop.example.com",
+          "mode": "fill",
+          "origin": "https://js.pay.example",
+          "page_total": {
+            "currency": "NOK",
+            "value": "499.00"
+          },
+          "purpose": "setup",
+          "total_source": "page",
+          "via": "js.pay.example"
+        },
+        "error": null,
+        "name": "setup_with_page_total",
+        "ok": false,
+        "target": "shop.example.com"
+      },
+      {
+        "card": {
+          "merchant": "shop.example.com",
+          "mode": "reveal",
+          "purpose": "setup"
+        },
+        "error": null,
+        "name": "setup_reveal",
+        "ok": false,
+        "target": "shop.example.com"
+      },
+      {
+        "card": {
+          "merchant": "shop.example.com",
+          "mode": "fill",
+          "purpose": "setup",
+          "via": "js.pay.example"
+        },
+        "error": null,
+        "name": "setup_without_origin",
+        "ok": false,
+        "target": "shop.example.com"
+      },
+      {
+        "card": {
+          "merchant": "shop.example.com",
+          "mode": "fill",
+          "origin": "https://pay.shop.example.com",
+          "purpose": "setup",
+          "via": "pay.shop.example.com"
+        },
+        "error": null,
+        "name": "via_on_the_shop_site",
+        "ok": false,
+        "target": "shop.example.com"
+      },
+      {
+        "card": {
+          "merchant": "shop.example.com",
+          "mode": "fill",
+          "origin": "https://www.shop.example.com",
+          "purpose": "setup",
+          "via": "js.pay.example"
+        },
+        "error": null,
+        "name": "via_other_origin",
+        "ok": false,
+        "target": "shop.example.com"
+      },
+      {
+        "card": {
+          "merchant": "shop.example.com",
+          "mode": "fill",
+          "origin": "http://js.pay.example",
+          "purpose": "setup",
+          "via": "js.pay.example"
+        },
+        "error": null,
+        "name": "via_plain_http",
+        "ok": false,
+        "target": "shop.example.com"
+      },
+      {
+        "card": {
+          "amount": {
+            "currency": "NOK",
+            "value": "899.00"
+          },
+          "merchant": "shop.example.com",
+          "mode": "reveal",
+          "via": "js.pay.example"
+        },
+        "error": null,
+        "name": "reveal_with_via",
+        "ok": false,
+        "target": "shop.example.com"
       }
     ]
   },
@@ -1938,6 +2096,62 @@
       "recipient_kem_pk": "Td-3-HXWLqROvCB5uulMNssHXo3O2K_LQIby38T-z28",
       "recipient_kem_sk": "vazvVwr6Ybz3fJM8Ey3EblV_Ow4P6yCovbNOvWY7IiI",
       "sender": "agent"
+    },
+    {
+      "aad": "QPPXAblLogAwDtzYrO18zgIdQP77UDyu6DAF-4aCs1-Q",
+      "ct": "5HqB3-KKM_LyJvFkrRi74I-ivGlgc6Ce7_W31GIGN5f_UL9dq08sy5khhr0npiKU2Zickc_5tity7zld9evIPu69AtllrZVI_-avc-C1fkXIkdwWbUTbhDPPHY3NOM82f6Nh-yND53ycN6H_eYZrpdRBrD_GH9zFQgYcD1XorJjagMZSrDwg-FeHQ27YwbiHShEwMm5fPQkEYAmQ3W6gsllGBGs6oCpRMwJ1htEsOByQ0rpqbPNRkYTWPsmIf4BX6F2LKHL8d8fBQRdZhGhpfjFZCvxPxwBTlxLH3pt5pxL_oMgD_kaA8fVDtmtwWBPTEwIYSDD4unvejqbshD5ZhjVQHlvAWdylBiMkgP_fuT6axYomOAWoxPmm-jR3UKw4UV5pLCJUwV843rx7oCv8zdmbVSvzvvGhxpczFgB2W757ku5mtrG9SIwi3IjhgGr13c0",
+      "enc": "8MhhS7Ur3VjJ2ZLE2WjkiHILfegWNktiWSoIhJk2cRY",
+      "ikm_e": "faNbCqkQmC-08MBOxQU-GDOkgsvW-8luHSEMMQafDMg",
+      "info": "nodkey/v1/request",
+      "name": "request_card_setup",
+      "plaintext": "{\"v\":1,\"request_id\":\"QPPXAblLogAwDtzYrO18zg\",\"kind\":\"card\",\"target\":\"shop.example.com\",\"reason\":\"Add your card at shop.example.com for later payments\",\"agent\":\"Agent · Horizon\",\"ts\":1791620000,\"card\":{\"mode\":\"fill\",\"purpose\":\"setup\",\"merchant\":\"shop.example.com\",\"via\":\"js.pay.example\",\"origin\":\"https://js.pay.example\"}}",
+      "plaintext_b64u": "eyJ2IjoxLCJyZXF1ZXN0X2lkIjoiUVBQWEFibExvZ0F3RHR6WXJPMTh6ZyIsImtpbmQiOiJjYXJkIiwidGFyZ2V0Ijoic2hvcC5leGFtcGxlLmNvbSIsInJlYXNvbiI6IkFkZCB5b3VyIGNhcmQgYXQgc2hvcC5leGFtcGxlLmNvbSBmb3IgbGF0ZXIgcGF5bWVudHMiLCJhZ2VudCI6IkFnZW50IMK3IEhvcml6b24iLCJ0cyI6MTc5MTYyMDAwMCwiY2FyZCI6eyJtb2RlIjoiZmlsbCIsInB1cnBvc2UiOiJzZXR1cCIsIm1lcmNoYW50Ijoic2hvcC5leGFtcGxlLmNvbSIsInZpYSI6ImpzLnBheS5leGFtcGxlIiwib3JpZ2luIjoiaHR0cHM6Ly9qcy5wYXkuZXhhbXBsZSJ9fQ",
+      "purpose": "request",
+      "recipient_kem_pk": "Td-3-HXWLqROvCB5uulMNssHXo3O2K_LQIby38T-z28",
+      "recipient_kem_sk": "vazvVwr6Ybz3fJM8Ey3EblV_Ow4P6yCovbNOvWY7IiI",
+      "sender": "agent"
+    },
+    {
+      "aad": "fk2C2Hc_0GoCWfKLi1TtrwIdQP77UDyu6DAF-4aCs1-Q",
+      "ct": "ScdnRAjspjtAMI2alIA9Y9j_thbVbGyB5E9ujCvCGvB5h1bCSuYeVyVjzXpR03F3_nw4eNWxy_I7D-oQKI2kwe2w-ft40MmmjDNMHarOJ3aXyCCncS7h9pf2-7ERSeHGjyACsHea1-IMni-n5YbENEjCDTJTwUwRDgpDhSJ6DQ_AGDloYXXmHNtWkNauCh41I2MC0lfgEk5vW1WttBwLd64JMNrQs79UH3DBOIw8xib93cZLFzgXhLCMx034CtZOXHGL5NZFalGNsE5lnR25DqVChFbaF_-5l1cDtpWHjv0W7adPnfwyft0Isxiaq8xDK3DjZXJe7mXXsRFzLl5GJx465Yax-T1Hm7NNHH0IMRSz-2dPqx0otjiLhhyWooZ5g_SkFgPS3XHDoWxGaz9vI8DaxSd0_I3PYeRf180Gzysgc2JdfMERceEh0l5yhO9OrdXYTeNHkypWQOgd5clAlpZQi3bnH29VMfzoi81gLaTu9YNlV-5IF7dIAoSHi95ievXrogPphaMF6_HLE62FFKvf4AEalRSgCQWemqiyfFscXEszLQ",
+      "enc": "quh44ogr_gZp_UyGt13H74XWPk704ez0Qa_VmFrFoCk",
+      "ikm_e": "CKNGBpsRCvPbM_lnemkub5X3XdCkvZ1RkXhR-sONqBA",
+      "info": "nodkey/v1/request",
+      "name": "request_card_fill_via",
+      "plaintext": "{\"v\":1,\"request_id\":\"fk2C2Hc_0GoCWfKLi1Ttrw\",\"kind\":\"card\",\"target\":\"shop.example.com\",\"reason\":\"Buy the 2 m USB-C cable you asked for\",\"agent\":\"Agent · Horizon\",\"ts\":1791620000,\"card\":{\"mode\":\"fill\",\"merchant\":\"shop.example.com\",\"via\":\"js.pay.example\",\"amount\":{\"value\":\"499.00\",\"currency\":\"NOK\"},\"origin\":\"https://js.pay.example\",\"page_total\":{\"value\":\"499.00\",\"currency\":\"NOK\"},\"total_source\":\"page\"}}",
+      "plaintext_b64u": "eyJ2IjoxLCJyZXF1ZXN0X2lkIjoiZmsyQzJIY18wR29DV2ZLTGkxVHRydyIsImtpbmQiOiJjYXJkIiwidGFyZ2V0Ijoic2hvcC5leGFtcGxlLmNvbSIsInJlYXNvbiI6IkJ1eSB0aGUgMiBtIFVTQi1DIGNhYmxlIHlvdSBhc2tlZCBmb3IiLCJhZ2VudCI6IkFnZW50IMK3IEhvcml6b24iLCJ0cyI6MTc5MTYyMDAwMCwiY2FyZCI6eyJtb2RlIjoiZmlsbCIsIm1lcmNoYW50Ijoic2hvcC5leGFtcGxlLmNvbSIsInZpYSI6ImpzLnBheS5leGFtcGxlIiwiYW1vdW50Ijp7InZhbHVlIjoiNDk5LjAwIiwiY3VycmVuY3kiOiJOT0sifSwib3JpZ2luIjoiaHR0cHM6Ly9qcy5wYXkuZXhhbXBsZSIsInBhZ2VfdG90YWwiOnsidmFsdWUiOiI0OTkuMDAiLCJjdXJyZW5jeSI6Ik5PSyJ9LCJ0b3RhbF9zb3VyY2UiOiJwYWdlIn19",
+      "purpose": "request",
+      "recipient_kem_pk": "Td-3-HXWLqROvCB5uulMNssHXo3O2K_LQIby38T-z28",
+      "recipient_kem_sk": "vazvVwr6Ybz3fJM8Ey3EblV_Ow4P6yCovbNOvWY7IiI",
+      "sender": "agent"
+    },
+    {
+      "aad": "QPPXAblLogAwDtzYrO18zg0g0Bt23Hxsm5z-wpZp2lpA",
+      "ct": "CXymFBeypEwDGYOmHDPIZhXZuBLxCAhJ6hPTdKUAlh1SEDkvVt5I6ItoQS4JdowsP8ZWuGID0N59-MIR_MteNWpdfvG7PW7DabjwpI-cMT1g0WwSTt5C_YrC5xAV5K864kSWNKDK8djQCklNorts5OD5bXZwnewCP7XuixiPamWaAxRt9Q2ypEJfRaF3KTDyL9ps-HPJ0pX-n8drjudJRdMEkm6hb6UJvkbtzuQM-QXK-PrSgipodAKYKie8WgYgoiUU8v9cE0TKIzX81x0GawN0FCMCvKDPrqmp_HS4YeTNMfZQrZLp310fXIMa",
+      "enc": "tZpibSe9v78mCYf9kLT0deuqS3iPEy19MVaWG2eYEBI",
+      "ikm_e": "UQBeTdoyt-wydr5Fpvi6AyeJqudQOSDH8cBioXv4yr4",
+      "info": "nodkey/v1/answer",
+      "name": "answer_card_setup",
+      "plaintext": "{\"v\":1,\"request_id\":\"QPPXAblLogAwDtzYrO18zg\",\"decision\":\"approved\",\"card\":{\"title\":\"Test Visa\",\"brand\":\"visa\",\"last4\":\"4242\",\"holder\":\"Alex Example\",\"number\":\"4242424242424242\",\"exp_month\":12,\"exp_year\":2030,\"cvc\":\"123\"}}",
+      "plaintext_b64u": "eyJ2IjoxLCJyZXF1ZXN0X2lkIjoiUVBQWEFibExvZ0F3RHR6WXJPMTh6ZyIsImRlY2lzaW9uIjoiYXBwcm92ZWQiLCJjYXJkIjp7InRpdGxlIjoiVGVzdCBWaXNhIiwiYnJhbmQiOiJ2aXNhIiwibGFzdDQiOiI0MjQyIiwiaG9sZGVyIjoiQWxleCBFeGFtcGxlIiwibnVtYmVyIjoiNDI0MjQyNDI0MjQyNDI0MiIsImV4cF9tb250aCI6MTIsImV4cF95ZWFyIjoyMDMwLCJjdmMiOiIxMjMifX0",
+      "purpose": "answer",
+      "recipient_kem_pk": "fE5zmodqNC-MJSk500yxJtz4i2vlbx3Hpg2qO712pTQ",
+      "recipient_kem_sk": "WVg29q7eTJuYsXMJkPAqAx2veoBDBCceAKKxCEs90KU",
+      "sender": "phone"
+    },
+    {
+      "aad": "QPPXAblLogAwDtzYrO18zg0g0Bt23Hxsm5z-wpZp2lpA",
+      "ct": "N89kAGuoU93M7i1Ajz740OAbgp3Tp7awoQ8tmKoa9v8SnNPweI0fqoYwSRX7NoFUigV16izvWUisDyiVr5WeQZp_zEeYNNYDsDyBmTZeUTOwlReCuJCehK9GJGC3C2hBJAPiatI",
+      "enc": "rh4K67tOLWPzix2MTGzeuFHXKjnHNn6PP16_dYIIqmU",
+      "ikm_e": "ryc-BD_fsgiK7qvF2Q4JIbv2FkCO_nw9XZY78S3KI5w",
+      "info": "nodkey/v1/answer",
+      "name": "answer_card_setup_off",
+      "plaintext": "{\"v\":1,\"request_id\":\"QPPXAblLogAwDtzYrO18zg\",\"decision\":\"denied\",\"error\":\"setup_off\"}",
+      "plaintext_b64u": "eyJ2IjoxLCJyZXF1ZXN0X2lkIjoiUVBQWEFibExvZ0F3RHR6WXJPMTh6ZyIsImRlY2lzaW9uIjoiZGVuaWVkIiwiZXJyb3IiOiJzZXR1cF9vZmYifQ",
+      "purpose": "answer",
+      "recipient_kem_pk": "fE5zmodqNC-MJSk500yxJtz4i2vlbx3Hpg2qO712pTQ",
+      "recipient_kem_sk": "WVg29q7eTJuYsXMJkPAqAx2veoBDBCceAKKxCEs90KU",
+      "sender": "phone"
     }
   ],
   "key_projects": {

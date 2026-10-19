@@ -172,6 +172,9 @@ their iPhone and needs Face ID; there is no "always allow" for cards.
 - `over_limit`: the amount is above the user's limit for you. Stop and tell them. **Never split a
   purchase into smaller ones** to get under a limit, and never pay more than the approved amount.
 - One approval pays one purchase. For the next one, ask again.
+- A page that only adds a card for later payments (a billing page, a subscription, no total) is not
+  a purchase. Never make up an amount for it: only the user's browser (the Nodkey browser extension,
+  or a browser host) adds a card for later payments, and the user approves it there.
 
 ## API keys and secrets
 

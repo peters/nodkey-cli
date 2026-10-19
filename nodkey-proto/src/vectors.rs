@@ -362,6 +362,7 @@ pub fn build() -> Value {
     let secrets = secret::add(&mut ctx, &agent, &phone); // After PRF, for the same reason.
     let key_projects = project::add(&mut ctx, &agent, &phone); // After the keys, likewise.
     let (pairing, signed) = pairing::add(&mut ctx, &agent, &phone); // After projects, likewise.
+    card::add_setup(&mut ctx, &agent, &phone); // After pairing, likewise.
     let sites = sites::add(); // No HPKE: earlier bytes stay the same.
 
     // Signed relay calls.

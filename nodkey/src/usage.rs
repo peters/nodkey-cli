@@ -44,9 +44,10 @@ Usage:
                                            password stays out of the agent's conversation: one JSON
                                            request on stdin, one JSON result on stdout
   nodkey card-fill --agent HOST [--phone PHONE]
-                                           a card for a browser host to fill a checkout form, under
-                                           the host's own profile (never an agent's): one JSON
-                                           request on stdin, one JSON result on stdout
+                                           a card for a browser host to fill a checkout form, or to
+                                           add for later payments (no amount), under the host's own
+                                           profile (never an agent's): one JSON request on stdin,
+                                           one JSON result on stdout
   nodkey mcp                               run the MCP server on stdio
   nodkey setup [--remove] [--dry-run]      add (or remove) the MCP server and skill in your agents
   nodkey skill                             print the agent skill
@@ -101,7 +102,7 @@ Global options:
 Exit codes: 0 approved, queued or done, 1 error, 2 denied or rejected, 3 expired (no answer),
 4 paused (the user or the agent limit paused this agent; resume it under Agents), 64 bad arguments;
 pay and card-fill: 5 over the user's limit, 6 full card numbers off, 7 cards off or no card,
-8 the page total is higher than the amount. run: the command's exit code once it ran (126 or
+8 the page total is higher than the amount, 9 cards for later payments off (card-fill). run: the command's exit code once it ran (126 or
 127 when it cannot start); 2, 3, 4 or 1 as above when the phone did not give the keys.
 Environment: NODKEY_AGENT_DIR (default ~/.config/nodkey-agent), NODKEY_REQUEST_TIMEOUT (120 s),
 NODKEY_PAIR_TIMEOUT (300 s), NODKEY_KEYSTORE (auto: the private keys in the keychain of the

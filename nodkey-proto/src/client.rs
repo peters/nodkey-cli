@@ -105,7 +105,9 @@ pub fn check_request(r: &Request) -> Result<(), String> {
         _ => Ok(()),
     }?;
     match (r.kind, &r.card) {
-        (Kind::Card, None) => Err("a card request needs the merchant and the amount".into()),
+        (Kind::Card, None) => {
+            Err("a card request needs the merchant and the amount (no amount for setup)".into())
+        }
         (Kind::Card, Some(c)) => c.check(&r.target).map_err(|(_, e)| e),
         (_, Some(_)) => Err("only a card request carries card data".into()),
         _ => Ok(()),

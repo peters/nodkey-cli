@@ -284,7 +284,8 @@ pub fn tools() -> Value {
                 amount is above the user's limit for you: never split a purchase to get under it. Full card numbers are \
                 off for every agent until the user turns them on (error reveal_off); a browser that fills cards for you \
                 (Horizon, or the Nodkey browser extension) is better, because the number then never enters this \
-                conversation. {APPROVAL} Always explain the reason: what you buy and why. Returns JSON with decision and, when approved, card (title, brand, last4, \
+                conversation. Only a purchase with an amount: adding a card to a site for later payments (no amount) is for \
+                the user's browser, never for you, so never make up an amount for it. {APPROVAL} Always explain the reason: what you buy and why. Returns JSON with decision and, when approved, card (title, brand, last4, \
                 number, exp_month, exp_year, cvc). Use the card only for this purchase and never pay more than amount; \
                 never store, log or repeat the card details."),
             "inputSchema": {

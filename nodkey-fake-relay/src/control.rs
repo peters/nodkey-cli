@@ -7,8 +7,9 @@
 //! - `GET /_fake/check/{agent_id}`: the check number the phone shows for a paired agent.
 //! - `GET /_fake/passkeys`: the phone's passkeys, `[{rp_id, credential_id, user_handle, user_name,
 //!   public_key}]` (b64u; `public_key` is SPKI DER, to check signatures with).
-//! - `PUT /_fake/cards` with `{"enabled": bool, "reveal": bool, "limit": {"value", "currency"} | null}`:
-//!   what the user allowed for cards (default: on, full numbers on, 1000.00 NOK per purchase).
+//! - `PUT /_fake/cards` with `{"enabled": bool, "reveal": bool, "setup"?: bool, "limit": {"value",
+//!   "currency"} | null}`: what the user allowed for cards (default: on, full numbers on, cards for
+//!   later payments on, 1000.00 NOK per purchase; `setup` is on when left out).
 //! - `GET /_fake/sessions`: the running task sessions, `[{id, agent_id, until, items, used}]`.
 //! - `PUT /_fake/seconds_left` with a number: the seconds left of every code from now on (17 by
 //!   default); below 8 the answer also carries the next code.

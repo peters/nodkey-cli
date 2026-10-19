@@ -10,7 +10,9 @@ fn money(value: &str, currency: &str) -> Money {
 fn fill() -> CardRequest {
     CardRequest {
         mode: CardMode::Fill,
+        purpose: CardPurpose::Pay,
         merchant: "shop.example.com".into(),
+        via: None,
         amount: Some(money("499.00", "NOK")),
         origin: Some("https://www.shop.example.com".into()),
         page_total: Some(money("499", "NOK")),
@@ -126,7 +128,9 @@ fn request_rules() {
     }
     let reveal = CardRequest {
         mode: CardMode::Reveal,
+        purpose: CardPurpose::Pay,
         merchant: "shop.example.com".into(),
+        via: None,
         amount: Some(money("899", "NOK")),
         origin: None,
         page_total: None,
@@ -136,6 +140,120 @@ fn request_rules() {
     let mut r = reveal.clone();
     r.origin = Some("https://shop.example.com".into());
     assert!(r.check("shop.example.com").is_err());
+    let mut r = reveal.clone();
+    r.via = Some("js.pay.example".into());
+    assert!(r.check("shop.example.com").is_err());
+}
+
+/// A setup request: a browser adds the card for later payments, with no amount.
+fn setup() -> CardRequest {
+    CardRequest {
+        purpose: CardPurpose::Setup,
+        amount: None,
+        page_total: None,
+        total_source: None,
+        ..fill()
+    }
+}
+
+#[test]
+fn setup_rules() {
+    assert!(setup().check("shop.example.com").is_ok());
+    let bad = |f: &dyn Fn(&mut CardRequest)| {
+        let mut r = setup();
+        f(&mut r);
+        r.check("shop.example.com").unwrap_err()
+    };
+    // A setup request never carries an amount: a plain refusal, not amount_missing.
+    assert_eq!(bad(&|r| r.amount = Some(money("1", "NOK"))).0, None);
+    assert_eq!(
+        bad(&|r| {
+            r.page_total = Some(money("1", "NOK"));
+            r.total_source = Some(TotalSource::Page);
+        })
+        .0,
+        None
+    );
+    // Only a browser that fills the card.
+    assert!(
+        bad(&|r| {
+            r.mode = CardMode::Reveal;
+            r.origin = None;
+        })
+        .1
+        .contains("mode fill")
+    );
+    assert!(bad(&|r| r.origin = None).1.contains("origin"));
+    // Pay is the default and stays out of the JSON; setup is written.
+    let pay = serde_json::to_value(fill()).unwrap();
+    assert!(pay.get("purpose").is_none() && pay.get("via").is_none());
+    assert_eq!(serde_json::to_value(setup()).unwrap()["purpose"], "setup");
+    let parsed: CardRequest = serde_json::from_str(
+        r#"{"mode":"fill","merchant":"shop.example.com","origin":"https://shop.example.com","amount":{"value":"1","currency":"NOK"}}"#,
+    )
+    .unwrap();
+    assert_eq!(parsed.purpose, CardPurpose::Pay);
+}
+
+#[test]
+fn payment_frame_from_another_site() {
+    let via = |r: CardRequest| CardRequest {
+        via: Some("js.pay.example".into()),
+        origin: Some("https://js.pay.example".into()),
+        ..r
+    };
+    assert!(via(fill()).check("shop.example.com").is_ok());
+    assert!(via(setup()).check("shop.example.com").is_ok());
+    let with = |via: &str, origin: &str| CardRequest {
+        via: Some(via.into()),
+        origin: Some(origin.into()),
+        ..setup()
+    };
+    assert!(
+        with("JS.Pay.Example", "https://js.pay.example:443")
+            .check("shop.example.com")
+            .is_ok()
+    );
+    for (via, origin, why) in [
+        // The frame must be the one named: not the shop's page, not another frame.
+        (
+            "js.pay.example",
+            "https://www.shop.example.com",
+            "not the payment frame",
+        ),
+        (
+            "js.pay.example",
+            "https://evil.example",
+            "not the payment frame",
+        ),
+        (
+            "js.pay.example",
+            "https://js.pay.example.evil.io",
+            "not the payment frame",
+        ),
+        (
+            "js.pay.example",
+            "http://js.pay.example",
+            "not an https origin",
+        ),
+        // A frame on the shop's own site needs no via.
+        (
+            "pay.shop.example.com",
+            "https://pay.shop.example.com",
+            "merchant's site",
+        ),
+        (
+            "shop.example.com",
+            "https://shop.example.com",
+            "merchant's site",
+        ),
+        ("js.pay.example/x", "https://js.pay.example", "not a host"),
+        ("", "https://js.pay.example", "not a host"),
+    ] {
+        let err = with(via, origin).check("shop.example.com").unwrap_err();
+        assert_eq!(err.0, None, "{via} {origin}");
+        assert!(err.1.contains(why), "{via} {origin}: {}", err.1);
+    }
 }
 
 #[test]
@@ -196,11 +314,21 @@ fn answer_json_names() {
         exp_month: 12,
         exp_year: 2030,
         cvc: Some(Secret::new("123")),
-        approved_amount: money("499.00", "NOK"),
+        approved_amount: Some(money("499.00", "NOK")),
     };
     assert_eq!(
         serde_json::to_string(&a).unwrap(),
         r#"{"title":"Test Visa","brand":"visa","last4":"4242","number":"4242424242424242","exp_month":12,"exp_year":2030,"cvc":"123","approved_amount":{"value":"499.00","currency":"NOK"}}"#
     );
     assert!(!format!("{a:?}").contains("4242424242424242"));
+    // A setup answer has no amount.
+    let setup = CardAnswer {
+        approved_amount: None,
+        ..a
+    };
+    assert!(
+        !serde_json::to_string(&setup)
+            .unwrap()
+            .contains("approved_amount")
+    );
 }

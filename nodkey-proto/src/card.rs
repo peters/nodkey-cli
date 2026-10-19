@@ -6,6 +6,11 @@
 //!
 //! Two modes: `fill` (a browser host fills the checkout form; the model never sees the number) and
 //! `reveal` (the agent gets the full card; off for every agent until the user turns it on).
+//!
+//! Two purposes: `pay` (one purchase of an amount, the default) and `setup` (a browser adds the
+//! card to a site for later payments: no amount, `fill` only, off until the user turns it on for
+//! that browser). `merchant` is always the top-level page's site; `via` names a payment frame from
+//! another site.
 
 use serde::{Deserialize, Serialize};
 
@@ -27,6 +32,27 @@ pub mod errors {
     pub const NO_CARD: &str = "no_card";
     /// The card data breaks another rule of [`super::CardRequest::check`].
     pub const BAD_CARD_REQUEST: &str = "bad_card_request";
+    /// `purpose: setup`, but adding cards for later payments is off for this agent.
+    pub const SETUP_OFF: &str = "setup_off";
+}
+
+/// What the card is for.
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "lowercase")]
+pub enum CardPurpose {
+    /// Pay one purchase of `amount`. The default: absent in the JSON.
+    #[default]
+    Pay,
+    /// Add the card to a site for later payments (a billing page, a subscription): no amount.
+    /// Only for a browser that fills the card (`mode: fill`), never for an agent's own profile.
+    Setup,
+}
+
+impl CardPurpose {
+    /// True for `pay`, which the JSON leaves out, so a pay request has the same bytes as before.
+    pub fn is_pay(&self) -> bool {
+        *self == CardPurpose::Pay
+    }
 }
 
 /// How the card reaches the checkout page.
@@ -131,13 +157,24 @@ impl std::fmt::Display for Money {
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct CardRequest {
     pub mode: CardMode,
-    /// The shop's site, e.g. `shop.example.com`.
+    /// `pay` (absent) or `setup`.
+    #[serde(default, skip_serializing_if = "CardPurpose::is_pay")]
+    pub purpose: CardPurpose,
+    /// The site of the top-level page (the address bar), e.g. `shop.example.com`; never the host
+    /// of a payment frame.
     pub merchant: String,
-    /// What will be paid. Required: the phone answers `amount_missing` without it.
+    /// `fill`: the host of the payment frame the card goes into (`js.pay.example`), when that
+    /// frame is from another site than the merchant. Absent when the form is on the merchant's
+    /// site.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub via: Option<String>,
+    /// What will be paid. Required for `pay` (the phone answers `amount_missing` without it);
+    /// absent for `setup`.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub amount: Option<Money>,
-    /// `fill`: the checkout page's origin as the host saw it (`https://www.shop.example.com`),
-    /// never from the page or the model. Required for `fill`.
+    /// `fill`: the origin of the frame the card goes into, as the host saw it
+    /// (`https://www.shop.example.com`, or `https://js.pay.example` with `via`), never from the
+    /// page or the model. Required for `fill`.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub origin: Option<String>,
     /// `fill`: the order total the host read on the checkout page, or the user typed.
@@ -161,6 +198,56 @@ impl CardRequest {
         if !merchant.eq_ignore_ascii_case(target.trim()) {
             return Err(plain("target must be the merchant"));
         }
+        match self.purpose {
+            CardPurpose::Pay => self.check_amount()?,
+            CardPurpose::Setup => {
+                if self.amount.is_some() || self.page_total.is_some() || self.total_source.is_some()
+                {
+                    return Err(plain(
+                        "a setup request adds a card for later payments: no amount, page_total or total_source",
+                    ));
+                }
+                if self.mode == CardMode::Reveal {
+                    return Err(plain(
+                        "a setup request is only for a browser that fills the card (mode fill)",
+                    ));
+                }
+            }
+        }
+        match self.mode {
+            CardMode::Reveal => {
+                if self.origin.is_some()
+                    || self.via.is_some()
+                    || self.page_total.is_some()
+                    || self.total_source.is_some()
+                {
+                    return Err(plain(
+                        "origin, via, page_total and total_source belong to fill requests",
+                    ));
+                }
+            }
+            CardMode::Fill => {
+                let origin = self.origin.as_deref().ok_or(plain(
+                    "a fill request needs the origin of the card form's frame from the host",
+                ))?;
+                match self.via.as_deref() {
+                    None => check_origin(origin, merchant),
+                    Some(via) => check_via(origin, via, merchant),
+                }
+                .map_err(|e| (None, e))?;
+                match (self.total_source, &self.page_total) {
+                    (Some(_), None) | (None, Some(_)) => {
+                        return Err(plain("page_total and total_source go together"));
+                    }
+                    _ => {}
+                }
+            }
+        }
+        Ok(())
+    }
+
+    /// `pay`: a valid amount, and a page total that is not more than it.
+    fn check_amount(&self) -> Result<(), (Option<&'static str>, String)> {
         let amount = self.amount.as_ref().ok_or((
             Some(errors::AMOUNT_MISSING),
             "amount and currency are required: say how much will be paid".to_owned(),
@@ -179,28 +266,6 @@ impl CardRequest {
                 ));
             }
         }
-        match self.mode {
-            CardMode::Reveal => {
-                if self.origin.is_some() || self.page_total.is_some() || self.total_source.is_some()
-                {
-                    return Err(plain(
-                        "origin, page_total and total_source belong to fill requests",
-                    ));
-                }
-            }
-            CardMode::Fill => {
-                let origin = self.origin.as_deref().ok_or(plain(
-                    "a fill request needs the checkout page's origin from the host",
-                ))?;
-                check_origin(origin, merchant).map_err(|e| (None, e))?;
-                match (self.total_source, &self.page_total) {
-                    (Some(_), None) | (None, Some(_)) => {
-                        return Err(plain("page_total and total_source go together"));
-                    }
-                    _ => {}
-                }
-            }
-        }
         Ok(())
     }
 }
@@ -209,26 +274,61 @@ impl CardRequest {
 /// `http://localhost[:port]` with the merchant `localhost` (a shop running on this computer, as
 /// for passkeys).
 pub fn check_origin(origin: &str, merchant: &str) -> Result<(), String> {
-    let local = merchant.eq_ignore_ascii_case("localhost");
-    let rest = origin
-        .strip_prefix("https://")
-        .or_else(|| origin.strip_prefix("http://").filter(|_| local))
-        .ok_or_else(|| format!("origin {origin:?} is not an https origin"))?;
-    let host = match rest.rsplit_once(':') {
-        Some((h, port)) if !port.is_empty() && port.bytes().all(|b| b.is_ascii_digit()) => h,
-        _ => rest,
-    };
-    let valid = !host.is_empty()
-        && host
-            .bytes()
-            .all(|b| b.is_ascii_alphanumeric() || b == b'.' || b == b'-');
-    let (host, merchant) = (host.to_ascii_lowercase(), merchant.to_ascii_lowercase());
-    if !valid || !(host == merchant || host.ends_with(&format!(".{merchant}"))) {
+    let host = origin_host(origin, merchant.eq_ignore_ascii_case("localhost"))?;
+    let merchant = merchant.to_ascii_lowercase();
+    if !host.as_deref().is_some_and(|h| on_site(h, &merchant)) {
         return Err(format!(
             "origin {origin:?} is not on the merchant's site {merchant}"
         ));
     }
     Ok(())
+}
+
+/// A payment frame from another site: `via` is a host that is not on the merchant's site
+/// (`js.pay.example`), and `origin` is `https://<via>[:port]`.
+pub fn check_via(origin: &str, via: &str, merchant: &str) -> Result<(), String> {
+    let lower = via.to_ascii_lowercase();
+    if !is_host(&lower) || via.chars().count() > MAX_TARGET {
+        return Err(format!(
+            "via {via:?} is not a host like js.pay.example: the payment frame's host"
+        ));
+    }
+    if on_site(&lower, &merchant.to_ascii_lowercase()) {
+        return Err(format!(
+            "via {via} is on the merchant's site; leave via out when the card form is on the shop's own site"
+        ));
+    }
+    if origin_host(origin, false)?.as_deref() != Some(lower.as_str()) {
+        return Err(format!("origin {origin:?} is not the payment frame {via}"));
+    }
+    Ok(())
+}
+
+/// The host of `https://<host>[:port]` (also `http://` when `http`), in lower case; `None` when
+/// the host is not a plain host name.
+fn origin_host(origin: &str, http: bool) -> Result<Option<String>, String> {
+    let rest = origin
+        .strip_prefix("https://")
+        .or_else(|| origin.strip_prefix("http://").filter(|_| http))
+        .ok_or_else(|| format!("origin {origin:?} is not an https origin"))?;
+    let host = match rest.rsplit_once(':') {
+        Some((h, port)) if !port.is_empty() && port.bytes().all(|b| b.is_ascii_digit()) => h,
+        _ => rest,
+    };
+    Ok(is_host(host).then(|| host.to_ascii_lowercase()))
+}
+
+/// Letters, digits, dots and dashes only.
+fn is_host(host: &str) -> bool {
+    !host.is_empty()
+        && host
+            .bytes()
+            .all(|b| b.is_ascii_alphanumeric() || b == b'.' || b == b'-')
+}
+
+/// Whether lower-case `host` is `site` or one of its subdomains.
+fn on_site(host: &str, site: &str) -> bool {
+    host == site || host.ends_with(&format!(".{site}"))
 }
 
 /// The card in an approved answer. `fill`: the host fills it in and gives the model only the
@@ -248,8 +348,10 @@ pub struct CardAnswer {
     /// Present when the card has a CVC stored.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub cvc: Option<Secret>,
-    /// The most the user approved for this one purchase: the request's amount.
-    pub approved_amount: Money,
+    /// The most the user approved for this one purchase: the request's amount. Absent for
+    /// `setup`.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub approved_amount: Option<Money>,
 }
 
 /// A card in a `list` answer (only when cards are on for the agent): never the number.

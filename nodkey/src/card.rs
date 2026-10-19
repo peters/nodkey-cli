@@ -2,10 +2,12 @@
 //! purchase (`kind: card`, `mode: reveal`). The user sees the shop and the amount and approves
 //! with Face ID every time; the phone refuses at once above the user's limit or when full card
 //! numbers are off for this agent. A browser host fills a card without the model seeing it with
-//! `nodkey card-fill` instead (see `cardfill.rs`).
+//! `nodkey card-fill` instead (see `cardfill.rs`); only a browser adds a card for later payments
+//! (`purpose: setup`), never an agent.
 
 use nodkey_proto::{
-    Answer, CardAnswer, CardMode, CardRequest, ClientInfo, Decision, Kind, Money, card::errors,
+    Answer, CardAnswer, CardMode, CardPurpose, CardRequest, ClientInfo, Decision, Kind, Money,
+    card::errors,
 };
 use serde::Serialize;
 use serde_json::{Map, Value};
@@ -15,9 +17,18 @@ use crate::{
     outcome::{OLD_PROTOCOL, Outcome, paused},
 };
 
+/// Why an agent cannot add a card for later payments.
+pub const NO_SETUP_FOR_AGENTS: &str = "request_payment pays one purchase of an exact amount. Adding a card to a \
+     site for later payments (purpose setup, no amount) is only for a browser that fills the card itself (the \
+     Nodkey browser extension, or a browser host such as Horizon), never for an agent. Do not make up an amount; \
+     ask the user to add the card in their browser.";
+
 /// The `merchant`, `amount` and `currency` of a `request_payment` call. `amount` may be a
 /// string ("499.00") or a number.
 pub fn from_args(args: &Map<String, Value>) -> Result<(String, Money), String> {
+    if args.get("purpose").is_some_and(|p| p != "pay") {
+        return Err(NO_SETUP_FOR_AGENTS.into());
+    }
     let merchant = match args.get("merchant") {
         Some(Value::String(s)) if !s.trim().is_empty() => s.trim().to_owned(),
         _ => return Err("merchant is required: the shop's site, e.g. shop.example.com".into()),
@@ -78,7 +89,9 @@ impl Agent {
         let mut request = new_request(Kind::Card, merchant, reason, client);
         request.card = Some(CardRequest {
             mode: CardMode::Reveal,
+            purpose: CardPurpose::Pay,
             merchant: merchant.trim().to_owned(),
+            via: None,
             amount: Some(amount.clone()),
             origin: None,
             page_total: None,
@@ -142,6 +155,11 @@ pub fn refusal(error: &str) -> Option<&'static str> {
              in. Check the order with the user."
         }
         errors::BAD_CARD_REQUEST => "The phone refused the card request as malformed.",
+        errors::SETUP_OFF => {
+            "Adding cards for later payments is off for this agent, so the phone refused without asking. It is \
+             only for a browser that fills the card (the Nodkey browser extension, or a browser host such as \
+             Horizon); the user turns it on for that browser under Agents in Nodkey."
+        }
         _ => return None,
     })
 }
@@ -191,6 +209,7 @@ pub fn exit_for_error(error: Option<&str>) -> Option<u8> {
         errors::REVEAL_OFF => 6,
         errors::CARDS_OFF | errors::NO_CARD => 7,
         errors::TOTAL_MISMATCH => 8,
+        errors::SETUP_OFF => 9,
         _ => return None,
     })
 }
@@ -225,6 +244,10 @@ mod tests {
                 "amount",
             ),
             (json!({"merchant": "s.example", "amount": "1"}), "currency"),
+            (
+                json!({"merchant": "s.example", "purpose": "setup", "reason": "x"}),
+                "never for an agent",
+            ),
             (
                 json!({"merchant": "s.example", "amount": "0", "currency": "NOK"}),
                 "more than 0",
@@ -295,7 +318,7 @@ mod tests {
             exp_month: 12,
             exp_year: 2030,
             cvc: Some(Secret::new("123")),
-            approved_amount: amount.clone(),
+            approved_amount: Some(amount.clone()),
         });
         let v: Value =
             serde_json::from_str(&text(&outcome(&a, "shop.example.com", &amount, "P"))).unwrap();
@@ -310,6 +333,7 @@ mod tests {
             (errors::CARDS_OFF, "Cards are off", Some(7)),
             (errors::NO_CARD, "No card", Some(7)),
             (errors::TOTAL_MISMATCH, "higher", Some(8)),
+            (errors::SETUP_OFF, "only for a browser", Some(9)),
             ("paused", "paused", None),
         ] {
             let mut d = Answer::decision("rid", Decision::Denied);

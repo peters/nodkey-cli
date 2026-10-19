@@ -35,7 +35,9 @@ pub mod webauthn;
 
 pub use apikey::{SaveSecret, SecretAnswer, SecretEntry, SecretTarget};
 pub use bundle::{BundleItem, BundleItemAnswer, BundleRequest};
-pub use card::{CardAnswer, CardEntry, CardMode, CardRequest, Money, SaveCard, TotalSource};
+pub use card::{
+    CardAnswer, CardEntry, CardMode, CardPurpose, CardRequest, Money, SaveCard, TotalSource,
+};
 pub use keys::{KeyPair, PublicKeys};
 pub use messages::*;
 pub use pairing::PairingGrant;

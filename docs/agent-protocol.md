@@ -785,9 +785,10 @@ fixed `cred_random` for the vectors' passkey, `derivations` (input, salt, output
 
 ## Payment cards
 
-`kind: card` asks for a payment card to pay **one purchase**. A card request always names the shop
-and the amount, so the user sees what money is about to be spent. `target` is the merchant; `card`
-holds the purchase:
+`kind: card` asks for a payment card. `purpose: pay` (the default) pays **one purchase**: the
+request always names the shop and the amount, so the user sees what money is about to be spent.
+`purpose: setup` lets a browser add the card to a site for later payments, with no amount (see
+"Cards for later payments"). `target` is the merchant; `card` holds the request:
 
 ```json
 {"v":1, "request_id":"…", "kind":"card", "target":"shop.example.com",
@@ -800,10 +801,12 @@ holds the purchase:
 | Field | Meaning |
 | --- | --- |
 | `mode` | `fill`: a browser host fills the checkout form and the model never sees the number. `reveal`: the agent gets the full card (number, expiry, CVC). |
-| `merchant` | the shop's site; the same as `target` |
-| `amount` | **required**: what will be paid, `value` a decimal string with a dot (at most 12 digits before it and 3 after, no thousands separators, more than 0), `currency` an ISO 4217 code (`NOK`) |
-| `origin` | `fill`, required: the checkout page's origin as the host saw the frame (`https://<host>[:port]`, `host` the merchant or a subdomain of it; or `http://localhost[:port]` with the merchant `localhost`, as for passkeys), never from the page or the model. Absent for `reveal`. |
-| `page_total` | `fill`, optional: the order total the host read on the checkout page (`total_source: page`) or the user typed because none was found (`total_source: user`). Must not be more than `amount` (same currency). Absent for `reveal`. |
+| `purpose` | `pay` or `setup`. Absent means `pay`, and a `pay` request leaves it out. `setup` is only for `fill`. |
+| `merchant` | the site of the top-level page (what the address bar shows), never the host of a payment frame; the same as `target` |
+| `via` | `fill`, optional: the host of the payment frame the card goes into, when that frame is from another site than the merchant (a payment provider's frame, `js.pay.example`). It must not be the merchant or a subdomain of it: leave it out when the card form is on the shop's own site. Absent for `reveal`. |
+| `amount` | `pay`, **required**: what will be paid, `value` a decimal string with a dot (at most 12 digits before it and 3 after, no thousands separators, more than 0), `currency` an ISO 4217 code (`NOK`). Absent for `setup`. |
+| `origin` | `fill`, required: the origin of the frame the card goes into, as the host saw it, never from the page or the model. Without `via`: `https://<host>[:port]`, `host` the merchant or a subdomain of it; or `http://localhost[:port]` with the merchant `localhost`, as for passkeys. With `via`: `https://<via>[:port]`. Absent for `reveal`. |
+| `page_total` | `pay` with `fill`, optional: the order total the host read on the checkout page (`total_source: page`) or the user typed because none was found (`total_source: user`). Must not be more than `amount` (same currency). Absent for `reveal` and `setup`. |
 | `total_source` | `page` or `user`; present exactly when `page_total` is |
 
 Both sides check these rules (`nodkey_proto::CardRequest::check`; the vector section `cards`
@@ -818,21 +821,24 @@ ID every time. The notification (category `AGENT_REQUEST_CARD`) shows the amount
 title and offers only Open Nodkey and Deny; the user approves in the app on a sheet that shows the
 amount, the shop, the reason, the picture and the card, with a button the user holds ("Hold to pay
 499,00 kr"). The history records the amount and the shop of every card request, also of refusals.
+The shop the phone shows is always `merchant`; with `via` it adds "via js.pay.example".
 
 Refusals without asking (`decision: denied`, `error`), in this order:
 
 | `error` | When |
 | --- | --- |
 | `cards_off` | cards are off for this agent |
-| `amount_missing` | no `amount`, or not a valid amount |
+| `amount_missing` | `pay` without `amount`, or not a valid amount |
 | `total_mismatch` | `page_total` is more than `amount` |
 | `bad_card_request` | the card data breaks another rule above |
 | `reveal_off` | `mode: reveal` while full card numbers are off for this agent |
-| `over_limit` | `amount` is above the agent's limit per purchase, or would take the last 24 hours above the daily limit |
+| `setup_off` | `purpose: setup` while adding cards for later payments is off for this agent |
+| `over_limit` | `pay`: `amount` is above the agent's limit per purchase, or would take the last 24 hours above the daily limit |
 | `no_card` | no card on the phone may be used by this agent |
 | `paused`, `unsupported_kind`, `unsupported_version` | as for every kind |
 
-An approved answer carries the card and the amount the user approved:
+An approved answer carries the card and the amount the user approved (`approved_amount`, absent
+for `setup`):
 
 ```json
 {"v":1, "request_id":"…", "decision":"approved",
@@ -848,6 +854,40 @@ brand and the last four digits, and never stores the card.
 
 A `list` answer carries `cards` (`title`, `brand`, `last4`; never the number) when cards are on for
 the agent.
+
+### Cards for later payments
+
+A billing page or a subscription often asks for a card with no total, so that the site can charge
+it later. A browser asks for such a card with `purpose: setup`:
+
+```json
+{"v":1, "request_id":"…", "kind":"card", "target":"shop.example.com",
+ "reason":"Add your card at shop.example.com for later payments", "agent":"Firefox on Linux", "ts":1791620000,
+ "card":{"mode":"fill", "purpose":"setup", "merchant":"shop.example.com", "via":"js.pay.example",
+         "origin":"https://js.pay.example"}}
+```
+
+- Only `mode: fill`, and no `amount`, `page_total` or `total_source` (else `bad_card_request`). The
+  card goes to the browser, which fills it only into the frame of `origin`.
+- Only a browser that fills the card itself asks: the Nodkey browser extension acting for the
+  user, or a browser host under its own profile (`nodkey card-fill --agent horizon`). An agent
+  never does: `request_payment` and `nodkey pay` have no `setup`, and an agent's card requests keep
+  the required amount, currency, merchant and limits.
+- On the phone, adding cards for later payments is a separate setting per agent, off by default,
+  like full card numbers. It is meant for a browser: the user turns it on for the Nodkey browser
+  extension or a browser host, never for an agent's own profile. Without it the phone refuses at
+  once with `setup_off`. Cards must be on for the agent (`cards_off`), and the agent must be allowed
+  a card (`no_card`).
+- The phone shows "Add your card at shop.example.com, via js.pay.example" (without `via`: "Add
+  your card at shop.example.com"), the reason, the picture and the card, and asks for Face ID every
+  time. One approval fills the card once. A setup request is never covered by a lease, and never
+  part of a bundle, a task plan, a task session or a follow-up window. The history records it with
+  the shop and `via`.
+- The limits per purchase and per 24 hours do not apply, because there is no amount, and the
+  request adds nothing to the amount of the last 24 hours.
+- The approved answer is the card without `approved_amount`. The browser never stores it.
+- An app that does not know `setup` reads a request without an amount and refuses it with
+  `amount_missing`. The browser then tells the user to update the app.
 
 ### Saving a card
 
@@ -869,8 +909,10 @@ same number updates the card the phone has. The answer carries `saved`: `added`,
 Vectors: `request_card_fill`, `request_card_reveal`, `request_card_missing_amount`, `answer_card`,
 `answer_card_amount_missing`, `answer_card_over_limit`, `answer_card_reveal_off`,
 `answer_cards_off`, `answer_card_total_mismatch`, `answer_card_no_card`, `save_card_number`,
-`save_card_cvc`, `request_save_card`, `answer_save_card`, `answer_list_with_cards`, and the `cards`
-section. Test card numbers only.
+`save_card_cvc`, `request_save_card`, `answer_save_card`, `answer_list_with_cards`,
+`request_card_setup`, `request_card_fill_via`, `answer_card_setup`, `answer_card_setup_off`, and
+the `cards` section (its `requests` include `setup`, `fill_via` and the setup and `via` rules).
+Test card numbers only.
 
 ## API keys and secrets
 
@@ -1463,7 +1505,8 @@ answers".
   [--outcome failed] --reason TEXT`; `nodkey sms-code TARGET --reason TEXT [--wait SECS]`. Exit codes:
   0 approved (or queued), 1 error, 2 denied (or rejected), 3 expired, 4 paused (`error: paused`),
   64 bad arguments; for `pay` and `card-fill` also 5
-  `over_limit`, 6 `reveal_off`, 7 `cards_off` or `no_card`, 8 `total_mismatch`. `nodkey pay MERCHANT
+  `over_limit`, 6 `reveal_off`, 7 `cards_off` or `no_card`, 8 `total_mismatch`, and for `card-fill`
+  9 `setup_off`. `nodkey pay MERCHANT
   AMOUNT CURRENCY --reason TEXT --reveal` prints the full card, so it requires `--reveal`; without a
   host nothing can fill a card for it. A missing amount is refused before anything is sent.
   `nodkey run` passes on the exit code of the command it ran (126 or 127 when the command cannot
@@ -1554,12 +1597,18 @@ is checked.
  "amount":{"value":"499.00", "currency":"NOK"}, "page_total":{"value":"499,00", "currency":"NOK"},
  "total_source":"page", "reason":"Buy the 2 m USB-C cable you asked for",
  "requester":{"app":"Horizon", "agent":"Claude Code"}}
+{"version":1, "purpose":"setup", "merchant":"shop.example.com", "via":"js.pay.example",
+ "origin":"https://js.pay.example", "requester":{"app":"Horizon", "agent":"Claude Code"}}
 ```
 
-`amount` comes from the agent (or is the page total when the user fills by hand); `origin` and
-`page_total` come from the host itself, never from the page's script or the model. Amounts take a dot
-or a comma before the decimals. Unknown fields are refused. The command sends `kind: card`, `mode:
-fill`. Results:
+`purpose` is `pay` (when left out) or `setup`: add the card for later payments, with no `amount`,
+`page_total` or `total_source` (see "Cards for later payments"). `merchant` is the top-level page's
+site. `via` is the payment frame's host when the card form is in a frame from another site, and
+`origin` is then that frame's origin. `amount` comes from the agent (or is the page total when the
+user fills by hand); `origin`, `via` and `page_total` come from the host itself, never from the
+page's script or the model. Amounts take a dot or a comma before the decimals. `reason` is optional
+("Pay 499.00 NOK at shop.example.com", or "Add your card at shop.example.com for later payments").
+Unknown fields are refused. The command sends `kind: card`, `mode: fill`. Results:
 
 ```json
 {"version":1, "status":"ok",
@@ -1567,8 +1616,12 @@ fill`. Results:
          "brand":"visa", "last4":"4242", "title":"Test Visa"},
  "approved_amount":{"value":"499.00", "currency":"NOK"},
  "summary":"filled: Visa ····4242 on shop.example.com, at most 499.00 NOK. One purchase; ask again for the next one."}
-{"version":1, "status":"denied|expired|over_limit|cards_off|total_mismatch|error", "message":"…", "error":"…"}
+{"version":1, "status":"ok", "card":{…},
+ "summary":"filled: Visa ····4242 on shop.example.com via js.pay.example, to add the card for later payments. No purchase was approved; ask again for the next card."}
+{"version":1, "status":"denied|expired|over_limit|cards_off|total_mismatch|setup_off|error", "message":"…", "error":"…"}
 ```
+
+A `setup` result has no `approved_amount`. With `via`, the summary names the shop "via" the frame.
 
 | `status` | Exit | When |
 | --- | --- | --- |
@@ -1578,12 +1631,14 @@ fill`. Results:
 | `over_limit` | 5 | above the user's limit for this agent |
 | `cards_off` | 7 | cards are off for this agent, or no card may be used (`error` says which) |
 | `total_mismatch` | 8 | the page total is more than the amount; checked before anything is sent |
-| `error` | 1 | not paired, relay trouble, an app that is too old |
-| `error` | 64 | the input is not a valid request (`error: amount_missing` when the amount is missing) |
+| `setup_off` | 9 | `setup`, and adding cards for later payments is off for this host |
+| `error` | 1 | not paired, relay trouble, an app that is too old (for `setup` also `error: amount_missing`: the app does not know it) |
+| `error` | 64 | the input is not a valid request (`error: amount_missing` when a `pay` request has no amount) |
 
 Before it fills, the host reads the page total again and fills nothing when it is now more than
 `approved_amount`. It keeps watching the total until the form is sent and clears the card fields if
-the total goes up. It never clicks the pay button itself and never stores the card.
+the total goes up. For `setup` there is no total: the host fills only the frame of `origin`. It
+never clicks the pay button itself and never stores the card.
 
 ## The login fill command
 

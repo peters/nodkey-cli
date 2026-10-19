@@ -215,7 +215,9 @@ fn card_checks() {
     );
     c.card = Some(crate::CardRequest {
         mode: crate::CardMode::Reveal,
+        purpose: crate::CardPurpose::Pay,
         merchant: "shop.example.com".into(),
+        via: None,
         amount: Some(money("499")),
         origin: None,
         page_total: None,

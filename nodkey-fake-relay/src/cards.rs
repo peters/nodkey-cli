@@ -1,8 +1,10 @@
 //! The fake phone's payment card and the rules it answers card requests by: cards on or off,
-//! full card numbers on or off, and a limit per purchase. Test card numbers only.
+//! full card numbers on or off, cards for later payments on or off, and a limit per purchase.
+//! Test card numbers only.
 
 use nodkey_proto::{
-    Answer, CardAnswer, Decision, Kind, Money, Purpose, Request, Secret, card::errors,
+    Answer, CardAnswer, CardMode, CardPurpose, Decision, Kind, Money, Purpose, Request, Secret,
+    card::errors,
 };
 use serde::Deserialize;
 
@@ -19,8 +21,15 @@ pub struct FakeCards {
     pub enabled: bool,
     /// "Full card number": allowed.
     pub reveal: bool,
+    /// "Add cards for later payments" (`purpose: setup`): allowed. On when left out.
+    #[serde(default = "on")]
+    pub setup: bool,
     /// Most per purchase; `None` means no limit.
     pub limit: Option<Money>,
+}
+
+fn on() -> bool {
+    true
 }
 
 impl Default for FakeCards {
@@ -28,6 +37,7 @@ impl Default for FakeCards {
         FakeCards {
             enabled: true,
             reveal: true,
+            setup: true,
             limit: Some(Money {
                 value: "1000.00".into(),
                 currency: "NOK".into(),
@@ -57,17 +67,22 @@ pub(crate) fn refuse(fake: &Fake, rid: &str, request: &Request) -> Option<Answer
     if let Err((code, _)) = card.check(&request.target) {
         return Some(denied(rid, code.unwrap_or(errors::BAD_CARD_REQUEST)));
     }
-    if card.mode == nodkey_proto::CardMode::Reveal && !settings.reveal {
+    if card.mode == CardMode::Reveal && !settings.reveal {
         return Some(denied(rid, errors::REVEAL_OFF));
     }
-    let amount = card.amount.as_ref().expect("checked");
+    if card.purpose == CardPurpose::Setup && !settings.setup {
+        return Some(denied(rid, errors::SETUP_OFF));
+    }
+    // A setup request has no amount, so no limit applies.
+    let amount = card.amount.as_ref()?;
     if settings.limit.as_ref().is_some_and(|l| amount.exceeds(l)) {
         return Some(denied(rid, errors::OVER_LIMIT));
     }
     None
 }
 
-/// Fills in an approved card answer: the test card, for at most the amount asked.
+/// Fills in an approved card answer: the test card, for at most the amount asked (no amount for
+/// `setup`).
 pub(crate) fn approve(answer: &mut Answer, request: &Request) {
     let card = request.card.as_ref().expect("checked before asking");
     answer.lease = None;
@@ -80,7 +95,7 @@ pub(crate) fn approve(answer: &mut Answer, request: &Request) {
         exp_month: 12,
         exp_year: 2030,
         cvc: Some(Secret::new(CARD_CVC)),
-        approved_amount: card.amount.clone().expect("checked before asking"),
+        approved_amount: card.amount.clone(),
     });
 }
 

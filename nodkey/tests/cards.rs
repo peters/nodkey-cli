@@ -1,6 +1,7 @@
 //! End to end: payment cards. `nodkey pay`, `nodkey card-fill` and the `request_payment` MCP tool
 //! against the in-process fake relay, whose phone holds the test card 4242 4242 4242 4242 and
-//! answers by the user's card settings (on/off, full numbers on/off, limit per purchase).
+//! answers by the user's card settings (on/off, full numbers on/off, cards for later payments
+//! on/off, limit per purchase).
 
 mod common;
 
@@ -13,7 +14,7 @@ use std::{
 };
 
 use fake_relay::{Mode, cards::FakeCards};
-use nodkey_proto::{CardMode, Kind, Money};
+use nodkey_proto::{CardMode, CardPurpose, Kind, Money};
 use serde_json::{Value, json};
 
 struct Cli {
@@ -106,6 +107,7 @@ fn set_cards(fake: &fake_relay::Shared, enabled: bool, reveal: bool, limit: Opti
     *fake.cards.lock().unwrap() = FakeCards {
         enabled,
         reveal,
+        setup: true,
         limit: limit.map(|v| Money::parse(v, "NOK").unwrap()),
     };
 }
@@ -300,6 +302,81 @@ fn a_browser_host_fills_a_card() {
 }
 
 #[test]
+fn a_browser_host_adds_a_card_for_later_payments() {
+    let (fake, addr) = fake_relay::start(1);
+    let cli = Cli::new(addr);
+    cli.pair("horizon");
+    // A billing page with the card form in a payment frame from another site, and no total.
+    let setup = |extra: Value| {
+        let mut v = json!({
+            "version": 1, "purpose": "setup", "merchant": "shop.example.com",
+            "via": "js.pay.example", "origin": "https://js.pay.example",
+            "requester": {"app": "Horizon", "agent": "Claude Code"},
+        });
+        for (k, val) in extra.as_object().unwrap() {
+            v[k] = val.clone();
+        }
+        v
+    };
+
+    let (v, code) = cli.card_fill(&setup(json!({})));
+    assert_eq!(code, 0, "{v}");
+    assert_eq!(v["card"]["number"], fake_relay::cards::CARD_NUMBER);
+    assert!(v.get("approved_amount").is_none(), "{v}");
+    let summary = v["summary"].as_str().unwrap();
+    assert!(
+        summary.contains("shop.example.com via js.pay.example")
+            && summary.contains("for later payments")
+            && !summary.contains(fake_relay::cards::CARD_NUMBER),
+        "{summary}"
+    );
+    let card = fake.seen().pop().unwrap().request.card.unwrap();
+    assert_eq!(
+        (card.purpose, card.mode, card.via.as_deref()),
+        (CardPurpose::Setup, CardMode::Fill, Some("js.pay.example"))
+    );
+    assert!(card.amount.is_none());
+
+    // A payment in such a frame names the frame too.
+    let (v, code) = cli.card_fill(&fill(
+        json!({"via": "js.pay.example", "origin": "https://js.pay.example"}),
+    ));
+    assert_eq!(code, 0, "{v}");
+    assert!(
+        v["summary"]
+            .as_str()
+            .unwrap()
+            .contains("via js.pay.example, at most 499.00 NOK")
+    );
+
+    // Checked before anything is sent: no amount, and only into the frame named in via.
+    let before = fake.seen().len();
+    for bad in [
+        json!({"amount": {"value": "1", "currency": "NOK"}}),
+        json!({"origin": "https://www.shop.example.com"}),
+        json!({"via": "pay.shop.example.com", "origin": "https://pay.shop.example.com"}),
+    ] {
+        let (v, code) = cli.card_fill(&setup(bad.clone()));
+        assert_eq!((code, v["status"].as_str()), (64, Some("error")), "{bad}");
+    }
+    assert_eq!(fake.seen().len(), before);
+
+    // Off for this browser: the phone refuses without asking.
+    fake.cards.lock().unwrap().setup = false;
+    let (v, code) = cli.card_fill(&setup(json!({})));
+    assert_eq!((code, v["status"].as_str()), (9, Some("setup_off")), "{v}");
+    assert!(
+        v["message"]
+            .as_str()
+            .unwrap()
+            .contains("only for a browser")
+    );
+    // Agents' own profiles never get here.
+    let (v, code) = cli.card_fill_as(&["--agent", "claude-code"], &setup(json!({})));
+    assert_eq!(code, 64, "{v}");
+}
+
+#[test]
 fn request_payment_over_mcp() {
     let (fake, addr) = fake_relay::start(1);
     let cli = Cli::new(addr);
@@ -399,6 +476,16 @@ fn request_payment_over_mcp() {
         call(json!({"merchant": "shop.example.com", "reason": "Buy"})),
     );
     assert_eq!(r["result"]["isError"], true, "{r}");
+    // An agent never adds a card for later payments, and nothing goes to the phone.
+    let before = fake.seen().len();
+    let r = rpc(
+        6,
+        "tools/call",
+        call(json!({"merchant": "shop.example.com", "purpose": "setup", "reason": "Add the card"})),
+    );
+    assert_eq!(r["result"]["isError"], true, "{r}");
+    assert!(r.to_string().contains("never for an agent"), "{r}");
+    assert_eq!(fake.seen().len(), before);
     drop(stdin);
     let _ = child.wait();
 }
