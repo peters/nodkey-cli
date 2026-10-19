@@ -65,6 +65,7 @@ fn results_and_exit_codes() {
         (Some("no_passkey"), "not_found", 2),
         (Some("excluded"), "excluded", 2),
         (Some("bad_client_data"), "denied", 2),
+        (Some("no_passcode"), "denied", 2),
         (Some("unsupported_kind"), "error", 1),
         (None, "denied", 2),
     ] {
@@ -78,6 +79,14 @@ fn results_and_exit_codes() {
         assert_eq!(v["error"].as_str(), error);
         assert_eq!(v["version"], 1);
     }
+    denied.error = Some("no_passcode".into());
+    let (v, _) = result(&request, &exchanged(Some(denied.clone())));
+    assert!(
+        v["message"]
+            .as_str()
+            .unwrap()
+            .contains("Face ID & Passcode")
+    );
 
     let key = webauthn::signing_key(&[5; 32]).unwrap();
     let auth = webauthn::authenticator_data("webauthn.io", None);

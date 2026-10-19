@@ -1,13 +1,14 @@
 //! Passkey vectors: the sealed `passkey` requests and answers, and a `webauthn` section with a
 //! fixed P-256 test key, the client data, the authenticator data and a signature to verify.
+//! [`add_no_passcode`] adds what a phone without a passcode answers.
 
 use serde_json::{Value, json};
 
 use super::{Ctx, Side, TS, label_id, label32, to_json};
 use crate::{
     Answer, Decision, Kind, PasskeyAnswer, PasskeyCreate, PasskeyGet, PasskeyOp, PasskeyRequest,
-    PasskeyUser, Purpose, Request, Requirement, VERSION, b64u,
-    passkey::{ES256, build_client_data_json, check_client_data, client_data_hash},
+    PasskeyUser, PrfInput, PrfValues, Purpose, Request, Requirement, VERSION, b64u,
+    passkey::{self, ES256, build_client_data_json, check_client_data, client_data_hash},
     webauthn,
 };
 
@@ -185,25 +186,21 @@ pub fn test_passkey() -> (webauthn::SigningKey, Vec<u8>, Vec<u8>) {
     (key, credential_id, user_handle)
 }
 
-/// Seals the passkey requests and answers into `ctx` and returns the `webauthn` section.
-pub(super) fn add(ctx: &mut Ctx, agent: &Side, phone: &Side) -> Value {
-    let (key, credential_id, user_handle) = test_passkey();
-    let public = key.verifying_key();
-    let challenge = |op: &str| {
-        b64u::encode(&label32(&format!(
-            "nodkey/v1/vectors/passkey/challenge/{op}"
-        )))
+/// The client data of the vectors' get and create.
+fn client_data(op: PasskeyOp) -> String {
+    let name = match op {
+        PasskeyOp::Get => "get",
+        PasskeyOp::Create => "create",
     };
+    let challenge = b64u::encode(&label32(&format!(
+        "nodkey/v1/vectors/passkey/challenge/{name}"
+    )));
+    build_client_data_json(op, &challenge, ORIGIN)
+}
 
-    let cd_create = build_client_data_json(PasskeyOp::Create, &challenge("create"), ORIGIN);
-    let cd_get = build_client_data_json(PasskeyOp::Get, &challenge("get"), ORIGIN);
-    let auth_create = webauthn::authenticator_data(RP_ID, Some((&credential_id, public)));
-    let attestation = webauthn::attestation_object(&auth_create);
-    let auth_get = webauthn::authenticator_data(RP_ID, None);
-    let signature = webauthn::sign(&key, &auth_get, cd_get.as_bytes());
-    let spki = webauthn::spki_der(public);
-
-    let request = |name: &str, passkey: PasskeyRequest, reason: &str| Request {
+/// A `passkey` request for `webauthn.io` with the id made from `name`.
+fn request(name: &str, passkey: PasskeyRequest, reason: &str) -> Request {
+    Request {
         v: VERSION,
         request_id: label_id(&format!("nodkey/v1/vectors/request/{name}")),
         kind: Kind::Passkey,
@@ -225,37 +222,53 @@ pub(super) fn add(ctx: &mut Ctx, agent: &Side, phone: &Side) -> Value {
         save_secret: None,
         project: None,
         nonce: None,
-    };
-    let r_create = request(
-        "passkey_create",
-        PasskeyRequest::Create(PasskeyCreate {
-            rp_id: RP_ID.into(),
-            rp_name: "WebAuthn.io".into(),
-            client_data_json: b64u::encode(cd_create.as_bytes()),
-            user: PasskeyUser {
-                id: b64u::encode(&user_handle),
-                name: "alex".into(),
-                display_name: "Alex".into(),
-            },
-            algorithms: vec![ES256, -257],
-            exclude_credentials: vec![],
-            resident_key: Requirement::Required,
-            user_verification: Requirement::Required,
-            prf: None,
-        }),
-        "Create a passkey for webauthn.io",
-    );
-    let r_get = request(
-        "passkey_get",
-        PasskeyRequest::Get(PasskeyGet {
-            rp_id: RP_ID.into(),
-            client_data_json: b64u::encode(cd_get.as_bytes()),
-            allow_credentials: vec![b64u::encode(&credential_id)],
-            user_verification: Requirement::Required,
-            prf: None,
-        }),
-        "Sign in to webauthn.io",
-    );
+    }
+}
+
+/// The vectors' get (the test passkey) and create (for its user), with `user_verification`.
+fn get_and_create(uv: Requirement) -> (PasskeyRequest, PasskeyRequest) {
+    let (_, credential_id, user_handle) = test_passkey();
+    let get = PasskeyRequest::Get(PasskeyGet {
+        rp_id: RP_ID.into(),
+        client_data_json: b64u::encode(client_data(PasskeyOp::Get).as_bytes()),
+        allow_credentials: vec![b64u::encode(&credential_id)],
+        user_verification: uv,
+        prf: None,
+    });
+    let create = PasskeyRequest::Create(PasskeyCreate {
+        rp_id: RP_ID.into(),
+        rp_name: "WebAuthn.io".into(),
+        client_data_json: b64u::encode(client_data(PasskeyOp::Create).as_bytes()),
+        user: PasskeyUser {
+            id: b64u::encode(&user_handle),
+            name: "alex".into(),
+            display_name: "Alex".into(),
+        },
+        algorithms: vec![ES256, -257],
+        exclude_credentials: vec![],
+        resident_key: Requirement::Required,
+        user_verification: uv,
+        prf: None,
+    });
+    (get, create)
+}
+
+/// Seals the passkey requests and answers into `ctx` and returns the `webauthn` section.
+pub(super) fn add(ctx: &mut Ctx, agent: &Side, phone: &Side) -> Value {
+    let (key, credential_id, user_handle) = test_passkey();
+    let public = key.verifying_key();
+
+    let cd_create = client_data(PasskeyOp::Create);
+    let cd_get = client_data(PasskeyOp::Get);
+    let auth_create = webauthn::authenticator_data(RP_ID, Some((&credential_id, public)));
+    let attestation = webauthn::attestation_object(&auth_create);
+    let auth_get = webauthn::authenticator_data(RP_ID, None);
+    let signature = webauthn::sign(&key, &auth_get, cd_get.as_bytes());
+    let spki = webauthn::spki_der(public);
+
+    let (get, create) = get_and_create(Requirement::Required);
+    let r_create = request("passkey_create", create, "Create a passkey for webauthn.io");
+    let r_get = request("passkey_get", get, "Sign in to webauthn.io");
     for (name, r) in [
         ("request_passkey_get", &r_get),
         ("request_passkey_create", &r_create),
@@ -359,5 +372,131 @@ pub(super) fn add(ctx: &mut Ctx, agent: &Side, phone: &Side) -> Value {
         "get": get,
         "create": create,
         "client_data_checks": checks,
+        "no_passcode": no_passcode_cases(),
     })
+}
+
+/// `webauthn.no_passcode`: which requests a phone without a passcode refuses with `no_passcode`
+/// (`refused`), and which it answers without UV.
+fn no_passcode_cases() -> Vec<Value> {
+    let prf = || {
+        Some(PrfInput {
+            eval: Some(PrfValues {
+                first: b64u::encode(&[1; 32]),
+                second: None,
+            }),
+            eval_by_credential: Default::default(),
+        })
+    };
+    let mut cases = Vec::new();
+    for uv in [
+        Requirement::Required,
+        Requirement::Preferred,
+        Requirement::Discouraged,
+    ] {
+        let (get, create) = get_and_create(uv);
+        let with_prf = |r: &PasskeyRequest| {
+            let mut r = r.clone();
+            match &mut r {
+                PasskeyRequest::Get(g) => g.prf = prf(),
+                PasskeyRequest::Create(c) => c.prf = prf(),
+            }
+            r
+        };
+        for r in [with_prf(&get), get, with_prf(&create), create] {
+            let (op, uv, has_prf) = match &r {
+                PasskeyRequest::Get(g) => ("get", g.user_verification, g.prf.is_some()),
+                PasskeyRequest::Create(c) => ("create", c.user_verification, c.prf.is_some()),
+            };
+            cases.push(json!({"op": op, "user_verification": uv, "prf": has_prf,
+                              "refused": r.needs_passcode()}));
+        }
+    }
+    cases
+}
+
+/// What a phone without a passcode answers: `no_passcode` for a get with
+/// `user_verification: required` and for a get with PRF inputs, and a get and a create with
+/// `user_verification: preferred` signed without UV (flags `0x19`, create `0x59`). After every
+/// other HPKE vector, so the bytes of the earlier ones stay the same.
+pub(super) fn add_no_passcode(ctx: &mut Ctx, agent: &Side, phone: &Side) {
+    let (key, credential_id, _) = test_passkey();
+    let public = key.verifying_key();
+    let (get, create) = get_and_create(Requirement::Preferred);
+    let r_get = request("passkey_get_preferred", get, "Sign in to webauthn.io");
+    let r_create = request(
+        "passkey_create_preferred",
+        create,
+        "Create a passkey for webauthn.io",
+    );
+    for (name, r) in [
+        ("request_passkey_get_preferred", &r_get),
+        ("request_passkey_create_preferred", &r_create),
+    ] {
+        ctx.seal(
+            name,
+            Purpose::Request,
+            "agent",
+            phone,
+            format!("{}{}", r.request_id, agent.id),
+            &to_json(r),
+            true,
+        );
+    }
+
+    let auth_get = webauthn::authenticator_data_without_uv(RP_ID);
+    let signature = webauthn::sign(&key, &auth_get, client_data(PasskeyOp::Get).as_bytes());
+    let mut a_get = Answer::decision(&r_get.request_id, Decision::Approved);
+    a_get.passkey = Some(PasskeyAnswer {
+        credential_id: b64u::encode(&credential_id),
+        attestation_object: None,
+        authenticator_data: b64u::encode(&auth_get),
+        signature: Some(b64u::encode(&signature)),
+        user_handle: Some(b64u::encode(&test_passkey().2)),
+        user_name: Some("alex".into()),
+        public_key: None,
+        public_key_algorithm: None,
+        prf: None,
+    });
+    let mut auth_create = webauthn::authenticator_data(RP_ID, Some((&credential_id, public)));
+    auth_create[32] &= !webauthn::FLAG_UV;
+    let mut a_create = Answer::decision(&r_create.request_id, Decision::Approved);
+    a_create.passkey = Some(PasskeyAnswer {
+        credential_id: b64u::encode(&credential_id),
+        attestation_object: Some(b64u::encode(&webauthn::attestation_object(&auth_create))),
+        authenticator_data: b64u::encode(&auth_create),
+        signature: None,
+        user_handle: None,
+        user_name: None,
+        public_key: Some(b64u::encode(&webauthn::spki_der(public))),
+        public_key_algorithm: Some(ES256),
+        prf: None,
+    });
+    let refused = |rid: &str| {
+        let mut a = Answer::decision(rid, Decision::Denied);
+        a.error = Some(passkey::errors::NO_PASSCODE.into());
+        a
+    };
+    for (name, a) in [
+        ("answer_passkey_get_without_uv", a_get),
+        ("answer_passkey_create_without_uv", a_create),
+        (
+            "answer_passkey_no_passcode",
+            refused(&label_id("nodkey/v1/vectors/request/passkey_get")),
+        ),
+        (
+            "answer_passkey_get_prf_no_passcode",
+            refused(&label_id("nodkey/v1/vectors/request/passkey_get_prf")),
+        ),
+    ] {
+        ctx.seal(
+            name,
+            Purpose::Answer,
+            "phone",
+            agent,
+            format!("{}{}", a.request_id, phone.id),
+            &to_json(&a),
+            true,
+        );
+    }
 }

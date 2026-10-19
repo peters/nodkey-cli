@@ -30,7 +30,8 @@
 //!   absent): pair like an app made before the commitment, answer the pairing check with a nonce
 //!   that does not match the commitment, or send answers without a signature.
 //! - `PUT /_fake/passcode` with `true` or `false`: whether the phone has a passcode (`true` to
-//!   begin with). Without one it refuses cards and keys with `no_passcode`.
+//!   begin with). Without one it refuses cards, keys and passkey requests that need user
+//!   verification or PRF with `no_passcode`, and signs other passkey answers without UV.
 //!
 //! The phone answers a `pairing_check` with its nonce (the first one of a pairing only), and drops
 //! a request without the agent's valid signature: it never answers it.

@@ -291,8 +291,9 @@ they are.
   into the environment of the command it starts.
 - Cards are off for every agent until you turn them on. Each payment needs Face ID; there is no
   "always allow" for cards, and your iPhone refuses by itself above the limit you set.
-- An iPhone without a passcode gives no cards or keys to agents or browsers, and no "always
-  allow". Set a passcode in Settings, Face ID & Passcode.
+- An iPhone without a passcode gives no cards or keys to agents or browsers, no passkey sign-in
+  that needs a verified user, and no "always allow". Set a passcode in Settings, Face ID &
+  Passcode.
 - With card fill, the model does not see the card number only when it cannot run `nodkey` or read
   the agent folder (no shell, or a sandbox). An agent with a shell could run `nodkey card-fill`
   itself after you approve a payment. Turn cards on only for the browser host, and approve only

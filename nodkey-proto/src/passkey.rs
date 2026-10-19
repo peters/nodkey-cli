@@ -33,6 +33,9 @@ pub mod errors {
     /// A get with PRF inputs where no passkey for the `rp_id` (or in `allow_credentials`)
     /// supports PRF: they were made before PRF support and have no `credRandom`.
     pub const PRF_UNSUPPORTED: &str = "prf_unsupported";
+    /// The phone has no passcode, so it cannot verify the user: a request for which
+    /// [`super::PasskeyRequest::needs_passcode`] is true; at once, right after `bad_client_data`.
+    pub const NO_PASSCODE: &str = "no_passcode";
 }
 
 /// WebAuthn's `required`, `preferred` or `discouraged` (user verification, resident key).
@@ -146,6 +149,17 @@ impl PasskeyRequest {
     /// lease or a task session.
     pub fn needs_prf_output(&self) -> bool {
         matches!(self, PasskeyRequest::Get(g) if g.prf.as_ref().is_some_and(PrfInput::has_inputs))
+    }
+
+    /// True when the phone must verify the user: `user_verification: required` (get or create),
+    /// or a get with PRF inputs. A phone without a passcode refuses such a request with
+    /// [`errors::NO_PASSCODE`] and answers any other one without UV.
+    pub fn needs_passcode(&self) -> bool {
+        let uv = match self {
+            PasskeyRequest::Get(g) => g.user_verification,
+            PasskeyRequest::Create(c) => c.user_verification,
+        };
+        uv == Requirement::Required || self.needs_prf_output()
     }
 
     /// `client_data_json` as sent (b64u).

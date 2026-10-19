@@ -124,3 +124,31 @@ fn request_json_shape() {
     }
     assert!(bad.check("webauthn.io").is_err());
 }
+
+#[test]
+fn what_needs_a_passcode() {
+    let request = |op: &str, extra: &str| -> PasskeyRequest {
+        serde_json::from_str(&format!(
+            r#"{{"op":"{op}","rp_id":"webauthn.io","client_data_json":"e30"{extra}}}"#
+        ))
+        .unwrap()
+    };
+    let create = r#","rp_name":"W","user":{"id":"AAEC","name":"alex","display_name":"Alex"},"algorithms":[-7]"#;
+    let prf = r#","prf":{"eval":{"first":"AAEC"}}"#;
+    for (op, extra, needs) in [
+        ("get", "", false),
+        ("get", r#","user_verification":"discouraged""#, false),
+        ("get", r#","user_verification":"required""#, true),
+        ("get", prf, true),
+        ("create", create, false),
+        (
+            "create",
+            &format!(r#"{create},"user_verification":"required""#),
+            true,
+        ),
+        // A create with PRF makes the key's secret; it needs no verified user.
+        ("create", &format!("{create}{prf}"), false),
+    ] {
+        assert_eq!(request(op, extra).needs_passcode(), needs, "{op}{extra}");
+    }
+}

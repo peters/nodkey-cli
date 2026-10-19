@@ -84,12 +84,15 @@ fn ids(list: &[String]) -> Vec<Vec<u8>> {
     list.iter().filter_map(|id| b64u::decode(id).ok()).collect()
 }
 
-/// The answer the phone gives at once, without asking the user: bad client data, no passkey for
-/// a get, PRF inputs and no passkey with PRF, or a create without ES256. `None` when the user is
-/// asked.
+/// The answer the phone gives at once, without asking the user: bad client data, no passcode on
+/// the phone for a request that needs one, no passkey for a get, PRF inputs and no passkey with
+/// PRF, or a create without ES256. `None` when the user is asked.
 pub(crate) fn refuse(fake: &Fake, rid: &str, request: &PasskeyRequest) -> Option<Answer> {
     if request.check_client_data().is_err() {
         return Some(denied(rid, errors::BAD_CLIENT_DATA));
+    }
+    if request.needs_passcode() && !*fake.passcode.lock().unwrap() {
+        return Some(denied(rid, errors::NO_PASSCODE));
     }
     match request {
         PasskeyRequest::Get(g) => {
@@ -130,9 +133,17 @@ pub(crate) fn without_uv(fake: &Fake, answer: &mut Answer, g: &PasskeyGet) {
 }
 
 /// Fills in an approved answer: signs (get) or makes a new passkey (create), or answers
-/// `excluded` when the phone already holds one the site listed.
+/// `excluded` when the phone already holds one the site listed. A phone without a passcode
+/// verified nobody: its answer has no UV.
 pub(crate) fn approve(fake: &Fake, answer: &mut Answer, request: &PasskeyRequest) {
     let client_data = b64u::decode(request.client_data_json()).expect("checked before asking");
+    let uv = *fake.passcode.lock().unwrap();
+    let flags = |mut auth: Vec<u8>| {
+        if !uv {
+            auth[32] &= !webauthn::FLAG_UV;
+        }
+        auth
+    };
     let mut passkeys = fake.passkeys.lock().unwrap();
     match request {
         PasskeyRequest::Get(g) => {
@@ -157,7 +168,7 @@ pub(crate) fn approve(fake: &Fake, answer: &mut Answer, request: &PasskeyRequest
                 // Never a lease: Face ID for every PRF answer.
                 answer.lease = None;
             }
-            let auth = webauthn::authenticator_data(&g.rp_id, None);
+            let auth = flags(webauthn::authenticator_data(&g.rp_id, None));
             let signature = webauthn::sign(&p.key, &auth, &client_data);
             answer.passkey = Some(PasskeyAnswer {
                 credential_id,
@@ -193,8 +204,10 @@ pub(crate) fn approve(fake: &Fake, answer: &mut Answer, request: &PasskeyRequest
                     .as_ref()
                     .map(|v| prf::results(&cred_random, v).expect("checked by the agent")),
             });
-            let auth =
-                webauthn::authenticator_data(&c.rp_id, Some((&credential_id, key.verifying_key())));
+            let auth = flags(webauthn::authenticator_data(
+                &c.rp_id,
+                Some((&credential_id, key.verifying_key())),
+            ));
             answer.passkey = Some(PasskeyAnswer {
                 credential_id: b64u::encode(&credential_id),
                 attestation_object: Some(b64u::encode(&webauthn::attestation_object(&auth))),

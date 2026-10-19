@@ -630,7 +630,7 @@ A new passkey (`op: create`):
 | `user` | create: `id` (the user handle, b64u, 1 to 64 bytes), `name`, `display_name` |
 | `algorithms` | create: COSE algorithm ids the site accepts, in its order |
 | `exclude_credentials` | create, optional: credential ids (b64u) the site already has for this user |
-| `resident_key`, `user_verification` | `required`, `preferred` or `discouraged`; absent means `preferred`. The phone always makes a discoverable passkey and asks for Face ID for every create. A get with `user_verification: required` is never answered by a lease or a task session: the phone asks with Face ID, and that answer carries UV. The agent refuses an answer to such a get without UV. |
+| `resident_key`, `user_verification` | `required`, `preferred` or `discouraged`; absent means `preferred`. The phone always makes a discoverable passkey and asks for Face ID for every create. A get with `user_verification: required` is never answered by a lease or a task session: the phone asks with Face ID, and that answer carries UV. The agent refuses an answer to such a get without UV. A phone without a passcode refuses a get or create with `user_verification: required` with `no_passcode` (see "Answers"). |
 | `prf` | optional: the WebAuthn PRF extension (see "PRF") |
 
 The host that talks to the page (Horizon, the browser extension) makes `client_data_json` itself
@@ -668,7 +668,8 @@ bytes.
 - `authenticator_data` = SHA-256(`rp_id`) ‖ flags (1 byte) ‖ sign count (4 bytes, 0). A get the
   user approved with Face ID has UP, UV, BE and BS (`0x1d`). A get that a lease (once, 1 day, 7 days
   or always) or a task session answered has UP, BE and BS (`0x19`): nobody was verified for that
-  answer, so UV is not set. BE and BS are always set: iOS needs them to stay the same.
+  answer, so UV is not set. A phone without a passcode verifies nobody either: each get it answers
+  has `0x19`, and each create `0x59`. BE and BS are always set: iOS needs them to stay the same.
 - create adds the attested credential data: AAGUID ‖ u16 big-endian length of the credential id ‖
   credential id ‖ COSE key, and the AT flag (`0x5d`). The COSE key is the CBOR map
   `{1: 2, 3: -7, -1: 1, -2: x, -3: y}` in this order; `attestation_object` is the CBOR map
@@ -698,6 +699,7 @@ A get answer may carry `lease` as a login answer does. Refusals are `decision: d
 | `unsupported_algorithm` | create without `-7` in `algorithms`; at once |
 | `excluded` | create when the phone holds a passkey in `exclude_credentials`; answered **after** the user approved, as WebAuthn asks, so a site cannot probe for passkeys without the user |
 | `prf_unsupported` | get with PRF inputs when no passkey for `rp_id` (or in a non-empty `allow_credentials`) supports PRF; at once (see "PRF") |
+| `no_passcode` | the phone has no passcode, so it cannot verify the user: a get or create with `user_verification: required`, or a get with PRF inputs (`PasskeyRequest::needs_passcode`); at once, right after `bad_client_data`. It answers any other request without UV. |
 | `paused`, `unsupported_kind`, `unsupported_version` | as for every kind; an older app answers `unsupported_kind` |
 
 Leases: a get may be covered by a lease of kind `passkey`, `(agent_id, passkey_id, passkey,
@@ -713,6 +715,12 @@ Vectors: `request_passkey_get`, `request_passkey_create`, `answer_passkey_get`,
 and create the `client_data_json` (text and b64u), its hash, the expected `authenticator_data`,
 the `attestation_object` (create), and `signed_data` and a `signature` that verifies with the public
 key (get; RFC 6979 nonces, so the file stays the same).
+
+A phone without a passcode: `request_passkey_get_preferred` and `request_passkey_create_preferred`
+(`user_verification: preferred`) with `answer_passkey_get_without_uv` (`0x19`) and
+`answer_passkey_create_without_uv` (`0x59`), `answer_passkey_no_passcode` (to
+`request_passkey_get`) and `answer_passkey_get_prf_no_passcode` (to `request_passkey_get_prf`),
+and `webauthn.no_passcode`: for each op, `user_verification` and `prf`, whether it is `refused`.
 
 ### PRF
 
@@ -1556,7 +1564,7 @@ the origin inside `client_data_json` and runs the client data check. Results:
 | --- | --- | --- |
 | `ok` | 0 | the phone signed (get) or made a passkey (create) |
 | `prf_unsupported` | 2 | a get with PRF inputs, and the passkey (or the app) has no PRF |
-| `denied` | 2 | the user said no, the agent is paused, or the phone refused the client data or the algorithms |
+| `denied` | 2 | the user said no, the agent is paused, the phone refused the client data or the algorithms, or it has no passcode (`error: no_passcode`) |
 | `not_found` | 2 | the phone has no matching passkey (`no_passkey`) |
 | `excluded` | 2 | the phone already holds a passkey in `exclude_credentials` |
 | `expired` | 3 | no answer in time |

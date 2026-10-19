@@ -63,6 +63,10 @@ WebAuthn JSON form.
   A passkey made before PRF support has no credRandom: the result is "prf_unsupported". Make a
   new passkey for PRF.
 
+An iPhone without a passcode cannot verify the user. It refuses a get or create with
+"user_verification":"required" and a get with PRF inputs ("status":"denied",
+"error":"no_passcode"), and answers any other request without UV.
+
 Results:
   {"version":1, "status":"ok", "credential_id":"<b64u>", "authenticator_data":"<b64u>",
    "signature":"<b64u DER>", "user_handle":"<b64u>",
@@ -292,6 +296,7 @@ fn result(passkey: &PasskeyRequest, ex: &Exchanged) -> (Value, u8) {
                 Some(errors::BAD_CLIENT_DATA) => {
                     ("denied", "The phone refused the client data.", DENIED)
                 }
+                Some(errors::NO_PASSCODE) => ("denied", crate::outcome::NO_PASSCODE, DENIED),
                 Some(errors::PRF_UNSUPPORTED) => (
                     "prf_unsupported",
                     "The passkey for this site has no PRF support (it was made before Nodkey had PRF); make a new passkey with prf.",
