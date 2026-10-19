@@ -5,7 +5,7 @@
 //! every new passkey gets the vectors' fixed `credRandom` and answers PRF inputs with it.
 
 use nodkey_proto::{
-    Answer, Decision, PasskeyAnswer, PasskeyRequest, PrfOutput, b64u,
+    Answer, Decision, PasskeyAnswer, PasskeyGet, PasskeyRequest, PrfOutput, b64u,
     passkey::{ES256, errors},
     prf,
     webauthn::{self, SigningKey},
@@ -108,6 +108,25 @@ pub(crate) fn refuse(fake: &Fake, rid: &str, request: &PasskeyRequest) -> Option
             (!c.algorithms.contains(&ES256)).then(|| denied(rid, errors::UNSUPPORTED_ALGORITHM))
         }
     }
+}
+
+/// Signs a get again without UV, as the phone does for an answer that a lease or a task session
+/// gave without Face ID.
+pub(crate) fn without_uv(fake: &Fake, answer: &mut Answer, g: &PasskeyGet) {
+    let Some(pa) = answer.passkey.as_mut() else {
+        return;
+    };
+    let passkeys = fake.passkeys.lock().unwrap();
+    let Some(p) = passkeys
+        .iter()
+        .find(|p| b64u::encode(&p.credential_id) == pa.credential_id)
+    else {
+        return;
+    };
+    let client_data = b64u::decode(&g.client_data_json).expect("checked before asking");
+    let auth = webauthn::authenticator_data_without_uv(&g.rp_id);
+    pa.authenticator_data = b64u::encode(&auth);
+    pa.signature = Some(b64u::encode(&webauthn::sign(&p.key, &auth, &client_data)));
 }
 
 /// Fills in an approved answer: signs (get) or makes a new passkey (create), or answers

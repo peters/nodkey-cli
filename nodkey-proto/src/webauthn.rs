@@ -1,5 +1,6 @@
 //! A software WebAuthn authenticator made the way Nodkey on the iPhone makes passkeys: ES256,
-//! flags UP, UV, BE and BS on every answer, sign count 0, "none" attestation and Nodkey's AAGUID.
+//! flags UP, BE and BS on every answer and UV when the user approved with Face ID (not for a get
+//! that a lease or a task session answered), sign count 0, "none" attestation and Nodkey's AAGUID.
 //! The fake phone and the vectors sign with it; an agent uses [`check_answer`] on what the phone
 //! sent and tests use [`verify`].
 
@@ -27,8 +28,12 @@ pub const FLAG_BE: u8 = 0x08;
 pub const FLAG_BS: u8 = 0x10;
 pub const FLAG_AT: u8 = 0x40;
 
-/// The flags of every answer: user present, user verified, backup eligible, backed up.
+/// The flags of an answer the user approved with Face ID: user present, user verified, backup
+/// eligible, backed up (`0x1d`; with AT for a create, `0x5d`).
 pub const FLAGS: u8 = FLAG_UP | FLAG_UV | FLAG_BE | FLAG_BS;
+
+/// The flags of a get that a lease or a task session answered: no Face ID, so no UV (`0x19`).
+pub const FLAGS_WITHOUT_UV: u8 = FLAG_UP | FLAG_BE | FLAG_BS;
 
 /// DER prefix of a P-256 SubjectPublicKeyInfo; the 65-byte uncompressed point follows.
 const SPKI_PREFIX: [u8; 26] = [
@@ -36,8 +41,16 @@ const SPKI_PREFIX: [u8; 26] = [
     0x86, 0x48, 0xce, 0x3d, 0x03, 0x01, 0x07, 0x03, 0x42, 0x00,
 ];
 
+/// The authenticator data of a get that a lease or a task session answered: [`FLAGS_WITHOUT_UV`].
+pub fn authenticator_data_without_uv(rp_id: &str) -> Vec<u8> {
+    let mut data = authenticator_data(rp_id, None);
+    data[32] = FLAGS_WITHOUT_UV;
+    data
+}
+
 /// `rpIdHash ‖ flags ‖ signCount (0)` and, for a new passkey, the attested credential data
-/// (`AAGUID ‖ u16be(len) ‖ credential id ‖ COSE key`).
+/// (`AAGUID ‖ u16be(len) ‖ credential id ‖ COSE key`), for an answer the user approved with
+/// Face ID ([`FLAGS`]).
 pub fn authenticator_data(rp_id: &str, attested: Option<(&[u8], &VerifyingKey)>) -> Vec<u8> {
     let mut data = Sha256::digest(rp_id.as_bytes()).to_vec();
     data.push(if attested.is_some() {
@@ -147,9 +160,10 @@ pub fn signed_data(authenticator_data: &[u8], client_data_json: &[u8]) -> Vec<u8
 }
 
 /// The agent's check of an approved answer before it hands it on: every value is b64u, the
-/// authenticator data is for `rp_id` with the user present, and the answer has the fields of
-/// its operation (a signature for get; an attestation object and an ES256 key for create), and
-/// PRF results only for inputs the request had ([`crate::prf::check_output`]).
+/// authenticator data is for `rp_id` with the user present (and verified, when the request said
+/// `user_verification: required`), and the answer has the fields of its operation (a signature
+/// for get; an attestation object and an ES256 key for create), and PRF results only for inputs
+/// the request had ([`crate::prf::check_output`]).
 pub fn check_answer(request: &PasskeyRequest, answer: &PasskeyAnswer) -> Result<(), String> {
     let decode = |name: &str, v: &str| {
         b64u::decode(v)
@@ -162,6 +176,13 @@ pub fn check_answer(request: &PasskeyRequest, answer: &PasskeyAnswer) -> Result<
     let rp_hash = Sha256::digest(request.rp_id().as_bytes());
     if auth.len() < 37 || auth[..32] != rp_hash[..] || auth[32] & FLAG_UP == 0 {
         return Err("the phone's authenticator data is not for this site".into());
+    }
+    let required = match request {
+        PasskeyRequest::Get(g) => g.user_verification,
+        PasskeyRequest::Create(c) => c.user_verification,
+    } == crate::Requirement::Required;
+    if required && auth[32] & FLAG_UV == 0 {
+        return Err("the site requires user verification, and the phone's answer has none".into());
     }
     match request {
         PasskeyRequest::Get(_) => {

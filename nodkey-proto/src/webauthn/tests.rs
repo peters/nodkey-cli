@@ -13,6 +13,11 @@ fn authenticator_data_layout() {
     assert_eq!(&plain[..32], &Sha256::digest(b"webauthn.io")[..]);
     assert_eq!(plain[32], 0x1d);
     assert_eq!(&plain[33..], &[0, 0, 0, 0]);
+    // A get that a lease or a task session answered: no Face ID, so no UV.
+    let leased = authenticator_data_without_uv("webauthn.io");
+    assert_eq!(leased[32], 0x19);
+    assert_eq!(leased[..32], plain[..32]);
+    assert_eq!(leased[33..], plain[33..]);
 
     let cred = [9u8; 16];
     let attested = authenticator_data("webauthn.io", Some((&cred, k.verifying_key())));
@@ -102,4 +107,19 @@ fn answer_check() {
     answer.authenticator_data = b64u::encode(&auth);
     answer.signature = None;
     assert!(check_answer(&request, &answer).is_err());
+
+    // Without UV: refused when the site requires user verification, fine otherwise.
+    let leased = authenticator_data_without_uv("webauthn.io");
+    answer.authenticator_data = b64u::encode(&leased);
+    answer.signature = Some(b64u::encode(&sign(&k, &leased, cd.as_bytes())));
+    assert!(
+        check_answer(&request, &answer)
+            .unwrap_err()
+            .contains("user verification")
+    );
+    let PasskeyRequest::Get(mut g) = request else {
+        unreachable!()
+    };
+    g.user_verification = Requirement::Preferred;
+    check_answer(&PasskeyRequest::Get(g), &answer).unwrap();
 }

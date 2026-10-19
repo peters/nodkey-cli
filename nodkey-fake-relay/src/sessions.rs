@@ -6,8 +6,8 @@
 use std::time::{SystemTime, UNIX_EPOCH};
 
 use nodkey_proto::{
-    Answer, BundleItemAnswer, Decision, Kind, Lease, LeaseKind, PasskeyRequest, Request, Secret,
-    SessionInfo, session::NEXT_CODE_BELOW,
+    Answer, BundleItemAnswer, Decision, Kind, Lease, LeaseKind, PasskeyRequest, Request,
+    Requirement, Secret, SessionInfo, session::NEXT_CODE_BELOW,
 };
 use serde::Serialize;
 
@@ -73,13 +73,15 @@ fn covers(item: &(Kind, String), request: &Request) -> bool {
         (Kind::Secret, Kind::Secret) => {
             item.1 == crate::secrets::cover(&request.target, request.project.as_deref())
         }
-        // A get with PRF inputs is never covered: Face ID every time.
+        // A get with PRF inputs, or one that requires user verification, is never covered: Face
+        // ID every time.
         (Kind::Passkey, Kind::Passkey) => {
-            request
-                .passkey
-                .as_ref()
-                .is_some_and(|p| matches!(p, PasskeyRequest::Get(_)) && !p.needs_prf_output())
-                && item.1 == wanted
+            request.passkey.as_ref().is_some_and(|p| match p {
+                PasskeyRequest::Get(g) => {
+                    !p.needs_prf_output() && g.user_verification != Requirement::Required
+                }
+                PasskeyRequest::Create(_) => false,
+            }) && item.1 == wanted
         }
         _ => false,
     }
@@ -110,6 +112,10 @@ pub fn answer_now(fake: &Fake, agent_id: &str, rid: &str, request: &Request) -> 
     drop(sessions);
     let mut answer = Answer::decision(rid, Decision::Approved);
     crate::phone::approve(fake, &mut answer, request);
+    // No Face ID for this answer: a passkey get carries no UV.
+    if let Some(PasskeyRequest::Get(g)) = &request.passkey {
+        crate::passkeys::without_uv(fake, &mut answer, g);
+    }
     answer.lease = Some(Lease {
         kind: LeaseKind::Session,
         until: Some(until),
@@ -242,6 +248,10 @@ mod tests {
             }),
             ..Default::default()
         });
+        assert!(!covers(&item, &request(&get)));
+        // A site that requires user verification gets Face ID, never a session answer.
+        get.prf = None;
+        get.user_verification = Requirement::Required;
         assert!(!covers(&item, &request(&get)));
     }
 }

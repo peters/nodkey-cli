@@ -528,7 +528,7 @@ remember the site, which makes it an exact match).
 
 Such an answer carries `lease: {"kind":"session", "until":…}`. Anything else is asked as usual,
 with or without `session_id`: another site or account, a passkey create, a passkey get with PRF
-inputs, `save`, `save_card`, `save_secret`,
+inputs or with `user_verification: required`, `save`, `save_card`, `save_secret`,
 `card`, `list`, `insights`, `cleanup` and `bundle`. A request with an unknown or ended `session_id`
 is also asked as usual; its answer carries `session_ended: true`, so the agent stops sending the id.
 
@@ -630,7 +630,7 @@ A new passkey (`op: create`):
 | `user` | create: `id` (the user handle, b64u, 1 to 64 bytes), `name`, `display_name` |
 | `algorithms` | create: COSE algorithm ids the site accepts, in its order |
 | `exclude_credentials` | create, optional: credential ids (b64u) the site already has for this user |
-| `resident_key`, `user_verification` | `required`, `preferred` or `discouraged`; absent means `preferred`. The phone always makes a discoverable passkey and always asks for Face ID, so these change nothing it does. |
+| `resident_key`, `user_verification` | `required`, `preferred` or `discouraged`; absent means `preferred`. The phone always makes a discoverable passkey and asks for Face ID for every create. A get with `user_verification: required` is never answered by a lease or a task session: the phone asks with Face ID, and that answer carries UV. The agent refuses an answer to such a get without UV. |
 | `prf` | optional: the WebAuthn PRF extension (see "PRF") |
 
 The host that talks to the page (Horizon, the browser extension) makes `client_data_json` itself
@@ -665,9 +665,10 @@ Nodkey is a software authenticator: ES256 (ECDSA P-256 with SHA-256), sign count
 `none` attestation, AAGUID `97531e9d-ff39-4e63-aaec-b1d68400c3c9`, a credential id of 16 random
 bytes.
 
-- `authenticator_data` = SHA-256(`rp_id`) ‖ flags (1 byte) ‖ sign count (4 bytes, 0). Flags are
-  UP, UV, BE and BS (`0x1d`) on every answer, also under a lease: iOS needs BE and BS to stay the
-  same, and UV is set because the user approved with Face ID when the lease was made.
+- `authenticator_data` = SHA-256(`rp_id`) ‖ flags (1 byte) ‖ sign count (4 bytes, 0). A get the
+  user approved with Face ID has UP, UV, BE and BS (`0x1d`). A get that a lease (once, 1 day, 7 days
+  or always) or a task session answered has UP, BE and BS (`0x19`): nobody was verified for that
+  answer, so UV is not set. BE and BS are always set: iOS needs them to stay the same.
 - create adds the attested credential data: AAGUID ‖ u16 big-endian length of the credential id ‖
   credential id ‖ COSE key, and the AT flag (`0x5d`). The COSE key is the CBOR map
   `{1: 2, 3: -7, -1: 1, -2: x, -3: y}` in this order; `attestation_object` is the CBOR map
@@ -700,8 +701,9 @@ A get answer may carry `lease` as a login answer does. Refusals are `decision: d
 | `paused`, `unsupported_kind`, `unsupported_version` | as for every kind; an older app answers `unsupported_kind` |
 
 Leases: a get may be covered by a lease of kind `passkey`, `(agent_id, passkey_id, passkey,
-until)`, once, 1 day, 7 days or always, as for logins. **A create and a get with PRF inputs are
-never covered by a lease**: Face ID every time. A get under a lease is answered by the notification service extension with a
+until)`, once, 1 day, 7 days or always, as for logins. **A create, a get with PRF inputs and a
+get with `user_verification: required` are never covered by a lease**: Face ID every time. A get
+under a lease carries no UV (see "What the phone makes"). A get under a lease is answered by the notification service extension with a
 quiet notification ("Claude Code signed in to webauthn.io with a passkey"), and the history marks
 it as a lease answer. Scopes: allowed for `selected`, `logins` and `all`, refused for `codes`.
 

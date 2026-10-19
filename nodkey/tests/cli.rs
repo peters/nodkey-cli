@@ -533,3 +533,53 @@ fn prf_gives_the_same_key_for_the_same_salt() {
         assert!(help.contains(part), "{part}");
     }
 }
+
+#[test]
+fn a_session_signs_in_without_uv_and_required_asks_with_face_id() {
+    let (fake, addr) = fake_relay::start(1);
+    let cli = Cli::new(addr);
+    assert!(
+        cli.run(&["pair", "--agent", "claude-code"])
+            .status
+            .success()
+    );
+    let out = cli.run(&[
+        "credentials",
+        "passkey:webauthn.io",
+        "--session",
+        "15",
+        "--reason",
+        "Sign in to webauthn.io a few times",
+        "--agent",
+        "claude-code",
+    ]);
+    assert!(out.status.success(), "{}", stderr(&out));
+    let key =
+        webauthn::key_from_spki(&b64u::decode(&fake.passkeys()[0].public_key).unwrap()).unwrap();
+
+    // The session answers by itself, even when the user would say no: no Face ID, so no UV.
+    fake.set_mode(Mode::Deny);
+    let cd = client_data(PasskeyOp::Get, ORIGIN);
+    let (signed, code) = cli.webauthn(&get("webauthn.io", &cd, &[]));
+    assert_eq!(code, 0, "{signed}");
+    let auth = bytes(&signed, "authenticator_data");
+    assert_eq!(auth[32], 0x19);
+    assert_eq!(auth, webauthn::authenticator_data_without_uv("webauthn.io"));
+    webauthn::verify(&key, &auth, cd.as_bytes(), &bytes(&signed, "signature")).unwrap();
+
+    // A site that requires user verification is asked with Face ID, never by the session.
+    let required = |cd: &str| {
+        let mut v: Value = serde_json::from_str(&get("webauthn.io", cd, &[])).unwrap();
+        v["user_verification"] = json!("required");
+        v.to_string()
+    };
+    let (v, code) = cli.webauthn(&required(&client_data(PasskeyOp::Get, ORIGIN)));
+    assert_eq!((code, v["status"].as_str()), (2, Some("denied")), "{v}");
+    fake.set_mode(Mode::Approve);
+    let cd = client_data(PasskeyOp::Get, ORIGIN);
+    let (signed, code) = cli.webauthn(&required(&cd));
+    assert_eq!(code, 0, "{signed}");
+    let auth = bytes(&signed, "authenticator_data");
+    assert_eq!(auth[32], 0x1d);
+    webauthn::verify(&key, &auth, cd.as_bytes(), &bytes(&signed, "signature")).unwrap();
+}
