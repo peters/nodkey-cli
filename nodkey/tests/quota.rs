@@ -2,6 +2,8 @@
 //! asks with the warning (the answer still gives the login, with `quota_warning`), a plan starts no
 //! session then and a running one ends, and a paused agent exits with 4 and says why.
 
+mod common;
+
 use nodkey_fake_relay as fake_relay;
 
 use std::{
@@ -25,16 +27,17 @@ impl Cli {
     }
 
     fn run(&self, args: &[&str]) -> Output {
-        Command::new(env!("CARGO_BIN_EXE_nodkey"))
-            .args(args)
-            .env("NODKEY_AGENT_DIR", &self.dir)
-            .env("NODKEY_KEYSTORE", "file")
-            .env("NODKEY_RELAY", format!("http://{}", self.relay))
-            .env("NODKEY_REQUEST_TIMEOUT", "3")
-            .env_remove("NODKEY_AGENT")
-            .env("TMPDIR", env!("CARGO_TARGET_TMPDIR"))
-            .output()
-            .expect("run nodkey")
+        common::output(
+            Command::new(env!("CARGO_BIN_EXE_nodkey"))
+                .args(args)
+                .env("NODKEY_AGENT_DIR", &self.dir)
+                .env("NODKEY_KEYSTORE", "file")
+                .env("NODKEY_RELAY", format!("http://{}", self.relay))
+                .env("NODKEY_REQUEST_TIMEOUT", "3")
+                .env_remove("NODKEY_AGENT")
+                .env("TMPDIR", env!("CARGO_TARGET_TMPDIR")),
+            args,
+        )
     }
 
     fn json(&self, args: &[&str]) -> (Value, i32, String) {

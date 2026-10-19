@@ -1,4 +1,9 @@
-//! The pairing check number both sides show so the user can spot a relay that swapped keys.
+//! The check number's formatting, and the number of pairings made before the commitment.
+//!
+//! New pairings use [`crate::pairing::check_number`], which also covers both sides' nonces. The
+//! number here covers the four keys only: a relay that swaps keys can choose its keys so that
+//! both screens show the same number, so no agent pairs with it any more. Apps made before the
+//! commitment still show it; the vectors keep it in `check`.
 //!
 //! `check = u32be(SHA-256("nodkey/v1/check" ‖ agent_sign ‖ agent_kem ‖ phone_sign ‖ phone_kem)[0..4]) mod 1_000_000`
 
@@ -6,7 +11,7 @@ use sha2::{Digest, Sha256};
 
 use crate::PublicKeys;
 
-/// The check number (0 ..= 999 999).
+/// The check number without a commitment (0 ..= 999 999).
 pub fn check_number(agent: &PublicKeys, phone: &PublicKeys) -> u32 {
     let mut h = Sha256::new();
     h.update(b"nodkey/v1/check");

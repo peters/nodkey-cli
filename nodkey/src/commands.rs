@@ -269,7 +269,8 @@ pub async fn run(command: &str, a: &Args, agent: &Agent) -> Result<u8, String> {
     }
 }
 
-/// `nodkey pair`: shows the code to type on the phone, waits, then shows the check number.
+/// `nodkey pair`: shows the code to type on the phone, waits, shows the check number and saves the
+/// pairing only when the person types `y` because their iPhone shows the same number.
 async fn pair(a: &Args, agent: &Agent) -> Result<u8, String> {
     let start = parse(&agent.pair_start(a.value("name")).await?)?;
     let code = start["code"].as_str().unwrap_or_default().to_owned();
@@ -285,22 +286,43 @@ async fn pair(a: &Args, agent: &Agent) -> Result<u8, String> {
                 .div_ceil(60)
         );
     }
-    let done = parse(
+    let check = parse(
         &agent
             .pair_finish(&code, &waiting("Waiting for your iPhone ...".to_owned()))
             .await?,
     )?;
+    let phone = check["phone"].as_str().unwrap_or("your iPhone").to_owned();
     if a.flag("json") {
-        print_json(&done);
+        print_json(&check);
     } else {
-        println!(
-            "\nPaired with {}. Check number: {}\n\nYour iPhone shows a check number too. If it is not the same, run\n`nodkey unpair \"{}\"` and remove the agent in Nodkey: someone may have swapped keys.",
-            done["phone"].as_str().unwrap_or("your iPhone"),
-            done["check"].as_str().unwrap_or_default(),
-            done["phone"].as_str().unwrap_or_default()
+        print!(
+            "\nCheck number: {}\n\nNodkey on {phone} shows a check number too. Is it the same number?\n\
+             Type y and press Enter if it is the same: ",
+            check["check"].as_str().unwrap_or_default()
         );
     }
-    Ok(0)
+    use std::io::Write;
+    let _ = std::io::stdout().flush();
+    let mut line = String::new();
+    let mut stdin = tokio::io::BufReader::new(tokio::io::stdin());
+    tokio::io::AsyncBufReadExt::read_line(&mut stdin, &mut line)
+        .await
+        .map_err(|e| e.to_string())?;
+    let same = matches!(line.trim().to_lowercase().as_str(), "y" | "yes");
+    let done = parse(&agent.pair_confirm(&code, same).await?)?;
+    if a.flag("json") {
+        print_json(&done);
+    } else if same {
+        println!(
+            "\nPaired with {phone}. If you did not confirm the number on your iPhone yet, do that too."
+        );
+    } else {
+        println!(
+            "\nThe pairing was not saved. Cancel it on your iPhone too. If the numbers were not the same, the\n\
+             pairing messages may have been changed on the way; try again, for example on another network."
+        );
+    }
+    Ok(if same { 0 } else { DENIED })
 }
 
 /// `nodkey agents`: every agent identity on this computer with its phones.

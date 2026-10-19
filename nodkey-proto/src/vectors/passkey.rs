@@ -224,6 +224,7 @@ pub(super) fn add(ctx: &mut Ctx, agent: &Side, phone: &Side) -> Value {
         wait_seconds: None,
         save_secret: None,
         project: None,
+        nonce: None,
     };
     let r_create = request(
         "passkey_create",

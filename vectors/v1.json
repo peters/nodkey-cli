@@ -1854,6 +1854,90 @@
       "recipient_kem_pk": "fE5zmodqNC-MJSk500yxJtz4i2vlbx3Hpg2qO712pTQ",
       "recipient_kem_sk": "WVg29q7eTJuYsXMJkPAqAx2veoBDBCceAKKxCEs90KU",
       "sender": "phone"
+    },
+    {
+      "aad": "K7P2QX0g0Bt23Hxsm5z-wpZp2lpA",
+      "ct": "hn12mMboR_y4UQz4z5q0NBeAGtTbGG6U0obvMXxi7rFASmKHQ2t2IDsI_fno-HhsnNFhWDkzHHjoiENm1ErEjsFjbFXjmKhTLwDgB9PWra9AHqcbbOM9iReVfmMBMEeGJUVTAfwTsp-X6delwACmoilzf2uSPgDcqsBbVg",
+      "enc": "tvSru12XN1CNGSvrC0Ijy0H4DCr3GsUS-rRsPC1O72o",
+      "ikm_e": "XsCexawULVvhP-MVwJ6Rs24PsDflPkHtZGNfoC2dwd0",
+      "info": "nodkey/v1/pairing",
+      "name": "pairing_grant_commit",
+      "plaintext": "{\"v\":1,\"phone_name\":\"Test iPhone\",\"scope\":\"selected\",\"commit\":\"6aVJvMDbPw7ANgdcK2aH0AONzpM6XXfxBjpjAu7lMy4\"}",
+      "plaintext_b64u": "eyJ2IjoxLCJwaG9uZV9uYW1lIjoiVGVzdCBpUGhvbmUiLCJzY29wZSI6InNlbGVjdGVkIiwiY29tbWl0IjoiNmFWSnZNRGJQdzdBTmdkY0syYUgwQU9OenBNNlhYZnhCanBqQXU3bE15NCJ9",
+      "purpose": "pairing",
+      "recipient_kem_pk": "fE5zmodqNC-MJSk500yxJtz4i2vlbx3Hpg2qO712pTQ",
+      "recipient_kem_sk": "WVg29q7eTJuYsXMJkPAqAx2veoBDBCceAKKxCEs90KU",
+      "sender": "phone"
+    },
+    {
+      "aad": "bf4HeFuLORBt81AHeuOq2QIdQP77UDyu6DAF-4aCs1-Q",
+      "ct": "5_NBTcZ5nFyntQl9qoEs1rQRspDEh-gqB1q7gUhixTNExxtsDtlk34aE2w6aT-A38xwHXUUSCkJs-M5kfqzy6raZVSA2DzuWjDUhotWGBIOyk8ymf2Kh4QMivdc_PMGOQDa1tnQjmR-gvQogYACibC3Y_6ts0Py7SWsNMXcWgL_yst8xL2dItZ0qIhMjrSNpGwX-urB6ZUT9iEAAr6LXMsQejYVLx6tjUjd7_D82gL6s3oFs3MvOKR3pwRVtj2Qx23VdJyC8bX51tFH58yozFUrXaVJU_NhctUP5iTdoqXH9GMZxUQ35TANyAqqItS3Hit5XYocwOn7SiSHsJUJ07nPp3cT0Poof36R3N2xALaNjaPJ66OiKcRzqnVFZdpSV4krtKsdiXTuneWcH",
+      "enc": "SjAQogFTAwbJQVmx7UzTViRu_Y3Tz-4WHzSAgOMUBGU",
+      "ikm_e": "JtvGTSZ-6B1U3CmEKvzGkCpvEvS4r_YkIP5fxpqEf1w",
+      "info": "nodkey/v1/request",
+      "name": "request_pairing_check",
+      "plaintext": "{\"v\":1,\"request_id\":\"bf4HeFuLORBt81AHeuOq2Q\",\"kind\":\"pairing_check\",\"target\":\"\",\"reason\":\"\",\"agent\":\"Agent · Horizon\",\"ts\":1791620000,\"nonce\":\"QyslfEJis3nJjsDUt_4s9rgFgXmnVs87HH4dRHvkDrs\",\"sig\":\"fceAEUhAmEeJSwZ5hs-giynuWmBjRWnKyhYDAXADTmfOnuxfBk693ptrsi-hBT_72SUjEYC5QJNKgUQLKsFOCQ\"}",
+      "plaintext_b64u": "eyJ2IjoxLCJyZXF1ZXN0X2lkIjoiYmY0SGVGdUxPUkJ0ODFBSGV1T3EyUSIsImtpbmQiOiJwYWlyaW5nX2NoZWNrIiwidGFyZ2V0IjoiIiwicmVhc29uIjoiIiwiYWdlbnQiOiJBZ2VudCDCtyBIb3Jpem9uIiwidHMiOjE3OTE2MjAwMDAsIm5vbmNlIjoiUXlzbGZFSmlzM25KanNEVXRfNHM5cmdGZ1htblZzODdISDRkUkh2a0RycyIsInNpZyI6ImZjZUFFVWhBbUVlSlN3WjVocy1naXludVdtQmpSV25LeWhZREFYQURUbWZPbnV4ZkJrNjkzcHRyc2ktaEJUXzcyU1VqRVlDNVFKTktnVVFMS3NGT0NRIn0",
+      "purpose": "request",
+      "recipient_kem_pk": "Td-3-HXWLqROvCB5uulMNssHXo3O2K_LQIby38T-z28",
+      "recipient_kem_sk": "vazvVwr6Ybz3fJM8Ey3EblV_Ow4P6yCovbNOvWY7IiI",
+      "sender": "agent"
+    },
+    {
+      "aad": "bf4HeFuLORBt81AHeuOq2Q0g0Bt23Hxsm5z-wpZp2lpA",
+      "ct": "lCQqMMkdCIJn7AuVFEWpHyOV7h8YYjoE7sUu8htkQZYkDbzU8718tuW893TG10FUFenoVdVX0SY6SyUcmAVEqVNJ54oJGBaxV8cTluSzKmyya2r7_KRQqTx5dfonGxhtRtPg5zBRKzH_9zZ9TKfggl4Uu1uPaIn0duZjdbGLzEii8inQ1FE2od0m7Ddw1pF1gmrGqMLOQJ0UZvdXB5deajMZNvrDyp-1GRMgzNnphScYU_XDCIN4ja0WOnnuzMG-rBhYP4lVVmmJQgsCO4QteVdStRNsPlcSsuJ5lwqDc0OZWj7_a4ryxQ",
+      "enc": "t4NE3376kxXn9PKZqyM1td5IdPc6HuriYbViQTeOVxk",
+      "ikm_e": "dBDrdLDRaaPLoL2L2jV4dRlrK2KvtOAiITPa08d0lQA",
+      "info": "nodkey/v1/answer",
+      "name": "answer_pairing_check",
+      "plaintext": "{\"v\":1,\"request_id\":\"bf4HeFuLORBt81AHeuOq2Q\",\"decision\":\"approved\",\"nonce\":\"kx_LAJ92S_mjs8RPmgxIrmSx_7_YRl6O9cDFs-jNOeo\",\"sig\":\"hG1d_zmBNT3Ty0h_J25mo-zdecdgqrV0gnIBLHfiuIzAXC6d8KxAk4CbMcKwjZ4As-0fKSxwmJuIzrvKJmF_Cw\"}",
+      "plaintext_b64u": "eyJ2IjoxLCJyZXF1ZXN0X2lkIjoiYmY0SGVGdUxPUkJ0ODFBSGV1T3EyUSIsImRlY2lzaW9uIjoiYXBwcm92ZWQiLCJub25jZSI6Imt4X0xBSjkyU19tanM4UlBtZ3hJcm1TeF83X1lSbDZPOWNERnMtak5PZW8iLCJzaWciOiJoRzFkX3ptQk5UM1R5MGhfSjI1bW8temRlY2RncXJWMGduSUJMSGZpdUl6QVhDNmQ4S3hBazRDYk1jS3dqWjRBcy0wZktTeHdtSnVJenJ2S0ptRl9DdyJ9",
+      "purpose": "answer",
+      "recipient_kem_pk": "fE5zmodqNC-MJSk500yxJtz4i2vlbx3Hpg2qO712pTQ",
+      "recipient_kem_sk": "WVg29q7eTJuYsXMJkPAqAx2veoBDBCceAKKxCEs90KU",
+      "sender": "phone"
+    },
+    {
+      "aad": "b8fjh7GyKBRRNuQcP0qgJQIdQP77UDyu6DAF-4aCs1-Q",
+      "ct": "Z6O1gr1lhvPgGXjaqy_AN2mf1YsbQUF3BIIreujmPvSruLDfCh5pyWMua2W4PtQIANhhmpbJ5kwkEtOeQ_bVIFizVyc7Zfnk0DuTsyZvQxqwOnnJb9o8bjp18PfOvW6fhkNqkA1FLhZqdklkF_qC0ZXgae0BoOXK3UUJDfBt30TJq1wLZDigtRHNT04449OatBCAmr8kncdXDd4B26lEVLJYNwLY2BcsYwrDBzuUAH0sOG7tdgv_Y2io2X-A9JoEiM6lLUo5idwbz1DYkopRcJxfvySOGl0Ca_mW2_n2JPhpwdppyTqXw7xsqJv4YWF4JLkf594FY2iizUAeyM-u9wye75BaZvvs",
+      "enc": "Cbp57cVrJDDlcnpqZdSUQzLz42wXNgtEX69tD5FsuiQ",
+      "ikm_e": "53ckg16J4nBUaemR8JroPGxFE4tpeK15gBdEkgg4dls",
+      "info": "nodkey/v1/request",
+      "name": "request_code_signed",
+      "plaintext": "{\"v\":1,\"request_id\":\"b8fjh7GyKBRRNuQcP0qgJQ\",\"kind\":\"code\",\"target\":\"github.com/alex\",\"reason\":\"Merge PR #42\",\"agent\":\"Agent · Horizon\",\"ts\":1791620000,\"sig\":\"dJjLdIiDPIBkcZTykd6j-ntfNP4vHh69FZVDrgynuGPL9kWGyVI_ua5NNDzE8Cqggpil4nqc2o1EtFCcwLzYBA\"}",
+      "plaintext_b64u": "eyJ2IjoxLCJyZXF1ZXN0X2lkIjoiYjhmamg3R3lLQlJSTnVRY1AwcWdKUSIsImtpbmQiOiJjb2RlIiwidGFyZ2V0IjoiZ2l0aHViLmNvbS9hbGV4IiwicmVhc29uIjoiTWVyZ2UgUFIgIzQyIiwiYWdlbnQiOiJBZ2VudCDCtyBIb3Jpem9uIiwidHMiOjE3OTE2MjAwMDAsInNpZyI6ImRKakxkSWlEUElCa2NaVHlrZDZqLW50Zk5QNHZIaDY5RlpWRHJneW51R1BMOWtXR3lWSV91YTVOTkR6RThDcWdncGlsNG5xYzJvMUV0RkNjd0x6WUJBIn0",
+      "purpose": "request",
+      "recipient_kem_pk": "Td-3-HXWLqROvCB5uulMNssHXo3O2K_LQIby38T-z28",
+      "recipient_kem_sk": "vazvVwr6Ybz3fJM8Ey3EblV_Ow4P6yCovbNOvWY7IiI",
+      "sender": "agent"
+    },
+    {
+      "aad": "b8fjh7GyKBRRNuQcP0qgJQ0g0Bt23Hxsm5z-wpZp2lpA",
+      "ct": "Up2hRddUhmrmLtXp6HmWEOoHNCKBzzVgqFL0abEBtE4wO2F28xT4U93CY12wq-D2p8lASNes7OdXCjKkr7mDCAcZOAabuWZhMFEEGPM_1fvklHpDdLEZrlwyQY82ME-cgcQICBKcL_6f08-2J9bukqkuRtx_pnEFJOTLFnC4Q5PRym1NIl7ChBsoQ1tpbR4iByvtlMXzW5kvDMLFiWLmOY37W2YfoGIJH4gbZqN6IlpTbEahVIYx0qzyiSmToAQkodot0HVTIwYId3EmbTPFFigC41-ZyNdaEyMvKYgQDgnCvzyf7J4T7z3jeojGOSgKWbKGgOQvyJMmNIBNoNbOxDLBkpuGjkjCVTAP7YnloC55npLV",
+      "enc": "qux9bK7BeEg7zGpNMSZAPXTPRg24lkr0v5ceoRV4HwI",
+      "ikm_e": "36MjXQGQOfWCSx1vag-Z2fBWtjFoFiMx_u3pTv4EZNI",
+      "info": "nodkey/v1/answer",
+      "name": "answer_code_signed",
+      "plaintext": "{\"v\":1,\"request_id\":\"b8fjh7GyKBRRNuQcP0qgJQ\",\"decision\":\"approved\",\"account\":{\"issuer\":\"GitHub\",\"name\":\"alex\",\"site\":\"github.com\"},\"code\":\"190274\",\"seconds_left\":12,\"sig\":\"NpPD_12QnOI8c9JF5_Od0_aEpmHYXYPzdN7Jz2bVR8xC6gpvwO2hLi2ej7kXFQ78WJHqV_oIoeYWFcgLWfpcDg\"}",
+      "plaintext_b64u": "eyJ2IjoxLCJyZXF1ZXN0X2lkIjoiYjhmamg3R3lLQlJSTnVRY1AwcWdKUSIsImRlY2lzaW9uIjoiYXBwcm92ZWQiLCJhY2NvdW50Ijp7Imlzc3VlciI6IkdpdEh1YiIsIm5hbWUiOiJhbGV4Iiwic2l0ZSI6ImdpdGh1Yi5jb20ifSwiY29kZSI6IjE5MDI3NCIsInNlY29uZHNfbGVmdCI6MTIsInNpZyI6Ik5wUERfMTJRbk9JOGM5SkY1X09kMF9hRXBtSFlYWVB6ZE43SnoyYlZSOHhDNmdwdndPMmhMaTJlajdrWEZRNzhXSkhxVl9vSW9lWVdGY2dMV2ZwY0RnIn0",
+      "purpose": "answer",
+      "recipient_kem_pk": "fE5zmodqNC-MJSk500yxJtz4i2vlbx3Hpg2qO712pTQ",
+      "recipient_kem_sk": "WVg29q7eTJuYsXMJkPAqAx2veoBDBCceAKKxCEs90KU",
+      "sender": "phone"
+    },
+    {
+      "aad": "DjEzC-6pdiLjv71vyq2RagIdQP77UDyu6DAF-4aCs1-Q",
+      "ct": "tFPCPo1KHuQsPMJ6fvYAvx0qZEOWX2GQbpAzbzlGr8e7ug5WO5GalhGvD6KzHRDc0O8kdcyveFWH2JZ9tYzDH9D5AlSO-xYdCBz-LZAR9Q8HRkh0_5NBHhKfZU2ndIpKa-6_ErvhoL7sNy7iShBMBTxaEgrI6K3W9WkVGoFmJvhKm0DfDKpDtjXtJ-fggZtZt58vdo_evqLhGCy-hJ-yAGT9BMhdTeXw_tj0K7PydRbLJh990ZooFP0KaQ5MAR9L6dRLP_V1P8-gWo-7loBu0Z8Q3K34NhHx37j1bpiGEIc1kp0XzPF8C0OxDOkXhfhu8toIu1m5KJGr-rEb17e49wT6ppPH8ewx_-PTd-KGee4hXKg-3ivJiODnVjDwOJwT71rDESF-_LkhSLB7QqEVtji0jjjgGtZHV-73okH-BBCpWcjDLF45xaQEL_56vm0J3McPJa_CSsaR4zb6HzEDHEZICww0-oJbrEVCseiLieU4bKI7iLZk2oR8Xmy-7H5TfANw1VozB2ubflRPX2FHiHDdjTlHwtQ_Bqd8K5w",
+      "enc": "e17XrfE2QCi8QIwW98LoKG5pyMqOzJ0EVNgEPD04zEc",
+      "ikm_e": "ndKLPT0xOf-QgujF2qxcTwlsnNDkcc3M44cgvxt5Ez4",
+      "info": "nodkey/v1/request",
+      "name": "request_login_signed_with_attachment",
+      "plaintext": "{\"v\":1,\"request_id\":\"DjEzC-6pdiLjv71vyq2Rag\",\"kind\":\"login\",\"target\":\"vg.no\",\"reason\":\"Sign in to read the article a friend sent\",\"agent\":\"Agent · Horizon\",\"ts\":1791620000,\"attachment\":{\"type\":\"image/png\",\"bytes\":76,\"caption\":\"vg.no login page\",\"sha256\":\"EHZFH0blvPonExbfXyK55sAP77xua9O0po0UsusmxME\"},\"sig\":\"h_0t5-w9zY8R-DjqgPSSLMgiFE33HQN2H-stDgKjXNv_l3R7b41crWdCQa17zqBbTDTLJgP7a8lkwVnLkFv0Aw\"}",
+      "plaintext_b64u": "eyJ2IjoxLCJyZXF1ZXN0X2lkIjoiRGpFekMtNnBkaUxqdjcxdnlxMlJhZyIsImtpbmQiOiJsb2dpbiIsInRhcmdldCI6InZnLm5vIiwicmVhc29uIjoiU2lnbiBpbiB0byByZWFkIHRoZSBhcnRpY2xlIGEgZnJpZW5kIHNlbnQiLCJhZ2VudCI6IkFnZW50IMK3IEhvcml6b24iLCJ0cyI6MTc5MTYyMDAwMCwiYXR0YWNobWVudCI6eyJ0eXBlIjoiaW1hZ2UvcG5nIiwiYnl0ZXMiOjc2LCJjYXB0aW9uIjoidmcubm8gbG9naW4gcGFnZSIsInNoYTI1NiI6IkVIWkZIMGJsdlBvbkV4YmZYeUs1NXNBUDc3eHVhOU8wcG8wVXN1c214TUUifSwic2lnIjoiaF8wdDUtdzl6WThSLURqcWdQU1NMTWdpRkUzM0hRTjJILXN0RGdLalhOdl9sM1I3YjQxY3JXZENRYTE3enFCYlREVExKZ1A3YThsa3dWbkxrRnYwQXcifQ",
+      "purpose": "request",
+      "recipient_kem_pk": "Td-3-HXWLqROvCB5uulMNssHXo3O2K_LQIby38T-z28",
+      "recipient_kem_sk": "vazvVwr6Ybz3fJM8Ey3EblV_Ow4P6yCovbNOvWY7IiI",
+      "sender": "agent"
     }
   ],
   "key_projects": {
@@ -2249,6 +2333,18 @@
       "sign_pk": "NMu8YPC2uQEjppdcKSzQ6-Q7yN3dV8P4seeqq_EZwWE",
       "sign_sk": "daB3ulkcXRz6q9o_HwBb2KZrfa_yEGtcJRzzSzXtrPI"
     }
+  },
+  "pairing": {
+    "agent_nonce": "QyslfEJis3nJjsDUt_4s9rgFgXmnVs87HH4dRHvkDrs",
+    "attachment_sha256": "EHZFH0blvPonExbfXyK55sAP77xua9O0po0UsusmxME",
+    "check_answer": "answer_pairing_check",
+    "check_request": "request_pairing_check",
+    "commit": "6aVJvMDbPw7ANgdcK2aH0AONzpM6XXfxBjpjAu7lMy4",
+    "digits": "719829",
+    "display": "719 829",
+    "grant": "pairing_grant_commit",
+    "number": 719829,
+    "phone_nonce": "kx_LAJ92S_mjs8RPmgxIrmSx_7_YRl6O9cDFs-jNOeo"
   },
   "pairing_code": {
     "code": "K7P2QX",
@@ -2662,6 +2758,68 @@
       }
     ]
   },
+  "signed": [
+    {
+      "agent_id": "IdQP77UDyu6DAF-4aCs1-Q",
+      "body": "{\"v\":1,\"request_id\":\"bf4HeFuLORBt81AHeuOq2Q\",\"kind\":\"pairing_check\",\"target\":\"\",\"reason\":\"\",\"agent\":\"Agent · Horizon\",\"ts\":1791620000,\"nonce\":\"QyslfEJis3nJjsDUt_4s9rgFgXmnVs87HH4dRHvkDrs\"}",
+      "direction": "request",
+      "hpke": "request_pairing_check",
+      "message": "nodkey/v1/signed\nrequest\nIdQP77UDyu6DAF-4aCs1-Q\n0g0Bt23Hxsm5z-wpZp2lpA\n{\"v\":1,\"request_id\":\"bf4HeFuLORBt81AHeuOq2Q\",\"kind\":\"pairing_check\",\"target\":\"\",\"reason\":\"\",\"agent\":\"Agent · Horizon\",\"ts\":1791620000,\"nonce\":\"QyslfEJis3nJjsDUt_4s9rgFgXmnVs87HH4dRHvkDrs\"}",
+      "name": "request_pairing_check",
+      "phone_id": "0g0Bt23Hxsm5z-wpZp2lpA",
+      "plaintext": "{\"v\":1,\"request_id\":\"bf4HeFuLORBt81AHeuOq2Q\",\"kind\":\"pairing_check\",\"target\":\"\",\"reason\":\"\",\"agent\":\"Agent · Horizon\",\"ts\":1791620000,\"nonce\":\"QyslfEJis3nJjsDUt_4s9rgFgXmnVs87HH4dRHvkDrs\",\"sig\":\"fceAEUhAmEeJSwZ5hs-giynuWmBjRWnKyhYDAXADTmfOnuxfBk693ptrsi-hBT_72SUjEYC5QJNKgUQLKsFOCQ\"}",
+      "sig": "fceAEUhAmEeJSwZ5hs-giynuWmBjRWnKyhYDAXADTmfOnuxfBk693ptrsi-hBT_72SUjEYC5QJNKgUQLKsFOCQ",
+      "sign_pk": "bOp7Vh4eecFjmSW9F1BoO_BAhHKC4mrGJXQb6K3A-j0"
+    },
+    {
+      "agent_id": "IdQP77UDyu6DAF-4aCs1-Q",
+      "body": "{\"v\":1,\"request_id\":\"bf4HeFuLORBt81AHeuOq2Q\",\"decision\":\"approved\",\"nonce\":\"kx_LAJ92S_mjs8RPmgxIrmSx_7_YRl6O9cDFs-jNOeo\"}",
+      "direction": "answer",
+      "hpke": "answer_pairing_check",
+      "message": "nodkey/v1/signed\nanswer\nIdQP77UDyu6DAF-4aCs1-Q\n0g0Bt23Hxsm5z-wpZp2lpA\n{\"v\":1,\"request_id\":\"bf4HeFuLORBt81AHeuOq2Q\",\"decision\":\"approved\",\"nonce\":\"kx_LAJ92S_mjs8RPmgxIrmSx_7_YRl6O9cDFs-jNOeo\"}",
+      "name": "answer_pairing_check",
+      "phone_id": "0g0Bt23Hxsm5z-wpZp2lpA",
+      "plaintext": "{\"v\":1,\"request_id\":\"bf4HeFuLORBt81AHeuOq2Q\",\"decision\":\"approved\",\"nonce\":\"kx_LAJ92S_mjs8RPmgxIrmSx_7_YRl6O9cDFs-jNOeo\",\"sig\":\"hG1d_zmBNT3Ty0h_J25mo-zdecdgqrV0gnIBLHfiuIzAXC6d8KxAk4CbMcKwjZ4As-0fKSxwmJuIzrvKJmF_Cw\"}",
+      "sig": "hG1d_zmBNT3Ty0h_J25mo-zdecdgqrV0gnIBLHfiuIzAXC6d8KxAk4CbMcKwjZ4As-0fKSxwmJuIzrvKJmF_Cw",
+      "sign_pk": "NMu8YPC2uQEjppdcKSzQ6-Q7yN3dV8P4seeqq_EZwWE"
+    },
+    {
+      "agent_id": "IdQP77UDyu6DAF-4aCs1-Q",
+      "body": "{\"v\":1,\"request_id\":\"b8fjh7GyKBRRNuQcP0qgJQ\",\"kind\":\"code\",\"target\":\"github.com/alex\",\"reason\":\"Merge PR #42\",\"agent\":\"Agent · Horizon\",\"ts\":1791620000}",
+      "direction": "request",
+      "hpke": "request_code_signed",
+      "message": "nodkey/v1/signed\nrequest\nIdQP77UDyu6DAF-4aCs1-Q\n0g0Bt23Hxsm5z-wpZp2lpA\n{\"v\":1,\"request_id\":\"b8fjh7GyKBRRNuQcP0qgJQ\",\"kind\":\"code\",\"target\":\"github.com/alex\",\"reason\":\"Merge PR #42\",\"agent\":\"Agent · Horizon\",\"ts\":1791620000}",
+      "name": "request_code_signed",
+      "phone_id": "0g0Bt23Hxsm5z-wpZp2lpA",
+      "plaintext": "{\"v\":1,\"request_id\":\"b8fjh7GyKBRRNuQcP0qgJQ\",\"kind\":\"code\",\"target\":\"github.com/alex\",\"reason\":\"Merge PR #42\",\"agent\":\"Agent · Horizon\",\"ts\":1791620000,\"sig\":\"dJjLdIiDPIBkcZTykd6j-ntfNP4vHh69FZVDrgynuGPL9kWGyVI_ua5NNDzE8Cqggpil4nqc2o1EtFCcwLzYBA\"}",
+      "sig": "dJjLdIiDPIBkcZTykd6j-ntfNP4vHh69FZVDrgynuGPL9kWGyVI_ua5NNDzE8Cqggpil4nqc2o1EtFCcwLzYBA",
+      "sign_pk": "bOp7Vh4eecFjmSW9F1BoO_BAhHKC4mrGJXQb6K3A-j0"
+    },
+    {
+      "agent_id": "IdQP77UDyu6DAF-4aCs1-Q",
+      "body": "{\"v\":1,\"request_id\":\"b8fjh7GyKBRRNuQcP0qgJQ\",\"decision\":\"approved\",\"account\":{\"issuer\":\"GitHub\",\"name\":\"alex\",\"site\":\"github.com\"},\"code\":\"190274\",\"seconds_left\":12}",
+      "direction": "answer",
+      "hpke": "answer_code_signed",
+      "message": "nodkey/v1/signed\nanswer\nIdQP77UDyu6DAF-4aCs1-Q\n0g0Bt23Hxsm5z-wpZp2lpA\n{\"v\":1,\"request_id\":\"b8fjh7GyKBRRNuQcP0qgJQ\",\"decision\":\"approved\",\"account\":{\"issuer\":\"GitHub\",\"name\":\"alex\",\"site\":\"github.com\"},\"code\":\"190274\",\"seconds_left\":12}",
+      "name": "answer_code_signed",
+      "phone_id": "0g0Bt23Hxsm5z-wpZp2lpA",
+      "plaintext": "{\"v\":1,\"request_id\":\"b8fjh7GyKBRRNuQcP0qgJQ\",\"decision\":\"approved\",\"account\":{\"issuer\":\"GitHub\",\"name\":\"alex\",\"site\":\"github.com\"},\"code\":\"190274\",\"seconds_left\":12,\"sig\":\"NpPD_12QnOI8c9JF5_Od0_aEpmHYXYPzdN7Jz2bVR8xC6gpvwO2hLi2ej7kXFQ78WJHqV_oIoeYWFcgLWfpcDg\"}",
+      "sig": "NpPD_12QnOI8c9JF5_Od0_aEpmHYXYPzdN7Jz2bVR8xC6gpvwO2hLi2ej7kXFQ78WJHqV_oIoeYWFcgLWfpcDg",
+      "sign_pk": "NMu8YPC2uQEjppdcKSzQ6-Q7yN3dV8P4seeqq_EZwWE"
+    },
+    {
+      "agent_id": "IdQP77UDyu6DAF-4aCs1-Q",
+      "body": "{\"v\":1,\"request_id\":\"DjEzC-6pdiLjv71vyq2Rag\",\"kind\":\"login\",\"target\":\"vg.no\",\"reason\":\"Sign in to read the article a friend sent\",\"agent\":\"Agent · Horizon\",\"ts\":1791620000,\"attachment\":{\"type\":\"image/png\",\"bytes\":76,\"caption\":\"vg.no login page\",\"sha256\":\"EHZFH0blvPonExbfXyK55sAP77xua9O0po0UsusmxME\"}}",
+      "direction": "request",
+      "hpke": "request_login_signed_with_attachment",
+      "message": "nodkey/v1/signed\nrequest\nIdQP77UDyu6DAF-4aCs1-Q\n0g0Bt23Hxsm5z-wpZp2lpA\n{\"v\":1,\"request_id\":\"DjEzC-6pdiLjv71vyq2Rag\",\"kind\":\"login\",\"target\":\"vg.no\",\"reason\":\"Sign in to read the article a friend sent\",\"agent\":\"Agent · Horizon\",\"ts\":1791620000,\"attachment\":{\"type\":\"image/png\",\"bytes\":76,\"caption\":\"vg.no login page\",\"sha256\":\"EHZFH0blvPonExbfXyK55sAP77xua9O0po0UsusmxME\"}}",
+      "name": "request_login_signed_with_attachment",
+      "phone_id": "0g0Bt23Hxsm5z-wpZp2lpA",
+      "plaintext": "{\"v\":1,\"request_id\":\"DjEzC-6pdiLjv71vyq2Rag\",\"kind\":\"login\",\"target\":\"vg.no\",\"reason\":\"Sign in to read the article a friend sent\",\"agent\":\"Agent · Horizon\",\"ts\":1791620000,\"attachment\":{\"type\":\"image/png\",\"bytes\":76,\"caption\":\"vg.no login page\",\"sha256\":\"EHZFH0blvPonExbfXyK55sAP77xua9O0po0UsusmxME\"},\"sig\":\"h_0t5-w9zY8R-DjqgPSSLMgiFE33HQN2H-stDgKjXNv_l3R7b41crWdCQa17zqBbTDTLJgP7a8lkwVnLkFv0Aw\"}",
+      "sig": "h_0t5-w9zY8R-DjqgPSSLMgiFE33HQN2H-stDgKjXNv_l3R7b41crWdCQa17zqBbTDTLJgP7a8lkwVnLkFv0Aw",
+      "sign_pk": "bOp7Vh4eecFjmSW9F1BoO_BAhHKC4mrGJXQb6K3A-j0"
+    }
+  ],
   "signin": {
     "methods": [
       {

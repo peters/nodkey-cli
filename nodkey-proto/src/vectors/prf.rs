@@ -54,6 +54,7 @@ fn request(name: &str, passkey: PasskeyRequest, reason: &str) -> Request {
         wait_seconds: None,
         save_secret: None,
         project: None,
+        nonce: None,
     }
 }
 

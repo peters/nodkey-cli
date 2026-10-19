@@ -268,15 +268,17 @@ did not choose.
 Each agent pairs once, with its own name ("Claude Code @ my-laptop", "Codex @ my-laptop"), so the
 user can pause or remove one agent without the others. Do it when a tool says this agent is not
 paired, or when the user asks: `pair` gives a code they type under Agents → Add agent in Nodkey; call
-`pair` again with the code to finish, then show them the check number and ask them to compare it with
-their iPhone. A different number means someone swapped keys: `unpair` and tell them. `list_phones`
-shows the paired phones; `unpair` leaves one.
+`pair` again with the code, then show them the check number and ask whether their iPhone shows the
+same number. Call `pair` with the code and `confirm: true` only when they say it is the same; with
+`confirm: false` when it is not (nothing is saved then; tell them to cancel on the iPhone too).
+Never confirm for the user. `list_phones` shows the paired phones; `unpair` leaves one.
 
 ## Without MCP: the nodkey command
 
 When the MCP tools are not available but the `nodkey` command is, use it the same way. It pairs as
 "Terminal @ <computer>" unless you pass `--agent NAME`; the user pairs it once with `nodkey pair`
-(it shows the code, waits, then shows the check number; run it in the user's own terminal).
+(it shows the code, waits, shows the check number and asks the user to type `y` when their iPhone
+shows the same number; run it in the user's own terminal).
 
 ```sh
 nodkey code github.com/alex --reason "Merge PR #42" --field code      # prints only the code

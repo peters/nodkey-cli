@@ -3,6 +3,8 @@
 //! relay, whose phone holds two test keys (`OPENAI_API_KEY` for openai.com, `EXAMPLE_TOKEN` for
 //! api.example.com).
 
+mod common;
+
 use nodkey_fake_relay as fake_relay;
 
 use std::{
@@ -45,7 +47,7 @@ impl Cli {
     }
 
     fn run(&self, args: &[&str]) -> Output {
-        self.command(args).output().expect("run nodkey")
+        common::output(&mut self.command(args), args)
     }
 
     fn run_with_stdin(&self, args: &[&str], input: &str) -> Output {

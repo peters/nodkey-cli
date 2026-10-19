@@ -41,6 +41,10 @@ pub struct Phone {
     pub check: String,
     pub scope: Scope,
     pub paired_at: u64,
+    /// The phone signs its answers: an answer without its valid signature is refused. Set for a
+    /// pairing with the commitment, and for an older pairing after its first signed answer.
+    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+    pub signs: bool,
 }
 
 impl Phone {
@@ -148,6 +152,19 @@ impl Store {
         let mut phones = self.phones()?;
         phones.retain(|p| p.phone_id != phone.phone_id);
         phones.push(phone);
+        self.save_phones(phones)
+    }
+
+    /// Remembers that the phone `phone_id` signs its answers.
+    pub fn mark_signs(&self, phone_id: &str) -> io::Result<()> {
+        let mut phones = self.phones()?;
+        let Some(p) = phones.iter_mut().find(|p| p.phone_id == phone_id) else {
+            return Ok(());
+        };
+        if p.signs {
+            return Ok(());
+        }
+        p.signs = true;
         self.save_phones(phones)
     }
 
@@ -368,6 +385,7 @@ mod tests {
             sign: String::new(),
             kem: String::new(),
             check: "000000".into(),
+            signs: false,
             scope: Scope::Selected,
             paired_at: at,
         }

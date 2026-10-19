@@ -402,8 +402,10 @@ pub fn tools() -> Value {
             "description": "Pair this agent with Nodkey on the user's iPhone; needed once per agent before the other tools work. \
                 Step 1: call without code. It returns a 6-character code like K7P-2QX; show it to the user and ask them to \
                 type it in Nodkey under Agents (valid 5 minutes). Step 2: call again with that code. It waits up to 5 \
-                minutes for their phone and returns the phone name and a check number such as 418 902; ask the user to \
-                confirm their iPhone shows the same number. The user approves the pairing on their iPhone.",
+                minutes for their phone and returns the phone name and a check number such as 418 902. Show the number \
+                and ask the user whether their iPhone shows the same number. Step 3: call again with the code and \
+                confirm: true only when the user says it is the same (the pairing is saved then), or confirm: false \
+                when it is not. Never confirm for the user. The user also confirms the number on their iPhone.",
             "inputSchema": {
                 "type": "object",
                 "properties": {
@@ -413,7 +415,11 @@ pub fn tools() -> Value {
                     },
                     "code": {
                         "type": "string",
-                        "description": "The code from step 1, to wait for the phone and finish pairing (step 2)."
+                        "description": "The code from step 1: to wait for the phone and get the check number (step 2), and with confirm (step 3)."
+                    },
+                    "confirm": {
+                        "type": "boolean",
+                        "description": "Step 3: true when the user says their iPhone shows the same check number, false when it does not."
                     }
                 },
                 "additionalProperties": false

@@ -317,10 +317,7 @@ impl Server {
         let progress = self.progress_fn(token);
         let a = &self.agent;
         match name {
-            "pair" => match opt_str(args, "code")? {
-                Some(code) => a.pair_finish(code, &progress).await,
-                None => a.pair_start(opt_str(args, "name")?).await,
-            },
+            "pair" => a.pair_tool(args, &progress).await,
             "list_phones" => a.list_phones(),
             "unpair" => a.unpair(req_str(args, "phone")?).await,
             "request_code" | "request_login" => {

@@ -14,6 +14,7 @@ pub mod keyfile;
 pub mod keystore;
 pub mod mcp;
 pub mod outcome;
+pub mod pairing;
 pub mod profile;
 pub mod relay;
 pub mod run;

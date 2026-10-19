@@ -1,4 +1,4 @@
-//! What the tools do: pairing, requests and the local list of phones.
+//! What the tools do: requests and the local list of phones (pairing is in `pairing.rs`).
 //!
 //! Every operation returns the text for the tool result (JSON). Secrets from the phone only pass
 //! through memory on their way into that text; they are never written to disk or to stderr.
@@ -6,8 +6,7 @@
 use std::time::{Duration, Instant};
 
 use nodkey_proto::{
-    AgentInfo, Answer, AttachmentInfo, CleanupFilter, ClientInfo, Kind, Purpose, Request, VERSION,
-    check, client, code,
+    Answer, CleanupFilter, ClientInfo, Kind, Purpose, Request, VERSION, check, client,
 };
 use serde::Serialize;
 use serde_json::json;
@@ -19,7 +18,7 @@ use crate::{
     outcome::Outcome,
     profile::Profile,
     relay::{Poll, Relay, Signer},
-    store::{Home, Phone, Store, select_phone},
+    store::{Home, Store, select_phone},
 };
 
 /// Timing knobs. The defaults follow the protocol; tests shorten them.
@@ -122,124 +121,10 @@ impl Agent {
             .map_err(|e| format!("Agent directory unavailable: {e}"))
     }
 
-    fn relay(&self) -> Result<&Relay, String> {
+    pub(crate) fn relay(&self) -> Result<&Relay, String> {
         self.relay
             .as_ref()
             .map_err(|e| format!("Relay unavailable: {e}"))
-    }
-
-    /// Starts a pairing and returns the code to type on the phone.
-    pub async fn pair_start(&self, name: Option<&str>) -> Result<Text, String> {
-        let store = self.store()?;
-        let relay = self.relay()?;
-        let name = name.map(str::trim).filter(|n| !n.is_empty());
-        if name.is_some_and(|n| n.chars().count() > 64) {
-            return Err("name is too long (at most 64 characters)".into());
-        }
-        let id = store
-            .identity_or_create(&self.default_name(), name)
-            .map_err(err)?;
-        let public = id.keys.public();
-        let info = AgentInfo {
-            agent_id: id.agent_id.clone(),
-            name: id.name.clone(),
-            sign: public.sign_b64u(),
-            kem: public.kem_b64u(),
-        };
-        let signer = Signer {
-            id: &id.agent_id,
-            keys: &id.keys,
-        };
-        let pc = relay.start_pairing(&signer, &info).await.map_err(err)?;
-        if !code::is_canonical(&pc.code) {
-            return Err(format!(
-                "relay returned an invalid pairing code {:?}",
-                pc.code
-            ));
-        }
-        let shown = code::display(&pc.code);
-        let expires_in = pc.expires.saturating_sub(nodkey_proto::unix_now());
-        Ok(text(&json!({
-            "code": shown,
-            "agent_name": id.name,
-            "expires": pc.expires,
-            "expires_in_seconds": expires_in,
-            "next": format!(
-                "Show the user the code {shown} and ask them to type it in Nodkey on their iPhone under Agents. \
-                 Then call pair again with code \"{shown}\" to wait for their phone and get the check number."
-            ),
-        })))
-    }
-
-    /// Waits for the phone to claim `code`, checks the grant and remembers the phone.
-    pub async fn pair_finish(&self, typed: &str, progress: Progress<'_>) -> Result<Text, String> {
-        let store = self.store()?;
-        let relay = self.relay()?;
-        let code = code::normalize(typed).map_err(err)?;
-        let id = store
-            .identity()
-            .map_err(err)?
-            .ok_or("No pairing was started on this computer. Call pair without a code first.")?;
-        let signer = Signer {
-            id: &id.agent_id,
-            keys: &id.keys,
-        };
-        let total = self.timing.pairing;
-        let claimed = poll_until(total, self.timing.max_wait, progress, "Waiting for the user to type the code on their iPhone", |wait| {
-            relay.wait_pairing(&signer, &code, wait)
-        })
-        .await?
-        .ok_or_else(|| {
-            format!(
-                "The code {} expired or was not claimed within {} s. Call pair without a code to get a new one.",
-                code::display(&code),
-                total.as_secs()
-            )
-        })?;
-
-        nodkey_proto::validate_id(&claimed.phone_id)
-            .map_err(|e| format!("relay sent a bad phone_id: {e}"))?;
-        let phone_keys = nodkey_proto::PublicKeys::from_b64u(&claimed.sign, &claimed.kem)
-            .map_err(|e| format!("relay sent bad phone keys: {e}"))?;
-        let plain = Purpose::Pairing
-            .open_box(
-                id.keys.kem_secret(),
-                &claimed.sealed(),
-                &client::grant_aad(&code, &claimed.phone_id),
-            )
-            .map_err(|_| {
-                "The pairing grant does not decrypt; the pairing was not saved.".to_owned()
-            })?;
-        let grant = client::read_grant(&plain, &id.keys.public(), &phone_keys).map_err(|e| match e {
-            nodkey_proto::Error::CheckMismatch { .. } => format!(
-                "{e}. Someone may have swapped keys; the pairing was not saved. Tell the user and do not \
-                 retry blindly."
-            ),
-            e => e.to_string(),
-        })?;
-        let n = check::check_number(&id.keys.public(), &phone_keys);
-        let phone = Phone {
-            phone_id: claimed.phone_id.clone(),
-            name: grant.phone_name.clone(),
-            sign: claimed.sign.clone(),
-            kem: claimed.kem.clone(),
-            check: grant.check.clone(),
-            scope: grant.scope,
-            paired_at: nodkey_proto::unix_now(),
-        };
-        store.add_phone(phone).map_err(err)?;
-        let shown = check::display(n);
-        Ok(text(&json!({
-            "paired": true,
-            "phone": grant.phone_name,
-            "phone_id": claimed.phone_id,
-            "check": shown,
-            "scope": grant.scope,
-            "next": format!(
-                "Ask the user to confirm that their iPhone shows the check number {shown}. If it shows a different \
-                 number, call unpair for this phone and tell them."
-            ),
-        })))
     }
 
     /// The paired phones.
@@ -433,14 +318,18 @@ impl Agent {
 
         let request_id = request.request_id.clone();
         request.agent = id.name.clone();
-        request.attachment = image.as_ref().map(|(kind, bytes, caption)| AttachmentInfo {
-            kind: *kind,
-            bytes: bytes.len() as u64,
-            caption: Some(caption.clone()),
+        request.attachment = image.as_ref().map(|(kind, bytes, caption)| {
+            client::attachment_info(*kind, bytes, Some(caption.clone()))
         });
-        let envelope =
-            client::seal_request(&request, &id.agent_id, &phone_keys.kem, image.is_some())
-                .map_err(err)?;
+        let envelope = client::seal_request(
+            &request,
+            &id.agent_id,
+            &phone.phone_id,
+            &phone_keys.kem,
+            &id.keys.signing_key(),
+            image.is_some(),
+        )
+        .map_err(err)?;
         // Seal the picture before posting, so the upload follows the request at once (the relay
         // holds the push for it at most 5 s).
         let attachment_body = match &image {
@@ -507,9 +396,25 @@ impl Agent {
                 &client::answer_aad(&ex.request_id, &phone.phone_id),
             )
             .map_err(|_| "The answer does not decrypt; ignoring it.".to_owned())?;
-        let mut answer = client::read_answer(&plain, &ex.request_id)
-            .map_err(|e| format!("{e}; ignoring it."))?;
+        let from = client::AnswerFrom {
+            agent_id: &id.agent_id,
+            phone_id: &phone.phone_id,
+            sign: &phone_keys.sign,
+            signs: phone.signs,
+        };
+        let (mut answer, signed) = client::read_answer(&plain, &ex.request_id, &from)
+            .map_err(|e| match e {
+                nodkey_proto::Error::BadSignature(_) => format!(
+                    "The answer is not signed by {}; it was not used. Tell the user; the relay may have                      changed it.",
+                    phone.name
+                ),
+                e => format!("{e}; ignoring it."),
+            })?;
         drop(plain);
+        if signed && !phone.signs {
+            // From now on this phone's answers must be signed.
+            let _ = store.mark_signs(&phone.phone_id);
+        }
         crate::session::note(&store, &phone.phone_id, &request, &answer);
         crate::session::settle(&mut answer).await;
         ex.answer = Some(answer);
@@ -549,12 +454,13 @@ pub fn new_request(kind: Kind, target: &str, reason: &str, client: ClientInfo) -
         wait_seconds: None,
         save_secret: None,
         project: None,
+        nonce: None,
     }
 }
 
 /// Long-polls with `poll(wait)` until a value arrives (`Some`), the resource is gone or `total`
 /// runs out (`None`). Transient failures are retried within the same deadline.
-async fn poll_until<T, F, Fut>(
+pub(crate) async fn poll_until<T, F, Fut>(
     total: Duration,
     max_wait: u64,
     progress: Progress<'_>,

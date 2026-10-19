@@ -141,10 +141,19 @@ nodkey pair
 ```
 
 It shows a code like `K7P-2QX`. In Nodkey, open **Agents**, tap **Add agent** and type the code.
-Then `nodkey pair` shows a check number like `418 902`, and so does your iPhone. If the numbers are
-not the same, someone may have swapped keys: run `nodkey unpair PHONE` and remove the agent in Nodkey.
+Then `nodkey pair` shows a check number like `418 902`, and so does your iPhone. Compare the two
+numbers. When they are the same, type `y` in the terminal and confirm on your iPhone too; only then
+is the pairing saved. When they are not the same, the pairing messages may have been changed on
+the way: say no on both sides, and nothing is saved.
 
-An agent pairs the same way with its `pair` tool: it shows you the code, then the check number.
+An agent pairs the same way with its `pair` tool: it shows you the code, then the check number, and
+asks you whether your iPhone shows the same number.
+
+Each side makes a random value for the check number, and the iPhone commits to its value before it
+sees the computer's. So the relay that passes the keys cannot pick keys that give the same number
+on both screens. After pairing, every request and every answer is signed by the side that sent it,
+inside the encryption. Nodkey on your iPhone must be new enough for this; an older app gets a
+message to update it.
 
 ## Use it from the terminal
 

@@ -1,5 +1,7 @@
 //! End to end: the `nodkey` command line against the in-process fake relay.
 
+mod common;
+
 use nodkey_fake_relay as fake_relay;
 
 use std::{
@@ -41,7 +43,7 @@ impl Cli {
     }
 
     fn run(&self, args: &[&str]) -> Output {
-        self.command(args).output().expect("run nodkey")
+        common::output(&mut self.command(args), args)
     }
 
     /// `nodkey webauthn --agent claude-code` with `input` on stdin: the one JSON line on stdout
@@ -289,10 +291,7 @@ fn create(cd: &str, user_id: &[u8], algorithms: &[i64], exclude: &[&str]) -> Str
 fn create_then_sign_in_with_a_passkey() {
     let (fake, addr) = fake_relay::start(1);
     let cli = Cli::new(addr);
-    let out = cli
-        .command(&["pair", "--agent", "claude-code"])
-        .output()
-        .unwrap();
+    let out = cli.run(&["pair", "--agent", "claude-code"]);
     assert!(out.status.success(), "{}", stderr(&out));
 
     // A new passkey: the attested authenticator data holds the returned key and credential id.
@@ -445,10 +444,7 @@ fn prf_gives_the_same_key_for_the_same_salt() {
     use nodkey_proto::{prf, vectors::prf::cred_random};
     let (fake, addr) = fake_relay::start(1);
     let cli = Cli::new(addr);
-    let out = cli
-        .command(&["pair", "--agent", "claude-code"])
-        .output()
-        .unwrap();
+    let out = cli.run(&["pair", "--agent", "claude-code"]);
     assert!(out.status.success(), "{}", stderr(&out));
     let expected = |salt: &[u8]| b64u::encode(&*prf::evaluate(&cred_random(), salt));
 

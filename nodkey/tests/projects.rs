@@ -4,6 +4,8 @@
 //! and the `request_secret`, `save_secret` and `list_accounts` MCP tools, against the in-process
 //! fake relay. Test values only.
 
+mod common;
+
 use nodkey_fake_relay as fake_relay;
 
 use std::{
@@ -60,7 +62,7 @@ impl Cli {
     }
 
     fn run(&self, args: &[&str], cwd: &Path) -> Output {
-        self.command(args, cwd).output().expect("run nodkey")
+        common::output(&mut self.command(args, cwd), args)
     }
 }
 

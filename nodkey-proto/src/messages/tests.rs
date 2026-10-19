@@ -2,7 +2,7 @@ use super::*;
 
 #[test]
 fn protocol_examples_parse() {
-    let g: PairingGrant = parse_plaintext(
+    let g: crate::PairingGrant = parse_plaintext(
         br#"{"v":1, "phone_name":"Test iPhone", "scope":"selected", "check":"418902"}"#,
     )
     .unwrap();
@@ -153,7 +153,8 @@ fn image_sniffing() {
         serde_json::to_string(&AttachmentInfo {
             kind: ImageType::Jpeg,
             bytes: 3,
-            caption: None
+            caption: None,
+            sha256: None
         })
         .unwrap(),
         r#"{"type":"image/jpeg","bytes":3}"#

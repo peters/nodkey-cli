@@ -2,6 +2,8 @@
 //! against the in-process fake relay, whose phone holds the test card 4242 4242 4242 4242 and
 //! answers by the user's card settings (on/off, full numbers on/off, limit per purchase).
 
+mod common;
+
 use nodkey_fake_relay as fake_relay;
 
 use std::{
@@ -39,7 +41,7 @@ impl Cli {
     }
 
     fn run(&self, args: &[&str]) -> Output {
-        self.command(args).output().expect("run nodkey")
+        common::output(&mut self.command(args), args)
     }
 
     fn pair(&self, agent: &str) {

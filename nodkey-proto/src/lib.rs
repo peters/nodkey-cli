@@ -2,7 +2,8 @@
 //!
 //! The binding contract is `docs/agent-protocol.md`; this crate implements it for the agent side
 //! (and for tests that play the phone): the JSON messages, HPKE sealing with the protocol's `info`
-//! and `aad` rules, Ed25519 signatures on relay calls, the pairing check number and pairing codes.
+//! and `aad` rules, Ed25519 signatures on relay calls and on sealed messages, pairing with a
+//! commitment and its check number, and pairing codes.
 
 pub mod apikey;
 pub mod auth;
@@ -16,12 +17,14 @@ pub mod code;
 pub mod dh;
 pub mod keys;
 pub mod messages;
+pub mod pairing;
 pub mod passkey;
 pub mod prf;
 pub mod quota;
 pub mod seal;
 pub mod secret;
 pub mod session;
+pub mod signed;
 pub mod signin;
 pub mod site;
 #[doc(hidden)]
@@ -35,6 +38,7 @@ pub use bundle::{BundleItem, BundleItemAnswer, BundleRequest};
 pub use card::{CardAnswer, CardEntry, CardMode, CardRequest, Money, SaveCard, TotalSource};
 pub use keys::{KeyPair, PublicKeys};
 pub use messages::*;
+pub use pairing::PairingGrant;
 pub use passkey::{
     PasskeyAnswer, PasskeyCreate, PasskeyGet, PasskeyOp, PasskeyRequest, PasskeyUser, Requirement,
 };
@@ -67,9 +71,11 @@ pub enum Error {
     Code(&'static str),
     /// A plaintext message is not valid JSON for its type.
     Json(String),
-    /// The pairing grant's check number differs from the one computed from both public keys:
-    /// someone may have swapped keys.
-    CheckMismatch { phone: String, computed: String },
+    /// The pairing grant has no commitment: the phone's app was made before it. Such a pairing
+    /// does not hold against a relay that swaps keys, so it is refused (never a fallback).
+    OldApp,
+    /// The phone's answer to the pairing check does not fit its commitment.
+    BadCommitment(&'static str),
 }
 
 impl std::fmt::Display for Error {
@@ -80,10 +86,11 @@ impl std::fmt::Display for Error {
             Error::BadSignature(m) => write!(f, "signature: {m}"),
             Error::Code(m) => write!(f, "pairing code: {m}"),
             Error::Json(m) => write!(f, "message: {m}"),
-            Error::CheckMismatch { phone, computed } => write!(
+            Error::OldApp => write!(
                 f,
-                "check numbers differ (phone says {phone}, this side computes {computed})"
+                "Nodkey on the iPhone is too old for this pairing; update Nodkey from the App Store, then pair again"
             ),
+            Error::BadCommitment(m) => write!(f, "pairing check: {m}"),
         }
     }
 }

@@ -4,12 +4,15 @@
 //! [`crate::dh::open_with_dh`] (key in WebCrypto) and hands the plaintext to the `read_*`
 //! functions here.
 
+use ed25519_dalek::SigningKey;
+use sha2::{Digest, Sha256};
 use zeroize::Zeroizing;
 
 use crate::{
-    Answer, Error, Kind, PairingGrant, PublicKeys, Purpose, Request, RequestEnvelope, SealedBox,
-    aad, b64u, check, parse_plaintext,
+    Answer, AttachmentInfo, Error, ImageType, Kind, Purpose, Request, RequestEnvelope, SealedBox,
+    aad, b64u, parse_plaintext,
     seal::{OsRng, seal_attachment_body},
+    signed::{self, Direction},
 };
 
 /// Longest `reason` and `target` the agent sends, in characters.
@@ -19,9 +22,12 @@ pub const MAX_TARGET: usize = 200;
 /// APNs' 4 KB (relay `REQUEST_CT_MAX`).
 pub const REQUEST_CT_MAX: usize = 3400;
 
-/// The length of `ct` once `r` is sealed: the JSON plus the 16-byte tag, in b64u characters.
+/// The length of `ct` once `r` is sealed: the signed JSON plus the 16-byte tag, in b64u
+/// characters.
 pub fn sealed_ct_len(r: &Request) -> usize {
-    let sealed = serde_json::to_vec(r).map_or(usize::MAX / 8, |v| v.len()) + 16;
+    let json = serde_json::to_vec(r).map_or(usize::MAX / 8, |v| v.len());
+    // The signature replaces the final "}" and the tag follows.
+    let sealed = json - 1 + signed::SUFFIX_LEN + 16;
     (4 * sealed).div_ceil(3)
 }
 
@@ -45,6 +51,12 @@ pub fn check_request(r: &Request) -> Result<(), String> {
             "target is required (a site or issuer, optionally /account, e.g. github.com/alex)"
                 .into(),
         );
+    }
+    if r.kind == Kind::PairingCheck {
+        return check_pairing(r);
+    }
+    if r.nonce.is_some() {
+        return Err("only a pairing_check request carries a nonce".into());
     }
     if r.reason.trim().is_empty() {
         return Err(
@@ -110,6 +122,33 @@ pub fn check_request(r: &Request) -> Result<(), String> {
     Ok(())
 }
 
+/// A `pairing_check` carries the agent's nonce and nothing else.
+fn check_pairing(r: &Request) -> Result<(), String> {
+    let nonce_ok = r
+        .nonce
+        .as_deref()
+        .is_some_and(|n| b64u::decode_array::<{ crate::pairing::NONCE_LEN }>(n).is_ok());
+    if !nonce_ok {
+        return Err("a pairing_check request needs a 32-byte nonce".into());
+    }
+    let extra = r.attachment.is_some()
+        || r.filter.is_some()
+        || r.save.is_some()
+        || r.passkey.is_some()
+        || r.bundle.is_some()
+        || r.card.is_some()
+        || r.save_card.is_some()
+        || r.session_id.is_some()
+        || r.suggest.is_some()
+        || r.wait_seconds.is_some()
+        || r.save_secret.is_some()
+        || r.project.is_some();
+    if extra || !r.target.is_empty() || !r.reason.is_empty() {
+        return Err("a pairing_check request carries only the nonce".into());
+    }
+    Ok(())
+}
+
 /// The `suggest` and `sms_code` rules: a suggestion names a clean site and a valid method, and
 /// `wait_seconds` belongs to `sms_code` only, within its range.
 fn check_signin(r: &Request) -> Result<(), String> {
@@ -154,16 +193,68 @@ fn check_session(r: &Request) -> Result<(), String> {
     }
 }
 
-/// Seals a checked request to the phone: the envelope to `POST /v1/phones/{phone_id}/requests`.
-/// `attachment` says whether a picture follows.
+/// Seals a checked request to the phone, signed with the agent's key: the envelope to
+/// `POST /v1/phones/{phone_id}/requests`. `attachment` says whether a picture follows.
 pub fn seal_request(
     request: &Request,
+    agent_id: &str,
+    phone_id: &str,
+    phone_kem: &[u8; 32],
+    key: &SigningKey,
+    attachment: bool,
+) -> Result<RequestEnvelope, Error> {
+    let body = Zeroizing::new(serde_json::to_vec(request)?);
+    let plain = Zeroizing::new(signed::sign(
+        Direction::Request,
+        agent_id,
+        phone_id,
+        &body,
+        key,
+    )?);
+    seal_plain(request, &plain, agent_id, phone_kem, attachment)
+}
+
+/// A request's JSON and the message its signature covers.
+pub struct ToSign {
+    pub body: Zeroizing<Vec<u8>>,
+    pub message: Zeroizing<Vec<u8>>,
+}
+
+/// For an agent whose signing key cannot leave its store (WebCrypto): the request's JSON and the
+/// message to sign. Sign `message` with Ed25519 and give `body` and the signature to
+/// [`seal_signed_request`].
+pub fn request_to_sign(request: &Request, agent_id: &str, phone_id: &str) -> Result<ToSign, Error> {
+    let body = Zeroizing::new(serde_json::to_vec(request)?);
+    let message = Zeroizing::new(signed::message(
+        Direction::Request,
+        agent_id,
+        phone_id,
+        &body,
+    ));
+    Ok(ToSign { body, message })
+}
+
+/// Seals a request whose JSON `body` (from [`request_to_sign`]) was signed elsewhere.
+pub fn seal_signed_request(
+    request: &Request,
+    body: &[u8],
+    sig: &[u8; 64],
     agent_id: &str,
     phone_kem: &[u8; 32],
     attachment: bool,
 ) -> Result<RequestEnvelope, Error> {
-    let plain = Zeroizing::new(serde_json::to_vec(request)?);
-    let sealed = Purpose::Request.seal(phone_kem, &aad(&request.request_id, agent_id), &plain)?;
+    let plain = Zeroizing::new(signed::attach(body, sig)?);
+    seal_plain(request, &plain, agent_id, phone_kem, attachment)
+}
+
+fn seal_plain(
+    request: &Request,
+    plain: &[u8],
+    agent_id: &str,
+    phone_kem: &[u8; 32],
+    attachment: bool,
+) -> Result<RequestEnvelope, Error> {
+    let sealed = Purpose::Request.seal(phone_kem, &aad(&request.request_id, agent_id), plain)?;
     Ok(RequestEnvelope {
         request_id: request.request_id.clone(),
         enc: b64u::encode(&sealed.enc),
@@ -211,6 +302,21 @@ pub fn seal_card_secret(
         .to_box())
 }
 
+/// What a request says about its picture, with the hash the phone checks the picture against.
+pub fn attachment_info(kind: ImageType, image: &[u8], caption: Option<String>) -> AttachmentInfo {
+    AttachmentInfo {
+        kind,
+        bytes: image.len() as u64,
+        caption,
+        sha256: Some(image_sha256(image)),
+    }
+}
+
+/// `attachment.sha256` of a picture: b64u of SHA-256 of its bytes.
+pub fn image_sha256(image: &[u8]) -> String {
+    b64u::encode(&Sha256::digest(image))
+}
+
 /// Seals a picture for `PUT /v1/requests/{request_id}/attachment`.
 pub fn seal_attachment(
     request_id: &str,
@@ -231,349 +337,42 @@ pub fn grant_aad(code: &str, phone_id: &str) -> Vec<u8> {
     aad(code, phone_id)
 }
 
-/// Reads an opened answer and checks that it belongs to `request_id`.
-pub fn read_answer(plain: &[u8], request_id: &str) -> Result<Answer, Error> {
-    let answer: Answer = parse_plaintext(plain)?;
+/// The phone an answer comes from, as this agent knows it from the pairing.
+#[derive(Debug, Clone, Copy)]
+pub struct AnswerFrom<'a> {
+    pub agent_id: &'a str,
+    pub phone_id: &'a str,
+    /// The phone's Ed25519 key, pinned at pairing.
+    pub sign: &'a [u8; 32],
+    /// Whether this phone signs its answers (a pairing with the commitment, or a signed answer
+    /// seen before): an answer without a valid signature is then refused.
+    pub signs: bool,
+}
+
+/// Reads an opened answer: checks its signature (see [`AnswerFrom::signs`]) and that it belongs
+/// to `request_id`. Also says whether it was signed, so the agent can remember that this phone
+/// signs.
+pub fn read_answer(
+    plain: &[u8],
+    request_id: &str,
+    from: &AnswerFrom<'_>,
+) -> Result<(Answer, bool), Error> {
+    let opened = signed::open(
+        Direction::Answer,
+        from.agent_id,
+        from.phone_id,
+        plain,
+        from.sign,
+        from.signs,
+    )?;
+    let answer: Answer = parse_plaintext(&opened.body)?;
     if answer.request_id != request_id {
         return Err(Error::Json(
             "the answer belongs to a different request".into(),
         ));
     }
-    Ok(answer)
-}
-
-/// Reads an opened pairing grant and checks its check number against the one computed from both
-/// sides' public keys. A different number means someone swapped keys: do not save the pairing.
-pub fn read_grant(
-    plain: &[u8],
-    agent: &PublicKeys,
-    phone: &PublicKeys,
-) -> Result<PairingGrant, Error> {
-    let grant: PairingGrant = parse_plaintext(plain)?;
-    let n = check::check_number(agent, phone);
-    if grant.check != check::digits(n) {
-        return Err(Error::CheckMismatch {
-            phone: grant.check.clone(),
-            computed: check::display(n),
-        });
-    }
-    Ok(grant)
+    Ok((answer, opened.signed))
 }
 
 #[cfg(test)]
-mod tests {
-    use super::*;
-    use crate::{CleanupFilter, Decision, KeyPair, SaveLogin, VERSION};
-
-    fn request(kind: Kind, target: &str, reason: &str) -> Request {
-        Request {
-            v: VERSION,
-            request_id: crate::random_id(),
-            kind,
-            target: target.into(),
-            reason: reason.into(),
-            agent: "Test".into(),
-            ts: 1,
-            attachment: None,
-            filter: None,
-            save: None,
-            passkey: None,
-            bundle: None,
-            card: None,
-            save_card: None,
-            client: None,
-            session_id: None,
-            suggest: None,
-            wait_seconds: None,
-            save_secret: None,
-            project: None,
-        }
-    }
-
-    #[test]
-    fn bundle_checks_and_the_sealed_size() {
-        let item = |id: &str, target: &str| crate::BundleItem {
-            id: id.into(),
-            kind: Kind::Login,
-            target: target.into(),
-        };
-        let mut b = request(Kind::Bundle, "", "Sign in to two sites");
-        assert!(check_request(&b).unwrap_err().contains("items"));
-        b.bundle = Some(crate::BundleRequest {
-            items: vec![item("1", "chatgpt.com"), item("2", "github.com")],
-            follow_up: None,
-            session: None,
-        });
-        assert!(check_request(&b).is_ok());
-        b.target = "chatgpt.com".into();
-        assert!(check_request(&b).unwrap_err().contains("no target"));
-        let mut c = request(Kind::Code, "github.com", "Merge");
-        c.bundle = b.bundle.clone();
-        assert!(check_request(&c).unwrap_err().contains("only a bundle"));
-
-        // Six long targets, a long reason and every client field at its longest do not fit in a push.
-        b.target = String::new();
-        b.reason = "r".repeat(500);
-        let long = || Some("c".repeat(80));
-        b.client = Some(crate::ClientInfo {
-            app: long(),
-            app_version: long(),
-            model: long(),
-            effort: long(),
-            os: long(),
-            host: long(),
-            workdir: long(),
-            mcp_version: long(),
-        });
-        b.bundle = Some(crate::BundleRequest {
-            items: (1..=6)
-                .map(|i| item(&i.to_string(), &"t".repeat(200)))
-                .collect(),
-            follow_up: Some(600),
-            session: None,
-        });
-        assert!(sealed_ct_len(&b) > REQUEST_CT_MAX);
-        assert!(check_request(&b).unwrap_err().contains("too large"));
-        // The length is the b64u length of the JSON and the tag.
-        let small = request(Kind::List, "", "See");
-        let n = serde_json::to_vec(&small).unwrap().len() + 16;
-        assert_eq!(sealed_ct_len(&small), b64u::encode(&vec![0u8; n]).len());
-    }
-
-    #[test]
-    fn checks() {
-        assert!(check_request(&request(Kind::Code, "github.com", "Merge")).is_ok());
-        assert!(check_request(&request(Kind::Code, " ", "Merge")).is_err());
-        assert!(check_request(&request(Kind::List, "", "See")).is_ok());
-        assert!(check_request(&request(Kind::List, "", " ")).is_err());
-        assert!(check_request(&request(Kind::Code, "x", &"r".repeat(501))).is_err());
-        let mut c = request(Kind::Cleanup, "", "Old routers");
-        assert!(check_request(&c).is_err());
-        c.filter = Some(CleanupFilter::default());
-        assert!(check_request(&c).is_err());
-        c.filter = Some(CleanupFilter {
-            ip_only: Some(true),
-            ..Default::default()
-        });
-        assert!(check_request(&c).is_ok());
-        let mut s = request(Kind::Save, "vg.no", "Save the login");
-        assert!(check_request(&s).is_err());
-        s.save = Some(SaveLogin {
-            url: "https://vg.no".into(),
-            username: "alex".into(),
-            password: SealedBox {
-                enc: String::new(),
-                ct: String::new(),
-            },
-            title: None,
-        });
-        assert!(check_request(&s).is_err());
-        let phone = KeyPair::generate();
-        let sealed = seal_password("agent", &phone.public().kem, "pw").unwrap();
-        s.save.as_mut().unwrap().password = sealed.clone();
-        assert!(check_request(&s).is_ok());
-        let opened = Purpose::Password
-            .open_box(phone.kem_secret(), &sealed, b"agent")
-            .unwrap();
-        assert_eq!(&opened[..], b"pw");
-        assert!(
-            Purpose::Password
-                .open_box(phone.kem_secret(), &sealed, b"other")
-                .is_err()
-        );
-        assert!(seal_password("agent", &phone.public().kem, "").is_err());
-
-        let mut p = request(Kind::Passkey, "webauthn.io", "Sign in");
-        assert!(check_request(&p).is_err());
-        let cd = crate::passkey::build_client_data_json(
-            crate::PasskeyOp::Get,
-            "AAEC",
-            "https://webauthn.io",
-        );
-        p.passkey = Some(crate::PasskeyRequest::Get(crate::PasskeyGet {
-            rp_id: "webauthn.io".into(),
-            client_data_json: b64u::encode(cd.as_bytes()),
-            allow_credentials: vec![],
-            user_verification: crate::Requirement::Preferred,
-            prf: None,
-        }));
-        assert!(check_request(&p).is_ok());
-        p.target = "evil.example".into();
-        assert!(check_request(&p).is_err());
-        p.kind = Kind::Code;
-        assert!(check_request(&p).is_err());
-    }
-
-    #[test]
-    fn signin_checks() {
-        let mut s = request(Kind::Suggest, "renderfarm.example", "Signed in with Google");
-        assert!(
-            check_request(&s)
-                .unwrap_err()
-                .contains("method and the outcome")
-        );
-        s.suggest = Some(crate::Suggestion {
-            method: crate::SignInMethod::federated(crate::Provider::Google, None),
-            outcome: crate::SuggestOutcome::SignedIn,
-        });
-        assert!(check_request(&s).is_ok());
-        s.target = "https://renderfarm.example/login".into();
-        assert!(check_request(&s).unwrap_err().contains("host"));
-        s.target = "renderfarm.example".into();
-        s.session_id = Some("Qm9vdHN0cmFwU2Vzc2lvbg".into());
-        assert!(
-            check_request(&s)
-                .unwrap_err()
-                .contains("belong to a session")
-        );
-        s.session_id = None;
-        s.suggest.as_mut().unwrap().method.provider = None;
-        assert!(check_request(&s).unwrap_err().contains("provider"));
-        let mut l = request(Kind::Login, "vg.no", "Sign in");
-        l.suggest = s.suggest.clone();
-        assert!(check_request(&l).unwrap_err().contains("only a suggest"));
-
-        let mut m = request(
-            Kind::SmsCode,
-            "appleid.example",
-            "The site sent a code by SMS",
-        );
-        assert!(check_request(&m).is_ok());
-        m.wait_seconds = Some(300);
-        assert!(check_request(&m).is_ok());
-        m.wait_seconds = Some(301);
-        assert!(check_request(&m).unwrap_err().contains("30 to 300"));
-        m.target = String::new();
-        m.wait_seconds = None;
-        assert!(check_request(&m).unwrap_err().contains("target"));
-        let mut c = request(Kind::Code, "github.com", "Merge");
-        c.wait_seconds = Some(120);
-        assert!(check_request(&c).unwrap_err().contains("only an sms_code"));
-    }
-
-    #[test]
-    fn card_checks() {
-        let money = |v: &str| crate::Money::parse(v, "NOK").unwrap();
-        let mut c = request(
-            Kind::Card,
-            "shop.example.com",
-            "Buy the cable you asked for",
-        );
-        assert!(
-            check_request(&c)
-                .unwrap_err()
-                .contains("merchant and the amount")
-        );
-        c.card = Some(crate::CardRequest {
-            mode: crate::CardMode::Reveal,
-            merchant: "shop.example.com".into(),
-            amount: Some(money("499")),
-            origin: None,
-            page_total: None,
-            total_source: None,
-        });
-        assert!(check_request(&c).is_ok());
-        c.card.as_mut().unwrap().amount = None;
-        assert!(check_request(&c).unwrap_err().contains("amount"));
-        let mut code = request(Kind::Code, "github.com", "Merge");
-        code.card = c.card.clone();
-        assert!(check_request(&code).unwrap_err().contains("only a card"));
-
-        let phone = KeyPair::generate();
-        let number = seal_card_secret("agent", &phone.public().kem, "4242424242424242").unwrap();
-        let opened = Purpose::Card
-            .open_box(phone.kem_secret(), &number, b"agent")
-            .unwrap();
-        assert_eq!(&opened[..], b"4242424242424242");
-        assert!(
-            Purpose::Password
-                .open_box(phone.kem_secret(), &number, b"agent")
-                .is_err()
-        );
-        assert!(seal_card_secret("agent", &phone.public().kem, " ").is_err());
-        let mut s = request(
-            Kind::Save,
-            "shop.example.com",
-            "Save the card you just used",
-        );
-        s.save_card = Some(crate::SaveCard {
-            number,
-            cvc: None,
-            exp_month: 12,
-            exp_year: 2030,
-            holder: None,
-            url: None,
-            last4: "4242".into(),
-        });
-        assert!(check_request(&s).is_ok());
-        s.save = Some(SaveLogin {
-            url: "https://vg.no".into(),
-            username: "alex".into(),
-            password: seal_password("agent", &phone.public().kem, "pw").unwrap(),
-            title: None,
-        });
-        assert!(check_request(&s).unwrap_err().contains("not both"));
-        let mut l = request(Kind::Login, "vg.no", "Sign in");
-        l.save_card = s.save_card.clone();
-        assert!(check_request(&l).unwrap_err().contains("only a save"));
-    }
-
-    #[test]
-    fn request_and_answer_round_trip() {
-        let phone = KeyPair::generate();
-        let agent = KeyPair::generate();
-        let (agent_id, phone_id) = (crate::random_id(), crate::random_id());
-        let r = request(Kind::Code, "github.com", "Merge");
-        let env = seal_request(&r, &agent_id, &phone.public().kem, false).unwrap();
-        assert_eq!(env.attachment, None);
-        let plain = Purpose::Request
-            .open(
-                phone.kem_secret(),
-                &b64u::decode(&env.enc).unwrap(),
-                &aad(&r.request_id, &agent_id),
-                &b64u::decode(&env.ct).unwrap(),
-            )
-            .unwrap();
-        let back: Request = parse_plaintext(&plain).unwrap();
-        assert_eq!(back, r);
-
-        let answer = Answer::decision(&r.request_id, Decision::Denied);
-        let sealed = Purpose::Answer
-            .seal(
-                &agent.public().kem,
-                &answer_aad(&r.request_id, &phone_id),
-                &serde_json::to_vec(&answer).unwrap(),
-            )
-            .unwrap();
-        let plain = Purpose::Answer
-            .open_box(
-                agent.kem_secret(),
-                &sealed.to_box(),
-                &answer_aad(&r.request_id, &phone_id),
-            )
-            .unwrap();
-        assert_eq!(read_answer(&plain, &r.request_id).unwrap(), answer);
-        assert!(read_answer(&plain, "other").is_err());
-    }
-
-    #[test]
-    fn grant_check_number() {
-        let (agent, phone) = (KeyPair::generate().public(), KeyPair::generate().public());
-        let n = check::check_number(&agent, &phone);
-        let grant = |check: String| {
-            serde_json::to_vec(&PairingGrant {
-                v: VERSION,
-                phone_name: "Test iPhone".into(),
-                scope: crate::Scope::Selected,
-                check,
-            })
-            .unwrap()
-        };
-        assert!(read_grant(&grant(check::digits(n)), &agent, &phone).is_ok());
-        let wrong = check::digits((n + 1) % 1_000_000);
-        assert!(matches!(
-            read_grant(&grant(wrong), &agent, &phone),
-            Err(Error::CheckMismatch { .. })
-        ));
-    }
-}
+mod tests;

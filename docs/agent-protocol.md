@@ -31,7 +31,7 @@ Each side (phone, agent) has:
 | Key | Algorithm | Use |
 | --- | --- | --- |
 | `kem` | X25519 | HPKE recipient key; public key = 32 bytes |
-| `sign` | Ed25519 | signs every relay call; public key = 32 bytes |
+| `sign` | Ed25519 | signs every relay call, and every request and answer inside the HPKE box (see "Signed requests and answers"); public key = 32 bytes |
 
 HPKE (RFC 9180) base mode, suite DHKEM(X25519, HKDF-SHA256) / HKDF-SHA256 / ChaCha20-Poly1305
 (KEM 0x0020, KDF 0x0001, AEAD 0x0003). Single-shot seal/open. `enc` is 32 bytes.
@@ -59,11 +59,133 @@ The relay rejects a signature older or newer than 120 s, an unknown id, or a key
 the one registered for that id. `POST /v1/pairings` (the agent is not known yet) is signed with the key
 in its own body.
 
-## Check number
+## Signed requests and answers
 
-Both sides show `check = (u32 big-endian of SHA-256("nodkey/v1/check" ‖ agent_sign ‖ agent_kem ‖
-phone_sign ‖ phone_kem)[0..4]) mod 1_000_000`, as six digits ("418 902"). The user compares them; a relay
-that swapped keys would show a different number.
+HPKE base mode keeps a message secret but does not show who sealed it, and the signatures on relay
+calls are checked by the relay only. So the sender also signs each request (agent → phone) and each
+answer (phone → agent) with its Ed25519 `sign` key, inside the plaintext, and the receiver checks
+the signature with the key it pinned at pairing. A relay that does not keep to the protocol can
+then neither read a message nor make one up.
+
+```text
+B   = the message's JSON as the sender serialized it (a UTF-8 object with at least "v"), without "sig"
+M   = "nodkey/v1/signed\n" + direction + "\n" + agent_id + "\n" + phone_id + "\n" + B
+sig = Ed25519(the sender's sign key, M)
+plaintext = B without its last byte "}" + ",\"sig\":\"" + b64u(sig) + "\"}"
+```
+
+- `direction` is `request` (agent → phone) or `answer` (phone → agent). `agent_id` and `phone_id`
+  are the b64u ids of this pairing, in this order for both directions.
+- `sig` is always the last member. b64u of 64 bytes is 86 characters, so the last 96 bytes of a
+  signed plaintext are `,"sig":"<86 characters>"}`. The receiver takes them off and adds `}` to get
+  `B` back byte for byte; no canonical JSON form is needed. Then it verifies `sig` over `M` and
+  reads `B` (or the whole plaintext: no message has a field named `sig`).
+- `M` starts with `nodkey/v1/signed\n`, a relay call's message with `nodkey/v1\n`, so one
+  signature cannot serve as the other.
+- The pairing grant is not signed: no key is pinned yet. The check number protects it (see below).
+  The saved password, card values and key of a `save` or `save_secret` request are sealed boxes
+  inside the signed request, so the signature covers them.
+- An attachment is not JSON. The signed request carries `attachment.sha256` (b64u of SHA-256 of
+  the image bytes), and the phone shows the picture only when the opened image has that hash.
+- Receivers made before signatures ignore the unknown `sig` member and read the message as before.
+
+When a signature is required:
+
+- On every message of a pairing made with the commitment (next section): both sides then know the
+  other side signs.
+- For a pairing made before this change: from the first message of that side that has a valid
+  signature. The receiver remembers this and requires a signature from then on.
+- Otherwise an unsigned message is accepted, from an app or agent made before signatures. A
+  signature that is there must always verify.
+
+A receiver drops a message without a valid signature when one is required. The phone does not show
+or answer such a request. The agent does not use such an answer and tells the user that the answer
+is not signed by the phone. Vectors: the `signed` section (the bytes signed, the signature and the
+plaintext of each) and its HPKE vectors `request_pairing_check`, `answer_pairing_check`,
+`request_code_signed`, `answer_code_signed` and `request_login_signed_with_attachment` (its
+picture is `attachment_png`).
+
+## Pairing and the check number
+
+Each side learns the other's keys from the relay. The person compares a six-digit check number on
+both screens to see that both sides have the same keys. The phone commits to a random value before
+it sees the agent's random value, and the agent sends its value before it sees the phone's. So a
+relay that swaps keys cannot choose keys or values that give the same number on both screens: with
+swapped keys the numbers are the same only by chance, one time in a million.
+
+```text
+commit = SHA-256("nodkey/v1/pairing-commit" ‖ phone_sign ‖ phone_kem ‖ phone_nonce)
+check  = u32be(SHA-256("nodkey/v1/pairing-check" ‖ agent_sign ‖ agent_kem ‖ phone_sign ‖ phone_kem
+                       ‖ agent_nonce ‖ phone_nonce)[0..4]) mod 1_000_000
+```
+
+Each nonce is 32 random bytes, new for each pairing. The keys are the 32-byte public keys. The
+number shows as six digits ("418 902").
+
+1. The agent starts the pairing with `POST /v1/pairings` and shows the code.
+2. The phone looks up the agent's keys (`GET /v1/pairings/{code}/agent`), makes `phone_nonce`, and
+   seals the grant with `commit` (b64u) to the agent. Then it claims the code
+   (`POST /v1/pairings/{code}/claim`).
+3. The agent gets the phone's keys and the grant (`GET /v1/pairings/{code}`). It makes
+   `agent_nonce` and sends one `pairing_check` request with `nonce` = b64u(`agent_nonce`), signed
+   (see "Signed requests and answers").
+4. The phone answers it at once, without asking the person: `decision: approved`, `nonce` =
+   b64u(`phone_nonce`), signed.
+5. The agent checks that `commit` is the hash of the phone's keys from the claim and the received
+   `phone_nonce`. Both sides show `check`. The person compares the numbers and confirms on each
+   side. A new pairing is active only after the person confirmed it on that side.
+
+```json
+{"v":1, "request_id":"…", "kind":"pairing_check", "target":"", "reason":"", "agent":"Claude Code @ dev-laptop",
+ "ts":1791620000, "nonce":"<b64u, 32 bytes>", "sig":"…"}
+{"v":1, "request_id":"…", "decision":"approved", "nonce":"<b64u, 32 bytes>", "sig":"…"}
+```
+
+The phone:
+
+- Makes a new `phone_nonce` for each claim, and sends it only in the answer to that agent's first
+  `pairing_check`.
+- Checks the request's signature with the agent's `sign` key from the lookup, and that the request
+  comes from the agent of this pairing (`agent_id` in the pending request list).
+- Answers only the first `pairing_check` of a pairing. Any other `pairing_check` (a second one, or
+  one from an agent that is not pairing) gets `decision: denied`, `error: "unexpected_pairing_check"`;
+  a second one also ends the pairing (the phone removes the agent). A `pairing_check` is never
+  covered by a lease or a task session, does not count for the agent limit and shows no
+  notification.
+- Then shows the check number and asks the person to compare it with the number on the computer.
+  When the person confirms that the numbers are the same, the agent is active. When they say the
+  numbers differ, or cancel, the phone removes the agent (`DELETE /v1/phones/{phone_id}/agents/{agent_id}`).
+- Gives up when no `pairing_check` came within 120 s of the claim: it tells the person that the
+  agent may need an update and removes the agent.
+- Until the person confirms, it does not show or answer any other request from that agent; those
+  expire.
+
+The agent:
+
+- Refuses a grant without `commit`: it comes from an app made before this change. It does not save
+  the pairing, leaves (`DELETE /v1/agents/{agent_id}/phones/{phone_id}`) and tells the person to
+  update Nodkey on the iPhone. It never falls back to the number without a commitment: a relay
+  could pretend to be such an app.
+- Sends exactly one `pairing_check` per pairing. It stops, saves nothing and leaves when the answer
+  does not come in time, is not `approved`, has no `nonce`, has a nonce that does not match
+  `commit`, or has no valid signature of the phone's key from the claim.
+- Shows the check number and saves the phone only after the person confirms on the computer that
+  the numbers are the same. When they are not the same, it leaves and saves nothing.
+
+Versions:
+
+| Agent | Phone | What happens |
+| --- | --- | --- |
+| this version | this version | pairing with the commitment; requests and answers signed |
+| this version | made before | the grant has `check` and no `commit`: the agent refuses as above; the phone drops the agent the next time it lists requests |
+| made before | this version | the agent cannot read the grant (it has no `check`) and saves nothing; the phone gets no `pairing_check` and gives up after 120 s as above |
+
+Pairings made before this change stay as they are: their keys are pinned. Apps made before this
+change showed `check = u32be(SHA-256("nodkey/v1/check" ‖ agent_sign ‖ agent_kem ‖ phone_sign ‖
+phone_kem)[0..4]) mod 1_000_000` and put it in the grant; a relay that swaps keys can choose its
+keys so that this number is the same on both screens, which is why it is no longer used (vectors:
+`check`). Vectors: the `pairing` section (nonces, `commit`, the number) and the HPKE vectors
+`pairing_grant_commit`, `request_pairing_check` and `answer_pairing_check`.
 
 ## Relay API
 
@@ -74,7 +196,7 @@ computer (`localhost`, `127.0.0.1`, `[::1]`), and does not follow redirects.
 | --- | --- | --- |
 | `PUT /v1/phones/{phone_id}` | phone | `{sign, kem, apns_token?, apns_sandbox?}` → `204`. First call registers (trust on first use); later calls must be signed by the registered key. |
 | `POST /v1/pairings` | agent (own key) | `{agent_id, name, sign, kem}` → `201 {code, expires}`. `code` is 6 Crockford base32 characters, valid 300 s. |
-| `GET /v1/pairings/{code}/agent` | phone | → `200 {agent_id, name, sign, kem}` of the agent waiting on a live, unclaimed code, `404` otherwise. The phone needs these keys to seal the grant (and its check number) before it claims. Counts against the phone's 10 claims per hour, so a pairing (lookup + claim) uses two. |
+| `GET /v1/pairings/{code}/agent` | phone | → `200 {agent_id, name, sign, kem}` of the agent waiting on a live, unclaimed code, `404` otherwise. The phone needs these keys to seal the grant (with its commitment) before it claims. Counts against the phone's 10 claims per hour, so a pairing (lookup + claim) uses two. |
 | `POST /v1/pairings/{code}/claim` | phone | `{enc, ct}` (sealed grant to the agent) → `200 {agent_id, name, sign, kem}`; the phone checks these are the keys the lookup returned |
 | `GET /v1/pairings/{code}?wait=60` | agent | → `{phone_id, sign, kem, enc, ct}` once claimed, `204` on timeout, `404` when expired |
 | `POST /v1/phones/{phone_id}/requests` | agent (paired) | `{request_id, enc, ct, attachment?: true, ttl?}` → `202`. Rate limit 20 per hour per agent. Sends a push when the phone has an APNs token; with `attachment: true` the push waits until the attachment is uploaded or 5 s have passed. `ttl` (120 to 360, default 120): how many seconds the relay keeps the request and its answer; the agent sends it only for `sms_code` (see "SMS codes"). A relay that does not know `ttl` keeps the request 120 s, and the agent then sees `expired`. |
@@ -92,24 +214,31 @@ Errors: `{error: "<code>", message}` with 400 `bad_request`, 401 `bad_signature`
 
 ## Messages (plaintext inside HPKE)
 
-Pairing grant (phone → agent):
+Pairing grant (phone → agent; see "Pairing and the check number"):
 
 ```json
-{"v":1, "phone_name":"Test iPhone", "scope":"selected", "check":"418902"}
+{"v":1, "phone_name":"Test iPhone", "scope":"selected", "commit":"<b64u, 32 bytes>"}
 ```
+
+Apps made before the commitment send `"check":"418902"` and no `commit`; the agent refuses such a
+grant.
 
 `scope`: `selected` (the user picks accounts per request), `codes`, `logins`, `all`.
 
 Request (agent → phone):
 
 ```json
-{"v":1, "request_id":"…", "kind":"code|login|list|insights|cleanup|save|passkey|bundle|card|session_end|suggest|sms_code|secret|save_secret", "target":"github.com/alex",
+{"v":1, "request_id":"…", "kind":"code|login|list|insights|cleanup|save|passkey|bundle|card|session_end|suggest|sms_code|secret|save_secret|pairing_check", "target":"github.com/alex",
  "reason":"Merge PR #42", "agent":"Claude · Horizon", "ts":1791620000}
 ```
 
-- `attachment` (optional): `{"type":"image/png|image/jpeg|image/gif", "bytes":12345, "caption":"vg.no login page"}`
-  when the agent uploads a picture of what it is about to sign in to (a screenshot of the login page, or
-  a short animated GIF). The phone shows it in the notification.
+- `attachment` (optional): `{"type":"image/png|image/jpeg|image/gif", "bytes":12345, "caption":"vg.no login page",
+  "sha256":"<b64u>"}` when the agent uploads a picture of what it is about to sign in to (a screenshot of the
+  login page, or a short animated GIF). The phone shows it in the notification. `sha256` is b64u of
+  SHA-256 of the image bytes; the phone shows only a picture with that hash (agents made before
+  signatures send none).
+- `nonce` (only `pairing_check`): the agent's nonce, b64u of 32 bytes (see "Pairing and the check
+  number"). An answer to `pairing_check` carries the phone's `nonce`.
 - `kind: code` returns a one-time code; `login` returns user name, password and, when the login has a
   TOTP key (linked, or a code account with the same site and user name), a code. For 120 s after
   the user approves a login or code once, a `code` request from the same agent for that account is
@@ -1259,14 +1388,18 @@ the phone answers a request whose `v` it does not speak with `decision: denied`,
 "unsupported_version"`, and a request of a `kind` it does not know with `error: "unsupported_kind"`,
 without asking the user. The agent tells the user to update the app or the agent. (Apps before this
 change ignore such a request, and the agent sees `expired`.) Requests also carry
-`client.mcp_version`, the version of `nodkey`.
+`client.mcp_version`, the version of `nodkey`. Pairing with the commitment and signed messages kept
+`v: 1`; how old and new sides meet is in "Pairing and the check number" and "Signed requests and
+answers".
 
 ## Agent side
 
 - Keys and pairings: `~/.config/nodkey-agent/` (directory 0700, files 0600; `NODKEY_AGENT_DIR`
   overrides it). Each agent on the computer has its own identity and pairing under
   `agents/<profile>/`: `identity.json` (`agent_id`, name, and the private keys or where they are; see
-  the next item) and `phones.json` (paired phones: `phone_id`, public keys, name, check). Profiles: `claude-code`, `codex`, `cursor`,
+  the next item) and `phones.json` (paired phones: `phone_id`, public keys, name, check, and
+  `signs: true` when the phone's answers must be signed). While a pairing waits for the person's
+  confirmation, `pairing.json` holds it (the code and the phone, at most 10 minutes). Profiles: `claude-code`, `codex`, `cursor`,
   `claude-desktop`, `terminal` (the command line), or any name given with `--agent`. The phone shows
   each by its name ("Claude Code @ my-laptop", "Terminal @ my-laptop"), so the user can pause or remove
   one without the others and the history shows who asked. `config.json` in the top folder may set
@@ -1289,10 +1422,11 @@ change ignore such a request, and the agent sees `expired`.) Requests also carry
 - One binary `nodkey`. The MCP server is `nodkey mcp` (stdio); `nodkey setup` registers it as
   `nodkey mcp --agent <profile>` in each agent it finds. Without `--agent`, the profile follows the
   MCP client's `clientInfo.name`.
-- A tool result only reaches the model when the call ends, so pairing over MCP takes two calls:
+- A tool result only reaches the model when the call ends, so pairing over MCP takes three calls:
   `pair(name?)` returns the code to type on the phone (`K7P-2QX`) at once; `pair(code)` then waits up
-  to 5 minutes for the claim and returns the phone name and the check number, which the model shows
-  the user to compare. Other tools: `list_phones()`, `unpair(phone)` (calls the agent-side `DELETE`
+  to 5 minutes for the claim, runs the pairing check and returns the phone name and the check number,
+  which the model shows the user to compare; `pair(code, confirm)` saves the phone when the user says
+  the numbers are the same (`confirm: true`), or leaves and saves nothing (`confirm: false`). Other tools: `list_phones()`, `unpair(phone)` (calls the agent-side `DELETE`
   and forgets the phone), `request_code(target, reason, image_path?)`,
   `request_login(target, reason, image_path?)`, `request_credentials(items, reason, follow_up_seconds?,
   session_minutes?, image_path?)`, `end_session()`, `request_payment(merchant, amount, currency, reason, image_path?)` (`mode: reveal`;
@@ -1312,7 +1446,8 @@ change ignore such a request, and the agent sees `expired`.) Requests also carry
   `agents/<profile>/session.json`, so the MCP server, the command line and `nodkey webauthn` of one
   profile share it; `end_session()` and `nodkey end-session` end it.
 - The command line does the same in one process: `nodkey pair` shows the code and then the check
-  number; `nodkey code`, `login`, `credentials`, `pay`, `suggest`, `sms-code`, `run`, `secret save`,
+  number, and reads one line on stdin: `y` (or `yes`) when the iPhone shows the same number saves the
+  pairing; anything else, or no line, saves nothing (exit code 2); `nodkey code`, `login`, `credentials`, `pay`, `suggest`, `sms-code`, `run`, `secret save`,
   `accounts`, `insights`, `cleanup`, `phones`, `unpair`. `nodkey suggest SITE --kind KIND [--provider NAME] [--mailbox ADDR]
   [--outcome failed] --reason TEXT`; `nodkey sms-code TARGET --reason TEXT [--wait SECS]`. Exit codes:
   0 approved (or queued), 1 error, 2 denied (or rejected), 3 expired, 4 paused (`error: paused`),

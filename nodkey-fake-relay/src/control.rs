@@ -25,6 +25,12 @@
 //!   `projects` absent or empty for a global key).
 //! - `PUT /_fake/account` with `{"site", "sites", "match"}`: the account every code and login
 //!   answer names from now on (default, or after `null`: the request's own site, `match: direct`).
+//! - `PUT /_fake/pairing` with `{"old_app", "bad_nonce", "unsigned_answers"}` (each `false` when
+//!   absent): pair like an app made before the commitment, answer the pairing check with a nonce
+//!   that does not match the commitment, or send answers without a signature.
+//!
+//! The phone answers a `pairing_check` with its nonce (the first one of a pairing only), and drops
+//! a request without the agent's valid signature: it never answers it.
 
 use std::sync::Arc;
 
@@ -55,6 +61,15 @@ pub(crate) fn routes() -> Router<Shared> {
         .route("/_fake/quota", axum::routing::put(set_quota))
         .route("/_fake/secrets", get(secrets).put(set_secrets))
         .route("/_fake/account", axum::routing::put(set_account))
+        .route("/_fake/pairing", axum::routing::put(set_pairing))
+}
+
+async fn set_pairing(
+    State(fake): State<Shared>,
+    Json(mode): Json<crate::pairing::PairingMode>,
+) -> StatusCode {
+    fake.set_pairing(mode);
+    StatusCode::NO_CONTENT
 }
 
 async fn set_account(

@@ -116,16 +116,6 @@ pub enum Scope {
     All,
 }
 
-/// Pairing grant, phone → agent (`nodkey/v1/pairing`).
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
-pub struct PairingGrant {
-    pub v: u8,
-    pub phone_name: String,
-    pub scope: Scope,
-    /// Six digits without a space.
-    pub check: String,
-}
-
 /// Kind of a request.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "lowercase")]
@@ -168,6 +158,10 @@ pub enum Kind {
     /// Keep a key an agent made ([`crate::SaveSecret`]); never covered by a lease.
     #[serde(rename = "save_secret")]
     SaveSecret,
+    /// The agent's nonce for the check number of a new pairing ([`crate::pairing`]); the phone
+    /// answers at once with its own, without asking. Once per pairing.
+    #[serde(rename = "pairing_check")]
+    PairingCheck,
 }
 
 /// The login a `save` request asks the phone to keep.
@@ -290,6 +284,9 @@ pub struct AttachmentInfo {
     pub bytes: u64,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub caption: Option<String>,
+    /// b64u of SHA-256 of the image bytes; the phone shows only an image that matches.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub sha256: Option<String>,
 }
 
 /// Request, agent → phone (`nodkey/v1/request`).
@@ -343,6 +340,9 @@ pub struct Request {
     /// key, else the global one ([`crate::apikey::project`]).
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub project: Option<String>,
+    /// `pairing_check`: the agent's nonce (b64u, 32 bytes).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub nonce: Option<String>,
 }
 
 /// the user's decision.
@@ -508,6 +508,9 @@ pub struct Answer {
     /// `list`: the keys this agent may ask for (names only), when its scope allows keys.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub secrets: Option<Vec<crate::SecretEntry>>,
+    /// `pairing_check`: the phone's nonce (b64u, 32 bytes).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub nonce: Option<String>,
 }
 
 impl Answer {
@@ -543,6 +546,7 @@ impl Answer {
             quota: None,
             secret: None,
             secrets: None,
+            nonce: None,
         }
     }
 }
@@ -567,11 +571,6 @@ pub trait Versioned {
     fn version(&self) -> u8;
 }
 
-impl Versioned for PairingGrant {
-    fn version(&self) -> u8 {
-        self.v
-    }
-}
 impl Versioned for Request {
     fn version(&self) -> u8 {
         self.v

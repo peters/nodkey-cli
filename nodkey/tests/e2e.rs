@@ -115,19 +115,32 @@ impl Client {
         let code = start["code"].as_str().unwrap().to_owned();
         assert_eq!(code, "K7P-2QX");
         assert_eq!(start["agent_name"], "E2E agent");
-        let (done, err) = self.tool("pair", json!({"code": code.to_lowercase()}));
-        assert!(!err, "{done}");
+        let (check, err) = self.tool("pair", json!({"code": code.to_lowercase()}));
+        assert!(!err, "{check}");
         let identity: Value =
             serde_json::from_slice(&std::fs::read(self.agent_dir().join("identity.json")).unwrap())
                 .unwrap();
         let agent_id = identity["agent_id"].as_str().unwrap();
-        assert_eq!(done["check"], fake.check_for(agent_id));
-        assert_eq!(done["phone"], fake_relay::PHONE_NAME);
-        assert_eq!(done["phone_id"], fake.phone_id.as_str());
+        assert_eq!(check["check"], fake.check_for(agent_id));
+        assert_eq!(check["confirmed"], false);
+        assert_eq!(check["phone"], fake_relay::PHONE_NAME);
+        assert_eq!(check["phone_id"], fake.phone_id.as_str());
+        assert!(check["next"].as_str().unwrap().contains("confirm: true"));
         assert!(
             fake.lookups() >= 1,
             "the phone looks up the agent's keys before it claims"
         );
+        // Nothing is saved before the user says the numbers are the same.
+        assert!(!self.agent_dir().join("phones.json").exists());
+        let (e, err) = self.tool(
+            "request_code",
+            json!({"target": "github.com", "reason": "Merge PR #42"}),
+        );
+        assert!(err, "{e}");
+        let (done, err) = self.tool("pair", json!({"code": code, "confirm": true}));
+        assert!(!err, "{done}");
+        assert_eq!(done["paired"], true);
+        assert_eq!(done["check"], check["check"]);
         done
     }
 }
@@ -198,9 +211,10 @@ fn pair_request_answer_with_attachment() {
     assert!(r["message"].as_str().unwrap().contains("cleanup_logins"));
     assert!(r.get("accounts").is_none());
 
-    // What the phone saw.
+    // What the phone saw, each request signed by the agent.
     let seen = fake.seen();
     assert_eq!(seen.len(), 4);
+    assert!(seen.iter().all(|s| s.signed));
     assert_eq!(seen[3].request.kind, nodkey_proto::Kind::Insights);
     assert_eq!(seen[0].request.kind, nodkey_proto::Kind::Code);
     assert_eq!(seen[0].request.target, "github.com/alex");
@@ -587,4 +601,25 @@ fn request_credentials_answers_item_by_item() {
             .collect::<Vec<_>>(),
         ["1", "2", "3"]
     );
+}
+
+#[test]
+fn pair_saves_nothing_when_the_user_says_the_numbers_differ() {
+    let (fake, addr) = fake_relay::start(1);
+    let mut c = Client::start(addr, &[]);
+    let (start, err) = c.tool("pair", json!({}));
+    assert!(!err, "{start}");
+    let (e, err) = c.tool("pair", json!({"confirm": true}));
+    assert!(err && e["error"].as_str().unwrap().contains("code"), "{e}");
+    let (check, err) = c.tool("pair", json!({"code": start["code"]}));
+    assert!(!err, "{check}");
+    let (done, err) = c.tool("pair", json!({"code": start["code"], "confirm": false}));
+    assert!(!err, "{done}");
+    assert_eq!(done["paired"], false);
+    assert!(done["next"].as_str().unwrap().contains("cancel"), "{done}");
+    assert!(!c.agent_dir().join("phones.json").exists());
+    assert_eq!(fake.left().len(), 1);
+    // The confirmation is used up.
+    let (e, err) = c.tool("pair", json!({"code": start["code"], "confirm": true}));
+    assert!(err, "{e}");
 }

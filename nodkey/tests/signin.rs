@@ -3,6 +3,8 @@
 //! order; `nodkey suggest` and the `suggest_sign_in_method` tool queue a suggestion (and the phone
 //! rejects too many); `nodkey sms-code` and `request_sms_code` wait for an SMS the test delivers.
 
+mod common;
+
 use nodkey_fake_relay as fake_relay;
 
 use std::{
@@ -44,7 +46,7 @@ impl Cli {
     }
 
     fn run(&self, args: &[&str]) -> Output {
-        self.command(args).output().expect("run nodkey")
+        common::output(&mut self.command(args), args)
     }
 
     fn json(&self, args: &[&str]) -> (Value, i32) {

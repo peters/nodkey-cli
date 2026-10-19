@@ -36,6 +36,7 @@ mod bundle;
 mod card;
 mod ctx;
 mod matching;
+mod pairing;
 pub mod passkey;
 pub mod prf;
 mod project;
@@ -131,6 +132,7 @@ fn request(
         wait_seconds: None,
         save_secret: None,
         project: None,
+        nonce: None,
     }
 }
 
@@ -152,7 +154,8 @@ pub fn build() -> Value {
         v: VERSION,
         phone_name: "Test iPhone".into(),
         scope: Scope::Selected,
-        check: check::digits(check_n),
+        check: Some(check::digits(check_n)),
+        commit: None,
     };
     ctx.seal(
         "pairing_grant",
@@ -184,6 +187,7 @@ pub fn build() -> Value {
             kind: ImageType::Png,
             bytes: PNG.len() as u64,
             caption: Some("vg.no login page".into()),
+            sha256: None,
         }),
     );
     let r_list = request(
@@ -357,6 +361,7 @@ pub fn build() -> Value {
     let prf = prf::add(&mut ctx, &agent, &phone); // After the agent limit, for the same reason.
     let secrets = secret::add(&mut ctx, &agent, &phone); // After PRF, for the same reason.
     let key_projects = project::add(&mut ctx, &agent, &phone); // After the keys, likewise.
+    let (pairing, signed) = pairing::add(&mut ctx, &agent, &phone); // After projects, likewise.
     let sites = sites::add(); // No HPKE: earlier bytes stay the same.
 
     // Signed relay calls.
@@ -548,5 +553,7 @@ pub fn build() -> Value {
         "secrets": secrets,
         "key_projects": key_projects,
         "sites": sites,
+        "pairing": pairing,
+        "signed": signed,
     })
 }

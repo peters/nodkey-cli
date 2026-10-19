@@ -2,6 +2,8 @@
 //! approved once covers later codes and logins for its items, even when the user would deny; a code
 //! about to run out is replaced by the next one; `end-session` and an ended session both stop it.
 
+mod common;
+
 use nodkey_fake_relay as fake_relay;
 
 use std::{
@@ -26,16 +28,17 @@ impl Cli {
     }
 
     fn run(&self, args: &[&str]) -> Output {
-        Command::new(env!("CARGO_BIN_EXE_nodkey"))
-            .args(args)
-            .env("NODKEY_AGENT_DIR", &self.dir)
-            .env("NODKEY_KEYSTORE", "file")
-            .env("NODKEY_RELAY", format!("http://{}", self.relay))
-            .env("NODKEY_REQUEST_TIMEOUT", "3")
-            .env_remove("NODKEY_AGENT")
-            .env("TMPDIR", env!("CARGO_TARGET_TMPDIR"))
-            .output()
-            .expect("run nodkey")
+        common::output(
+            Command::new(env!("CARGO_BIN_EXE_nodkey"))
+                .args(args)
+                .env("NODKEY_AGENT_DIR", &self.dir)
+                .env("NODKEY_KEYSTORE", "file")
+                .env("NODKEY_RELAY", format!("http://{}", self.relay))
+                .env("NODKEY_REQUEST_TIMEOUT", "3")
+                .env_remove("NODKEY_AGENT")
+                .env("TMPDIR", env!("CARGO_TARGET_TMPDIR")),
+            args,
+        )
     }
 
     fn json(&self, args: &[&str]) -> (Value, i32) {

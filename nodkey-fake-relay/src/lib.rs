@@ -11,7 +11,7 @@
 mod bundle;
 pub mod cards;
 pub mod control;
-mod pairing;
+pub mod pairing;
 pub mod passkeys;
 mod phone;
 pub mod quota;
@@ -37,9 +37,9 @@ use axum::{
     routing::{get, post, put},
 };
 use nodkey_proto::{
-    AgentInfo, Answer, CleanupFilter, Decision, KeyPair, Kind, PairingClaimed, PairingCode,
-    PairingGrant, PublicKeys, Purpose, Request, RequestEnvelope, Scope, aad, auth, b64u, check,
-    parse_plaintext, seal,
+    AgentInfo, Answer, CleanupFilter, Decision, KeyPair, Kind, PairingClaimed, PublicKeys, Purpose,
+    Request, RequestEnvelope, aad, auth, b64u, parse_plaintext, seal,
+    signed::{self, Direction},
 };
 use serde::Deserialize;
 use serde_json::json;
@@ -75,6 +75,9 @@ pub struct Seen {
     pub saved_card: Option<String>,
     /// The key of a `save_secret` request, opened likewise (test values only).
     pub saved_secret: Option<String>,
+    /// Whether the request carried the agent's valid signature. The phone drops one that did
+    /// not: it never answers it.
+    pub signed: bool,
 }
 
 struct Pairing {
@@ -117,6 +120,8 @@ pub struct Fake {
     pub secrets: Mutex<Vec<secrets::FakeKey>>,
     /// The account every code and login answer names, when a test set one.
     pub account: Mutex<Option<phone::FakeAccount>>,
+    /// How the phone pairs and signs, and each agent's pairing nonces.
+    pub pairing: Mutex<pairing::FakePairing>,
     /// Where this relay listens; the phone calls it for the pairing lookup.
     addr: std::sync::OnceLock<SocketAddr>,
     inner: Mutex<Inner>,
@@ -147,7 +152,7 @@ impl Fake {
         self.inner.lock().unwrap().left.clone()
     }
 
-    /// Requests in arrival order.
+    /// Requests in arrival order (without pairing checks).
     pub fn seen(&self) -> Vec<Seen> {
         let inner = self.inner.lock().unwrap();
         inner
@@ -164,11 +169,13 @@ impl Fake {
 
     /// The check number the phone shows for `agent_id`.
     pub fn check_for(&self, agent_id: &str) -> String {
-        let inner = self.inner.lock().unwrap();
-        check::display(check::check_number(
-            &inner.agents[agent_id],
-            &self.phone.public(),
-        ))
+        let agent = self.inner.lock().unwrap().agents[agent_id];
+        pairing::check_for(self, agent_id, &agent)
+    }
+
+    /// How the phone pairs and signs from now on.
+    pub fn set_pairing(&self, mode: pairing::PairingMode) {
+        self.pairing.lock().unwrap().mode = mode;
     }
 }
 
@@ -223,44 +230,6 @@ struct Wait {
     wait: Option<u64>,
 }
 
-async fn start_pairing(
-    State(fake): State<Shared>,
-    method: Method,
-    uri: Uri,
-    headers: HeaderMap,
-    body: Bytes,
-) -> Response {
-    let Ok(info) = serde_json::from_slice::<AgentInfo>(&body) else {
-        return fail(StatusCode::BAD_REQUEST, "bad_request");
-    };
-    let Ok(keys) = PublicKeys::from_b64u(&info.sign, &info.kem) else {
-        return fail(StatusCode::BAD_REQUEST, "bad_request");
-    };
-    match verify(&headers, &keys, &method, &uri, &body) {
-        Ok(id) if id == info.agent_id => {}
-        Ok(_) => return fail(StatusCode::UNAUTHORIZED, "bad_signature"),
-        Err(r) => return r,
-    }
-    let code = "K7P2QX".to_owned();
-    let mut inner = fake.inner.lock().unwrap();
-    inner.pairings.insert(
-        code.clone(),
-        Pairing {
-            agent: info,
-            polls: 0,
-            claimed: None,
-        },
-    );
-    (
-        StatusCode::CREATED,
-        Json(PairingCode {
-            code,
-            expires: nodkey_proto::unix_now() + 300,
-        }),
-    )
-        .into_response()
-}
-
 async fn agent_leaves(
     State(fake): State<Shared>,
     Path((agent_id, phone_id)): Path<(String, String)>,
@@ -285,71 +254,6 @@ async fn agent_leaves(
     inner.agents.remove(&agent_id);
     inner.left.push(agent_id);
     StatusCode::NO_CONTENT.into_response()
-}
-
-async fn wait_pairing(
-    State(fake): State<Shared>,
-    Path(code): Path<String>,
-    method: Method,
-    uri: Uri,
-    headers: HeaderMap,
-) -> Response {
-    let agent = {
-        let inner = fake.inner.lock().unwrap();
-        match inner.pairings.get(&code) {
-            Some(p) => p.agent.clone(),
-            None => return fail(StatusCode::NOT_FOUND, "not_found"),
-        }
-    };
-    let keys = PublicKeys::from_b64u(&agent.sign, &agent.kem).unwrap();
-    if let Err(r) = verify(&headers, &keys, &method, &uri, b"") {
-        return r;
-    }
-    let claim_now = {
-        let mut inner = fake.inner.lock().unwrap();
-        let p = inner.pairings.get_mut(&code).unwrap();
-        p.polls += 1;
-        p.claimed.is_none() && p.polls >= fake.claim_on_poll
-    };
-    if claim_now {
-        // The phone claims the way Nodkey does: it looks up the waiting agent's keys with a signed
-        // GET /v1/pairings/{code}/agent and seals the grant (with the check number) to those.
-        let keys = match pairing::phone_looks_up(&fake, &code).await {
-            Ok(k) => k,
-            Err(status) => return fail(status, "phone lookup failed"),
-        };
-        let mut inner = fake.inner.lock().unwrap();
-        let p = inner.pairings.get_mut(&code).unwrap();
-        let phone_pub = fake.phone.public();
-        let grant = PairingGrant {
-            v: 1,
-            phone_name: PHONE_NAME.into(),
-            scope: Scope::Selected,
-            check: check::digits(check::check_number(&keys, &phone_pub)),
-        };
-        let sealed = Purpose::Pairing
-            .seal(
-                &keys.kem,
-                &aad(&code, &fake.phone_id),
-                &serde_json::to_vec(&grant).unwrap(),
-            )
-            .unwrap();
-        p.claimed = Some(PairingClaimed {
-            phone_id: fake.phone_id.clone(),
-            sign: phone_pub.sign_b64u(),
-            kem: phone_pub.kem_b64u(),
-            enc: b64u::encode(&sealed.enc),
-            ct: b64u::encode(&sealed.ct),
-        });
-        let agent_id = p.agent.agent_id.clone();
-        inner.agents.insert(agent_id, keys);
-    }
-    let inner = fake.inner.lock().unwrap();
-    let p = &inner.pairings[&code];
-    match &p.claimed {
-        Some(c) => Json(c.clone()).into_response(),
-        None => StatusCode::NO_CONTENT.into_response(),
-    }
 }
 
 async fn post_request(
@@ -381,6 +285,15 @@ async fn post_request(
             &b64u::decode(&env.ct).unwrap(),
         )
         .expect("request opens with the phone key");
+    let opened = signed::open(
+        Direction::Request,
+        &agent_id,
+        &fake.phone_id,
+        &plain,
+        &key.sign,
+        true,
+    );
+    let signed = opened.is_ok();
     let request: Request = parse_plaintext(&plain).unwrap();
     assert_eq!(request.request_id, env.request_id);
     let saved_password = request.save.as_ref().map(|s| {
@@ -392,7 +305,10 @@ async fn post_request(
     let saved_card = cards::saved_number(&fake, &request, &agent_id);
     let saved_secret = secrets::saved_value(&fake, &request, &agent_id);
     let mut inner = fake.inner.lock().unwrap();
-    inner.order.push(env.request_id.clone());
+    // A pairing check belongs to the pairing; `seen` lists the requests after it.
+    if request.kind != Kind::PairingCheck {
+        inner.order.push(env.request_id.clone());
+    }
     inner.requests.insert(
         env.request_id,
         Seen {
@@ -403,6 +319,7 @@ async fn post_request(
             saved_password,
             saved_card,
             saved_secret,
+            signed,
         },
     );
     StatusCode::ACCEPTED.into_response()
@@ -435,7 +352,15 @@ async fn put_attachment(
     }
     let image = seal::open_attachment_body(fake.phone.kem_secret(), &aad(&rid, &agent_id), &body)
         .expect("attachment opens with the phone key");
-    seen.attachment = Some(image.to_vec());
+    // The phone shows only the picture the signed request names by its hash.
+    let hash = seen
+        .request
+        .attachment
+        .as_ref()
+        .and_then(|a| a.sha256.clone());
+    if hash.is_none_or(|h| h == nodkey_proto::client::image_sha256(&image)) {
+        seen.attachment = Some(image.to_vec());
+    }
     StatusCode::NO_CONTENT.into_response()
 }
 
@@ -454,15 +379,24 @@ async fn wait_answer(
     if let Err(r) = verify(&headers, &key, &method, &uri, b"") {
         return r;
     }
-    let mut request = {
+    let (mut request, signed) = {
         let inner = fake.inner.lock().unwrap();
         match inner.requests.get(&rid) {
-            Some(s) if s.agent_id == agent_id => s.request.clone(),
+            Some(s) if s.agent_id == agent_id => (s.request.clone(), s.signed),
             Some(_) => return fail(StatusCode::FORBIDDEN, "not_paired"),
             None => return fail(StatusCode::NOT_FOUND, "not_found"),
         }
     };
     let mode = *fake.mode.lock().unwrap();
+    if !signed {
+        // The phone dropped it.
+        tokio::time::sleep(Duration::from_secs(q.wait.unwrap_or(1).min(60))).await;
+        return StatusCode::NO_CONTENT.into_response();
+    }
+    if request.kind == Kind::PairingCheck {
+        let answer = pairing::answer_check(&fake, &agent_id, &rid, &request);
+        return seal_answer(&fake, &agent_id, &rid, &answer);
+    }
     if let Some(refused) = quota::refuse(&fake, &rid, &request) {
         return seal_answer(&fake, &agent_id, &rid, &refused);
     }
@@ -518,12 +452,13 @@ async fn wait_answer(
 
 fn seal_answer(fake: &Shared, agent_id: &str, rid: &str, answer: &Answer) -> Response {
     let agent_kem = fake.inner.lock().unwrap().agents[agent_id].kem;
+    let mut plain = serde_json::to_vec(answer).unwrap();
+    if !fake.pairing.lock().unwrap().mode.unsigned_answers {
+        let key = fake.phone.signing_key();
+        plain = signed::sign(Direction::Answer, agent_id, &fake.phone_id, &plain, &key).unwrap();
+    }
     let sealed = Purpose::Answer
-        .seal(
-            &agent_kem,
-            &aad(rid, &fake.phone_id),
-            &serde_json::to_vec(answer).unwrap(),
-        )
+        .seal(&agent_kem, &aad(rid, &fake.phone_id), &plain)
         .unwrap();
     Json(sealed.to_box()).into_response()
 }
@@ -548,16 +483,17 @@ pub fn start_on(bind: &str, claim_on_poll: u32) -> (Shared, SocketAddr) {
         quota: Mutex::new(quota::FakeQuota::default()),
         secrets: Mutex::new(secrets::test_keys()),
         account: Mutex::new(None),
+        pairing: Mutex::new(pairing::FakePairing::default()),
         addr: std::sync::OnceLock::new(),
         inner: Mutex::new(Inner::default()),
     });
     let app = Router::new()
-        .route("/v1/pairings", post(start_pairing))
+        .route("/v1/pairings", post(pairing::start_pairing))
         .route(
             "/v1/agents/{agent_id}/phones/{phone_id}",
             axum::routing::delete(agent_leaves),
         )
-        .route("/v1/pairings/{code}", get(wait_pairing))
+        .route("/v1/pairings/{code}", get(pairing::wait_pairing))
         .route("/v1/pairings/{code}/agent", get(pairing::pairing_agent))
         .route("/v1/phones/{phone_id}/requests", post(post_request))
         .route("/v1/requests/{rid}/attachment", put(put_attachment))
