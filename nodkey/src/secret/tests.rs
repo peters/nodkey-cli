@@ -30,6 +30,28 @@ fn targets_from_names() {
 }
 
 #[test]
+fn projects_from_names() {
+    assert_eq!(project(None).unwrap(), None);
+    assert_eq!(project(Some(" ")).unwrap(), None);
+    assert_eq!(project(Some("Global")).unwrap(), None);
+    assert_eq!(
+        project(Some(" sparrow ")).unwrap().as_deref(),
+        Some("sparrow")
+    );
+    assert!(project(Some("a/b")).unwrap_err().contains("not a project"));
+    assert_eq!(
+        projects(["Sparrow", "otter", "sparrow", "global", ""]).unwrap(),
+        ["Sparrow", "otter"]
+    );
+    let many: Vec<String> = (0..11).map(|i| format!("P{i}")).collect();
+    assert!(projects(many.iter().map(String::as_str)).is_err());
+    assert_eq!(string_list(None).unwrap(), Vec::<String>::new());
+    assert_eq!(string_list(Some(&json!(["Sparrow"]))).unwrap(), ["Sparrow"]);
+    assert!(string_list(Some(&json!("Sparrow"))).is_err());
+    assert!(string_list(Some(&json!([1]))).is_err());
+}
+
+#[test]
 fn expiry_dates() {
     assert_eq!(expires(None).unwrap(), None);
     assert_eq!(
@@ -51,6 +73,8 @@ fn key() -> SecretAnswer {
         variable: Some("OPENAI_API_KEY".into()),
         value: Some(Secret::new("sk-test-0000")),
         expires: None,
+        from: None,
+        project: None,
     }
 }
 
@@ -64,6 +88,19 @@ fn results() {
     assert!(
         m.contains("nodkey run --secret") && m.contains("never in a file"),
         "{m}"
+    );
+    a.secret = Some(SecretAnswer {
+        from: Some(KeyFrom::Project),
+        project: Some("Sparrow".into()),
+        ..key()
+    });
+    let v: Value = serde_json::from_str(&text(&outcome(&a, "OPENAI_API_KEY", "P"))).unwrap();
+    assert_eq!(v["secret"]["from"], "project");
+    assert!(
+        v["message"]
+            .as_str()
+            .unwrap()
+            .contains("the key of the project Sparrow")
     );
 
     for (error, want) in [

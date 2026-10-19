@@ -45,8 +45,8 @@ for, with the exact amount, and never split a purchase to get under their limit.
 user signs in (method) and carry the provider login (via): fill via only on the provider's own pages. When a result \
 carries quota_warning (the phone showed a notice about many new logins) or paused, tell the user why, do not retry in \
 a loop, and ask for fewer items. API keys: never paste one into a chat or a file; run the command that needs it with \
-`nodkey run --secret NAME -- <command>`, and save a key you made at once with save_secret. If no phone is paired, use \
-the pair tool first.";
+`nodkey run --secret NAME -- <command>` (or `nodkey run -- <command>` where a .nodkey file lists the keys), and save a \
+key you made at once with save_secret. If no phone is paired, use the pair tool first.";
 
 /// Shared server state.
 pub struct Server {

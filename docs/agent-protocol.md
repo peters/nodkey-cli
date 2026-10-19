@@ -142,6 +142,8 @@ Request (agent → phone):
   The agent cannot reverse it, and two agents get different ids for the same site. A clean-up
   `filter` may carry `group`; the phone resolves it to `domain` or `username` (refusing at once with
   `error: "unknown_group"` when it matches nothing) and shows the user the real filter before anything moves.
+- `project` (optional): the project a `secret` request or a bundle's `secret` items ask in (see
+  "Keys by project").
 - `client` (optional, every field optional) says who is asking, for the phone's history:
   `{"app":"Claude Code", "app_version":"2.4.1", "model":"claude-opus-5-5", "effort":"high",
   "os":"linux 7.0.0 x86_64", "host":"dev-laptop", "workdir":"nodkey", "mcp_version":"0.1.0"}`.
@@ -679,8 +681,9 @@ section. Test card numbers only.
 
 Nodkey keeps API keys and other secrets ("keys"), so a user does not paste a key into a chat or
 keep it in a plain `.env` file. A key has a title, a service (a host, `openai.com`), an environment
-variable name (`OPENAI_API_KEY`), the value, notes and an optional expiry date. The value stays in
-the phone's keychain. `nodkey_proto::apikey` implements this section.
+variable name (`OPENAI_API_KEY`), the value, notes, an optional expiry date and a list of projects
+(empty: a global key; see "Keys by project"). The value stays in the phone's keychain.
+`nodkey_proto::apikey` implements this section.
 
 ### Asking for a key
 
@@ -691,8 +694,11 @@ the phone's keychain. `nodkey_proto::apikey` implements this section.
 | `openai.com` | a service: the key's service is this host, or one is a subdomain of the other (`api.openai.com`) |
 | `OPENAI_API_KEY` | a variable name: letters, digits and `_`, not a digit first, at most 100 characters; compared without regard to case |
 | `openai.com/OPENAI_API_KEY` | both must match |
+| `sparrow/OPENAI_API_KEY` | the variable name in the project `sparrow` (see "Keys by project") |
+| `global/OPENAI_API_KEY` | the variable name among the global keys only |
 
-A target with a dot and no slash is a service. A service is in the form of
+A target with a dot and no slash is a service. Before a slash, a part with a dot (or `localhost`)
+is a service, `global` (in any case) means the global keys, and anything else is a project name. A service is in the form of
 `nodkey_proto::signin::site` (lower case, no scheme, port, path or `www.`); the agent tools tidy
 it before they send. The phone checks the target too and refuses a bad one at once with
 `bad_secret_request`.
@@ -713,7 +719,8 @@ user answered, so an agent cannot probe for keys). An approved answer carries th
            "value":"sk-test-0000", "expires":1799396000}}
 ```
 
-`service`, `variable` and `expires` are absent when the key has none.
+`service`, `variable` and `expires` are absent when the key has none. `from` and `project` say
+which key the phone gave (see "Keys by project").
 
 Rules on the phone:
 
@@ -755,13 +762,15 @@ service):
 
 `value` is sealed to the phone **on its own** with HPKE (`info` = `nodkey/v1/secret`, `aad` =
 `agent_id`), like the password of a `save` request. `variable` is required; `service`, `title`
-(at most 100 characters), `notes` (at most 500) and `expires` are optional. The agent tools send a
+(at most 100 characters), `notes` (at most 500), `expires` and `projects` (see "Keys by project")
+are optional. The agent tools send a
 value of at most 1500 bytes (`MAX_SAVE_VALUE`), so the request fits the relay; a longer key is
 added in the app.
 
-The phone shows the title, the service and the variable name (never the value) and asks the user
-to save it with Face ID. A key with the same service and variable name (the name compared without
-regard to case; no service matches no service) gets the new value; otherwise the phone adds a key.
+The phone shows the title, the service, the variable name and the projects (never the value) and
+asks the user to save it with Face ID. A key with the same service, variable name and projects (the
+name compared without regard to case; no service matches no service; projects as in "Keys by
+project") gets the new value; otherwise the phone adds a key.
 A save is **never covered by a lease** and is never part of a bundle or a task session. It does
 not count against the agent limit. Every scope may save a key. The answer carries `saved`:
 `added`, `updated` or `unchanged`, or a refusal (`bad_secret_request`, `paused`,
@@ -773,20 +782,114 @@ A `list` answer carries `secrets`, the names of the keys the agent may ask for (
 when its scope allows keys:
 
 ```json
-"secrets":[{"title":"OpenAI", "service":"openai.com", "variable":"OPENAI_API_KEY"}]
+"secrets":[{"title":"OpenAI", "service":"openai.com", "variable":"OPENAI_API_KEY"},
+           {"title":"OpenAI (Sparrow)", "variable":"OPENAI_API_KEY", "projects":["Sparrow"]}]
 ```
+
+`projects` is absent for a global key.
+
+### Keys by project
+
+A key has a list of projects ("Sparrow", "Otter", "Heron"). An empty list makes it **global**: every
+project, and every request that names no project, may use it. One project: only that project. Several:
+shared by those projects. The same variable name may be on one key per project and on one global key.
+`nodkey_proto::apikey::project` implements this part.
+
+A project name is 1 to 40 characters (`MAX_PROJECT`) without spaces at either end, without `/`,
+`,` or a control character, and is not `global` in any case. Two names are the same project when
+they are equal without regard to case (Unicode lower case: `sparrow` is the app's "Sparrow"). A key
+belongs to at most 10 projects (`MAX_PROJECTS`). In iCloud the app keeps the list as one string,
+the names joined by line breaks.
+
+A `secret` request (and a bundle with `secret` items) may name the project it asks in:
+
+```json
+{"v":1, "request_id":"…", "kind":"secret", "target":"OPENAI_API_KEY",
+ "reason":"Run the tests that call the OpenAI API", "agent":"Claude Code @ my-laptop", "ts":1791620000,
+ "project":"sparrow"}
+```
+
+`project` is allowed only on a `secret` request and on a bundle with at least one `secret` item (it
+applies to all of them); both sides refuse it elsewhere, and the phone refuses a bad name with
+`bad_secret_request`. A target's own `project/NAME` wins over the request's `project`, and
+`global/NAME` asks for the global key whatever the request's `project` says.
+
+**The lookup** (the phone, the same everywhere, `apikey::lookup`):
+
+1. The keys of the asked project (the target's, else the request's) that match the target.
+2. Else the global keys that match the target.
+3. Else no key matches: the phone still asks, and the user can pick a key by hand, add one, or
+   answer `no_secret`.
+
+When several keys match in one step, the user picks one. The approval names the source:
+"OPENAI_API_KEY from Sparrow" or "OPENAI_API_KEY (global)"; a bundle in a project reads "Claude Code
+wants 3 keys from Sparrow". Every key still needs Face ID, is never covered by a lease, counts
+against the agent limit and may be in a task plan (a plan item in a project covers later requests
+in the session that the lookup answers with the same key).
+
+The key in an answer says where it came from:
+
+```json
+{"v":1, "request_id":"…", "decision":"approved", "lease":{"kind":"once"},
+ "secret":{"title":"OpenAI (Sparrow)", "variable":"OPENAI_API_KEY", "value":"sk-test-sparrow-0000",
+           "from":"project", "project":"Sparrow"}}
+```
+
+`from` is `project` (a key of the asked project; `project` is its name as the user wrote it),
+`global` (a global key) or `chosen` (nothing matched and the user picked this key by hand). Apps
+before projects send neither.
+
+A `save_secret` carries `projects` (absent or empty: a global key); a save updates the key with the
+same service, variable name and projects (the same names in any order and case), else adds one
+(`apikey::saved_key`):
+
+```json
+"save_secret":{"variable":"OPENAI_API_KEY", "service":"openai.com", "title":"OpenAI for Sparrow",
+               "projects":["Sparrow"], "value":{"enc":"…", "ct":"…"}}
+```
+
+**The `.nodkey` file.** A repository says which keys its commands need in a `.nodkey` file at its
+root, by name only, so it is safe to commit (also in a public repository):
+
+```toml
+project = "sparrow"
+secrets = ["OPENAI_API_KEY", "ANTHROPIC_API_KEY", "global/GITHUB_TOKEN"]
+```
+
+`nodkey` reads a small part of TOML: comments, `project` as a string and `secrets` as a list of
+strings (`NAME`, `global/NAME` or `project/NAME`; never a value or a service, and every variable
+name once). Other keys and tables are refused. `nodkey run -- <command>` in that folder or below it
+reads the nearest file and asks for all its keys in one request (one bundle with `project`, or one
+`secret` request for a single key).
+
+Vectors: `request_secret_project`, `answer_secret_project`, `answer_secret_project_global`,
+`answer_secret_project_chosen`, `request_secret_global`, `answer_secret_global`,
+`request_secret_project_target`, `request_bundle_project`, `answer_bundle_project`,
+`request_bundle_project_session`, `answer_bundle_project_session`, `save_secret_projects_value`,
+`request_save_secret_projects`, `answer_save_secret_projects`, `answer_list_with_key_projects`, and
+the `key_projects` section: project names (`names`), the same project (`same`), targets with a
+project or `global` (`targets`), a set of `keys`, which keys the lookup finds for a target and a
+request's project (`lookups`: `from` and the indexes, `null` and `[]` when nothing matches) and
+which key a save updates (`saves`: an index, or `null` for a new key). Test values only.
 
 ### The agent side
 
-- `nodkey run --secret NAME[=SERVICE] [--secret ...] --reason TEXT -- <command> [args]` asks for
-  the keys, puts each value only into the environment of the command as `NAME`, and never prints a
-  value. One key is one `secret` request; several keys are one bundle (or, while a task session
-  runs, one `secret` request each, which the session may cover). The command runs only when the
-  phone gave every key. **This is the preferred way:** the model never sees the value.
-- `nodkey secret save NAME [--service HOST] [--title TEXT] [--notes TEXT] [--expires DATE]
-  --reason TEXT` reads the value from stdin, never from the arguments.
-- The MCP tool `request_secret` returns the value, with a message to prefer `nodkey run`;
-  `save_secret` saves a key; `list_accounts` shows the key names.
+- `nodkey run [--secret NAME[=SERVICE]]... [--project NAME] [--reason TEXT] -- <command> [args]`
+  asks for the keys of the nearest `.nodkey` file (in its project) and the `--secret` ones (which
+  add to the file's, or replace one with the same name; `global/NAME` and `project/NAME` work too),
+  puts each value only into the environment of the command as `NAME`, and never prints a value.
+  `--project NAME` asks in another project; `--project global` asks for global keys only. The reason
+  defaults to `Run <command>`. One key is one `secret` request; several keys are one bundle (or,
+  while a task session runs, one `secret` request each, which the session may cover). The command
+  runs only when the phone gave every key; stderr says where each came from ("OPENAI_API_KEY from
+  Sparrow, GITHUB_TOKEN (global)"). **This is the preferred way:** the model never sees the value.
+- `nodkey secret save NAME [--service HOST] [--project NAMES] [--title TEXT] [--notes TEXT]
+  [--expires DATE] --reason TEXT` reads the value from stdin, never from the arguments. `--project`
+  takes names separated by commas (`global`: a global key); without it, the project of the nearest
+  `.nodkey` file, if any.
+- The MCP tool `request_secret` (with an optional `project`) returns the value, with a message to
+  prefer `nodkey run`; `save_secret` (with optional `projects`) saves a key; `list_accounts` shows
+  the key names and their projects.
 - An agent never pastes a key into a chat, a file, a commit or a log, and saves a key it made at
   once with `save_secret`.
 
@@ -1112,9 +1215,9 @@ change ignore such a request, and the agent sees `expired`.) Requests also carry
   error, so a typo cannot widen the filter), `suggest_sign_in_method(target, kind, provider?, mailbox?,
   outcome, reason)` (`provider` is a known name or the provider's own; a `signed_in` suggestion
   goes as `seen`, a `failed` one without `certainty`), `request_sms_code(target, reason,
-  wait_seconds?)`, `request_secret(variable?, service?, reason, image_path?)` and
-  `save_secret(variable, service?, value, title?, notes?, expires?, reason)` (see "API keys and
-  secrets"). A `request_login` result shows `via` with `fill_only_on` (`via_sites`), and its
+  wait_seconds?)`, `request_secret(variable?, service?, project?, reason, image_path?)` and
+  `save_secret(variable, service?, value, title?, notes?, expires?, projects?, reason)` (see "API
+  keys and secrets"). A `request_login` result shows `via` with `fill_only_on` (`via_sites`), and its
   message says what to do with `method`, `via` and `second_step`. `image_path` is an optional PNG/JPEG/GIF file (for example
   a browser screenshot) sent as the attachment. Results go to the model; the server keeps no secret.
   A running task session (its id, end, phone and the approved items, never a secret) is kept in

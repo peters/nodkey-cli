@@ -21,8 +21,9 @@ pub(crate) const EXPIRED: u8 = 3;
 pub(crate) const PAUSED: u8 = 4;
 const BAD_ARGS: u8 = 64;
 
-const VALUE_FLAGS: [&str; 27] = [
+const VALUE_FLAGS: [&str; 28] = [
     "service",
+    "project",
     "title",
     "notes",
     "expires",
@@ -148,7 +149,7 @@ pub fn main(raw: Vec<String>) -> ExitCode {
     let help = before_command.iter().any(|a| a == "-h" || a == "--help");
     match command.as_str() {
         "run" if !help => return crate::run::main(rest),
-        "secret" if !help => return crate::run::secret_main(rest),
+        "secret" if !help => return crate::secret::save::main(rest),
         _ => {}
     }
     if rest.iter().any(|a| a == "-h" || a == "--help") {

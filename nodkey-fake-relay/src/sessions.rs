@@ -66,8 +66,10 @@ fn covers(item: &(Kind, String), request: &Request) -> bool {
     let wanted = site(&request.target);
     match (request.kind, item.0) {
         (Kind::Code, Kind::Code | Kind::Login) | (Kind::Login, Kind::Login) => item.1 == wanted,
-        // A key is covered by a key item with the same target.
-        (Kind::Secret, Kind::Secret) => item.1 == request.target.trim().to_ascii_lowercase(),
+        // A key is covered by a key item with the same target in the same project.
+        (Kind::Secret, Kind::Secret) => {
+            item.1 == crate::secrets::cover(&request.target, request.project.as_deref())
+        }
         // A get with PRF inputs is never covered: Face ID every time.
         (Kind::Passkey, Kind::Passkey) => {
             request
@@ -139,7 +141,8 @@ pub fn after(fake: &Fake, agent_id: &str, request: &Request, answer: &mut Answer
             }
             if asked.kind == Kind::Secret {
                 // A key in a plan: no value and no lease; later key requests go through.
-                approved.push((asked.kind, asked.target.trim().to_ascii_lowercase()));
+                let project = request.project.as_deref();
+                approved.push((asked.kind, crate::secrets::cover(&asked.target, project)));
                 item.lease = None;
                 if let Some(key) = item.secret.as_mut() {
                     key.value = None;

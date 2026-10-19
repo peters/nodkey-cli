@@ -339,6 +339,10 @@ pub struct Request {
     /// The key a `save_secret` request asks the phone to keep; absent for the other kinds.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub save_secret: Option<crate::SaveSecret>,
+    /// The project a `secret` request (or the `secret` items of a bundle) asks in: that project's
+    /// key, else the global one ([`crate::apikey::project`]).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub project: Option<String>,
 }
 
 /// the user's decision.

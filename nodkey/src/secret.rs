@@ -4,7 +4,8 @@
 //! The phone asks for Face ID every time; there is never a lease for a key.
 
 use nodkey_proto::{
-    Answer, Decision, Kind, Lease, Quota, SaveSecret, SecretAnswer, SecretTarget, apikey,
+    Answer, Decision, Kind, Lease, Quota, SaveSecret, SecretAnswer, SecretTarget,
+    apikey::{self, KeyFrom},
 };
 use serde::Serialize;
 use serde_json::{Map, Value};
@@ -47,8 +48,42 @@ pub fn target(variable: Option<&str>, service: Option<&str>) -> Result<String, S
     Ok(SecretTarget {
         service,
         variable: variable.map(str::to_owned),
+        ..SecretTarget::default()
     }
     .to_target())
+}
+
+/// A project as an agent or the command line names it: `None` when it is empty or `global`
+/// (only global keys then answer a request, and a save makes a global key).
+pub fn project(name: Option<&str>) -> Result<Option<String>, String> {
+    match name.map(str::trim).filter(|p| !p.is_empty()) {
+        None => Ok(None),
+        Some(p) if p.eq_ignore_ascii_case(apikey::GLOBAL) => Ok(None),
+        Some(p) if apikey::valid_project(p) => Ok(Some(p.to_owned())),
+        Some(p) => Err(format!(
+            "{p:?} is not a project name (1 to {} characters, no / or ,); use the name from the .nodkey file",
+            apikey::MAX_PROJECT
+        )),
+    }
+}
+
+/// The projects of a key to save, from a list (`global` or none: a global key).
+pub fn projects<'a>(names: impl IntoIterator<Item = &'a str>) -> Result<Vec<String>, String> {
+    let mut out: Vec<String> = Vec::new();
+    for name in names {
+        if let Some(p) = project(Some(name))?
+            && !out.iter().any(|q| apikey::same_project(q, &p))
+        {
+            out.push(p);
+        }
+    }
+    if out.len() > apikey::MAX_PROJECTS {
+        return Err(format!(
+            "a key belongs to at most {} projects",
+            apikey::MAX_PROJECTS
+        ));
+    }
+    Ok(out)
 }
 
 /// A key to save: everything but the value.
@@ -59,6 +94,8 @@ pub struct NewKey {
     pub title: Option<String>,
     pub notes: Option<String>,
     pub expires: Option<u64>,
+    /// The projects the key is for; empty for a global key.
+    pub projects: Vec<String>,
 }
 
 impl NewKey {
@@ -71,6 +108,7 @@ impl NewKey {
         let clean = |s: Option<String>| s.map(|t| t.trim().to_owned()).filter(|t| !t.is_empty());
         self.title = clean(self.title);
         self.notes = clean(self.notes);
+        self.projects = projects(self.projects.iter().map(String::as_str))?;
         Ok(self)
     }
 }
@@ -92,19 +130,22 @@ pub fn expires(v: Option<&Value>) -> Result<Option<u64>, String> {
 }
 
 impl Agent {
-    /// Asks the phone for one key and waits for the answer (`image_path`: a picture for the
-    /// notification). The result carries the value; the
-    /// message tells the model to prefer `nodkey run`.
+    /// Asks the phone for one key, in `project` when given (that project's key, else the global
+    /// one), and waits for the answer (`image_path`: a picture for the notification). The result
+    /// carries the value; the message tells the model to prefer `nodkey run`.
+    #[allow(clippy::too_many_arguments)]
     pub async fn request_secret(
         &self,
         target: &str,
+        project: Option<&str>,
         reason: &str,
         image_path: Option<&str>,
         phone_selector: Option<&str>,
         reported: Reported<'_>,
         progress: Progress<'_>,
     ) -> Result<Text, String> {
-        let request = new_request(Kind::Secret, target, reason, self.client_for(reported));
+        let mut request = new_request(Kind::Secret, target, reason, self.client_for(reported));
+        request.project = project.map(str::to_owned);
         let ex = self
             .exchange(request, image_path, phone_selector, progress)
             .await?;
@@ -121,8 +162,8 @@ impl Agent {
         Ok(text(&v))
     }
 
-    /// Seals `value` to the phone and asks it to keep the key: a key with the same service and
-    /// variable name gets the new value, else a new key is added.
+    /// Seals `value` to the phone and asks it to keep the key: a key with the same service,
+    /// variable name and projects gets the new value, else a new key is added.
     #[allow(clippy::too_many_arguments)]
     pub async fn save_secret(
         &self,
@@ -159,6 +200,7 @@ impl Agent {
             title: key.title,
             notes: key.notes,
             expires: key.expires,
+            projects: key.projects,
             value: sealed,
         };
         let target = save.target();
@@ -231,9 +273,10 @@ pub fn outcome<'a>(a: &'a Answer, target: &'a str, phone: &'a str) -> SecretOutc
     let approved = a.decision == Decision::Approved;
     let message = match a.decision {
         Decision::Approved if a.secret.as_ref().is_some_and(|s| s.value.is_some()) => format!(
-            "The user approved. The key is in secret.value. Use it only for this task: put it in the \
+            "The user approved. The key is in secret.value.{} Use it only for this task: put it in the \
              environment of the command that needs it, never in a file, a commit, a chat message or a log, and \
-             never repeat it. {PREFER_RUN}"
+             never repeat it. {PREFER_RUN}",
+            from_note(a.secret.as_ref())
         ),
         Decision::Approved => "The phone approved but sent no key.".to_owned(),
         Decision::Denied => refusal(a),
@@ -251,6 +294,18 @@ pub fn outcome<'a>(a: &'a Answer, target: &'a str, phone: &'a str) -> SecretOutc
         error: a.error.as_deref(),
         quota: a.quota.as_ref(),
         message,
+    }
+}
+
+/// Where the key came from, for a result's message.
+pub fn from_note(key: Option<&SecretAnswer>) -> String {
+    match key.map(|k| (k.from, k.project.as_deref())) {
+        Some((Some(KeyFrom::Project), Some(p))) => format!(" It is the key of the project {p}."),
+        Some((Some(KeyFrom::Global), _)) => " It is the global key (secret.from).".to_owned(),
+        Some((Some(KeyFrom::Chosen), _)) => {
+            " No key matched, so the user picked this one by hand.".to_owned()
+        }
+        _ => String::new(),
     }
 }
 
@@ -309,9 +364,11 @@ pub async fn call(
     let reason = req_str(args, "reason")?;
     if name == "request_secret" {
         let t = target(opt_str(args, "variable")?, opt_str(args, "service")?)?;
+        let project = project(opt_str(args, "project")?)?;
         return agent
             .request_secret(
                 &t,
+                project.as_deref(),
                 reason,
                 opt_str(args, "image_path")?,
                 phone,
@@ -326,12 +383,28 @@ pub async fn call(
         title: opt_str(args, "title")?.map(str::to_owned),
         notes: opt_str(args, "notes")?.map(str::to_owned),
         expires: expires(args.get("expires"))?,
+        projects: string_list(args.get("projects"))?,
     };
     let value = Zeroizing::new(req_str(args, "value")?.to_owned());
     agent
         .save_secret(key, value, reason, phone, reported, progress)
         .await
 }
+
+/// An optional list of strings (`projects`).
+fn string_list(v: Option<&Value>) -> Result<Vec<String>, String> {
+    match v {
+        None | Some(Value::Null) => Ok(Vec::new()),
+        Some(Value::Array(list)) => list
+            .iter()
+            .map(|p| p.as_str().map(str::to_owned))
+            .collect::<Option<Vec<String>>>()
+            .ok_or_else(|| "projects must be a list of project names".to_owned()),
+        Some(_) => Err("projects must be a list of project names, e.g. [\"Sparrow\"]".into()),
+    }
+}
+
+pub mod save;
 
 #[cfg(test)]
 mod tests;

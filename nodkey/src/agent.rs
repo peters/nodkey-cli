@@ -544,6 +544,7 @@ pub fn new_request(kind: Kind, target: &str, reason: &str, client: ClientInfo) -
         suggest: None,
         wait_seconds: None,
         save_secret: None,
+        project: None,
     }
 }
 

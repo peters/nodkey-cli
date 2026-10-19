@@ -1645,8 +1645,595 @@
       "recipient_kem_pk": "fE5zmodqNC-MJSk500yxJtz4i2vlbx3Hpg2qO712pTQ",
       "recipient_kem_sk": "WVg29q7eTJuYsXMJkPAqAx2veoBDBCceAKKxCEs90KU",
       "sender": "phone"
+    },
+    {
+      "aad": "IdQP77UDyu6DAF-4aCs1-Q",
+      "ct": "wkNN7Leo417MkYme7ZgMxvtdORvEWEtNNMk-9ed_-AaodkaW",
+      "enc": "KQ-6lXlJ5xD5zJeGmuuySZYBthG8GUvokRt_ph9Mkw8",
+      "ikm_e": "M3Hfu0Q1FtHd7KcAalWcWLYmJkkTlybnvbXoa_nrsJ8",
+      "info": "nodkey/v1/secret",
+      "name": "save_secret_projects_value",
+      "plaintext_b64u": "c2stdGVzdC1zcGFycm93LTAwMDA",
+      "purpose": "secret",
+      "recipient_kem_pk": "Td-3-HXWLqROvCB5uulMNssHXo3O2K_LQIby38T-z28",
+      "recipient_kem_sk": "vazvVwr6Ybz3fJM8Ey3EblV_Ow4P6yCovbNOvWY7IiI",
+      "sender": "agent"
+    },
+    {
+      "aad": "kWvFlEJjfdwE1ukkVv0TiAIdQP77UDyu6DAF-4aCs1-Q",
+      "ct": "IRDRIxPJ2avRln_rn2bHyJP75sM7jPrj-d3v4RYPZUyu4fdBnKodRbTVlhwlp2UE562LT5tyaueQpviNn10E1NNRDnkE7vSuWcTh9zc36zU8zV7XjTtua11n8cyWf6WC_8Q7svyj0UE94LYOPKWXci7299MmnhtCV5oabV31icAhEpxX8L4cEHKPYPYvXOQ83mWlqnxgvPlovcp_4c4OH3T5WyvyO-0pZMV_MTNcw8vBLcESbo0HrGsYZWuzUMgNIKNTOe8vcwjKxNeIHZ4BjM2PZenRSH1P",
+      "enc": "WDUDJ31ng7eTcVPIAUTvfI22VlUAjzrAGg5XHk0sxSg",
+      "ikm_e": "FWHqZeMYhpdS_ELLlVIcuELV5Xp0U9qg5iRhLw7Ch38",
+      "info": "nodkey/v1/request",
+      "name": "request_secret_project",
+      "plaintext": "{\"v\":1,\"request_id\":\"kWvFlEJjfdwE1ukkVv0TiA\",\"kind\":\"secret\",\"target\":\"OPENAI_API_KEY\",\"reason\":\"Run the tests that call the OpenAI API\",\"agent\":\"Agent · Horizon\",\"ts\":1791620000,\"project\":\"sparrow\"}",
+      "plaintext_b64u": "eyJ2IjoxLCJyZXF1ZXN0X2lkIjoia1d2RmxFSmpmZHdFMXVra1Z2MFRpQSIsImtpbmQiOiJzZWNyZXQiLCJ0YXJnZXQiOiJPUEVOQUlfQVBJX0tFWSIsInJlYXNvbiI6IlJ1biB0aGUgdGVzdHMgdGhhdCBjYWxsIHRoZSBPcGVuQUkgQVBJIiwiYWdlbnQiOiJBZ2VudCDCtyBIb3Jpem9uIiwidHMiOjE3OTE2MjAwMDAsInByb2plY3QiOiJzcGFycm93In0",
+      "purpose": "request",
+      "recipient_kem_pk": "Td-3-HXWLqROvCB5uulMNssHXo3O2K_LQIby38T-z28",
+      "recipient_kem_sk": "vazvVwr6Ybz3fJM8Ey3EblV_Ow4P6yCovbNOvWY7IiI",
+      "sender": "agent"
+    },
+    {
+      "aad": "YVrqkWGUf0FAi011hvESOQIdQP77UDyu6DAF-4aCs1-Q",
+      "ct": "fb9yhqfDnwFvS69jDDqg6zqWA_yWLhUnAisDKftD5JfSSdvbDyYCknpOSGqcGQy8dEuLnRr6BLtL6GJYzKoM4B9RQO0f-n9W0fr6uFtXoHsUQfxZzNmUBfradRRDT-P2MU6smeupapldpAueZLjRnNd-kYBKJI0HdAkMUk6tM5LSGOdu5IK0nVEXqbyfXBWzSzFkq1VsLrnrbq4OuBgt9VbC_q1QRkMwJORPwQQ27VxFWZ2qRR-j6ObSlYpMBzMnhN74yxmKGJ75jv5ijUdclJCvlOvJOzHRQpQ",
+      "enc": "ODdbrMJSpd4YxudEvWYi_OoR9GPSZS5oKMUlpGepcH8",
+      "ikm_e": "ZoKpxGA76MFiSoZcWPZdxBqWkUq_gqlZaiYO4K6_fSA",
+      "info": "nodkey/v1/request",
+      "name": "request_secret_global",
+      "plaintext": "{\"v\":1,\"request_id\":\"YVrqkWGUf0FAi011hvESOQ\",\"kind\":\"secret\",\"target\":\"global/OPENAI_API_KEY\",\"reason\":\"Run the tests with the shared key\",\"agent\":\"Agent · Horizon\",\"ts\":1791620000,\"project\":\"sparrow\"}",
+      "plaintext_b64u": "eyJ2IjoxLCJyZXF1ZXN0X2lkIjoiWVZycWtXR1VmMEZBaTAxMWh2RVNPUSIsImtpbmQiOiJzZWNyZXQiLCJ0YXJnZXQiOiJnbG9iYWwvT1BFTkFJX0FQSV9LRVkiLCJyZWFzb24iOiJSdW4gdGhlIHRlc3RzIHdpdGggdGhlIHNoYXJlZCBrZXkiLCJhZ2VudCI6IkFnZW50IMK3IEhvcml6b24iLCJ0cyI6MTc5MTYyMDAwMCwicHJvamVjdCI6InNwYXJyb3cifQ",
+      "purpose": "request",
+      "recipient_kem_pk": "Td-3-HXWLqROvCB5uulMNssHXo3O2K_LQIby38T-z28",
+      "recipient_kem_sk": "vazvVwr6Ybz3fJM8Ey3EblV_Ow4P6yCovbNOvWY7IiI",
+      "sender": "agent"
+    },
+    {
+      "aad": "WMAdd4xKL9aac1f4gn_nXwIdQP77UDyu6DAF-4aCs1-Q",
+      "ct": "v6FOpWGfyrLJhTAFeEKS9mnlPaeJkFY-ALu6s8KkuRC8VBM-bY6eXHnzimh2K3jcm4EuKvfIiKGOfS_-bvVOkKh9WHgPtWzjktvXGjsMFqf0xaydox6NnED7mE06ELBCUCaAqoZ3rA0GG6fB_1tDMLiTm1L6LC0mYdWFJXyOp_9U1-6vNyoFbX6nPBDUMBQynwIfHfM4ulUhrJo2zUGQYJYglmK_Gx5nwCbkATXe1iqnHfi-XLlM",
+      "enc": "mwa-KuW6Ezqm4FqbVMs2sHYl1t0rzU_TddzfkH0RKjg",
+      "ikm_e": "7t_TUTZj2mJ0oTYGDDnJ22OowqjLiP8Ja1XimA-59iI",
+      "info": "nodkey/v1/request",
+      "name": "request_secret_project_target",
+      "plaintext": "{\"v\":1,\"request_id\":\"WMAdd4xKL9aac1f4gn_nXw\",\"kind\":\"secret\",\"target\":\"otter/OPENAI_API_KEY\",\"reason\":\"Run the Otter tests\",\"agent\":\"Agent · Horizon\",\"ts\":1791620000}",
+      "plaintext_b64u": "eyJ2IjoxLCJyZXF1ZXN0X2lkIjoiV01BZGQ0eEtMOWFhYzFmNGduX25YdyIsImtpbmQiOiJzZWNyZXQiLCJ0YXJnZXQiOiJvdHRlci9PUEVOQUlfQVBJX0tFWSIsInJlYXNvbiI6IlJ1biB0aGUgT3R0ZXIgdGVzdHMiLCJhZ2VudCI6IkFnZW50IMK3IEhvcml6b24iLCJ0cyI6MTc5MTYyMDAwMH0",
+      "purpose": "request",
+      "recipient_kem_pk": "Td-3-HXWLqROvCB5uulMNssHXo3O2K_LQIby38T-z28",
+      "recipient_kem_sk": "vazvVwr6Ybz3fJM8Ey3EblV_Ow4P6yCovbNOvWY7IiI",
+      "sender": "agent"
+    },
+    {
+      "aad": "3D8yX8EdRfsf6NHlisC5sAIdQP77UDyu6DAF-4aCs1-Q",
+      "ct": "yhwVInnVZuO0ORX9axaz8MeyGd4FtW5DPU9Fk9b5WR4xmyR920Edc2qrjy3q7IxhyB-ekxUPooCL70rgshsZQa5f7K1el-gV30yVtGjW8vpwsekgRAPPpFAj9KwaFYZTtRidJdC4zDFO2xtcJodCT9LgOKrOxrPcVkrNbOMTeo7bCIi25QblEbFPRvVLdNm5DOxodtoFojyV0m0B2KcThMvLicm4tduZ5AeD_3gSLT_AiLVWVPFsfzz173J0OIZ3t44N9kS9lsoJ8FI5o7XMrl2p-n6v9HL7EXiFOX6Ofg--Y6PW0tcJw9j86yGOyht8GMA7ZCZa0yEd3b3XSkmQdbUdSjRtmh8OTSOxH9sWW3fyCHdGnTJ5gkLWToegIDPhcbdChoVqU-M7OhNs_xshNoKxR6vVcumJp06ays-L7WzOnKQjFhsICrOT79gsY1B_8hAxBtAb1wW9ydvsEWKGf6ocXb1Sm-8AK5NUuHatPHpf",
+      "enc": "nOG0GjVnopP-GSORlPyZlO62-WchMERSItP1g1MVYBQ",
+      "ikm_e": "RM6WRgtz8yH49-qZ2VkXS4hv7xP-MqTLQFgJVYtB7JQ",
+      "info": "nodkey/v1/request",
+      "name": "request_bundle_project",
+      "plaintext": "{\"v\":1,\"request_id\":\"3D8yX8EdRfsf6NHlisC5sA\",\"kind\":\"bundle\",\"target\":\"\",\"reason\":\"Run the integration tests\",\"agent\":\"Agent · Horizon\",\"ts\":1791620000,\"bundle\":{\"items\":[{\"id\":\"1\",\"kind\":\"secret\",\"target\":\"OPENAI_API_KEY\"},{\"id\":\"2\",\"kind\":\"secret\",\"target\":\"ANTHROPIC_API_KEY\"},{\"id\":\"3\",\"kind\":\"secret\",\"target\":\"ADMIN_TOKEN\"}]},\"project\":\"sparrow\"}",
+      "plaintext_b64u": "eyJ2IjoxLCJyZXF1ZXN0X2lkIjoiM0Q4eVg4RWRSZnNmNk5IbGlzQzVzQSIsImtpbmQiOiJidW5kbGUiLCJ0YXJnZXQiOiIiLCJyZWFzb24iOiJSdW4gdGhlIGludGVncmF0aW9uIHRlc3RzIiwiYWdlbnQiOiJBZ2VudCDCtyBIb3Jpem9uIiwidHMiOjE3OTE2MjAwMDAsImJ1bmRsZSI6eyJpdGVtcyI6W3siaWQiOiIxIiwia2luZCI6InNlY3JldCIsInRhcmdldCI6Ik9QRU5BSV9BUElfS0VZIn0seyJpZCI6IjIiLCJraW5kIjoic2VjcmV0IiwidGFyZ2V0IjoiQU5USFJPUElDX0FQSV9LRVkifSx7ImlkIjoiMyIsImtpbmQiOiJzZWNyZXQiLCJ0YXJnZXQiOiJBRE1JTl9UT0tFTiJ9XX0sInByb2plY3QiOiJzcGFycm93In0",
+      "purpose": "request",
+      "recipient_kem_pk": "Td-3-HXWLqROvCB5uulMNssHXo3O2K_LQIby38T-z28",
+      "recipient_kem_sk": "vazvVwr6Ybz3fJM8Ey3EblV_Ow4P6yCovbNOvWY7IiI",
+      "sender": "agent"
+    },
+    {
+      "aad": "pzYC4ryqNnIMWI4CgHIGaAIdQP77UDyu6DAF-4aCs1-Q",
+      "ct": "pMtKiHsaFrMOoRmbnQRkcM9gGUr0zuW8OvFfBemELvFDimb17BRyp6TsybZ4PYK7Mb3VyhZyniWDFjQvg0arfr_r07RzJ-nEEiquXweaYrag0g7i0-letZ24asf8u_myvEiXu0NrR5U25EuehPLBEoPrkJO_r4ojQTU-kFMCSIo1Yw6W3i6bqU_jvamJ1HKIz18rwwrt8MHrwtlKPHgEeG9khXLTdkiL-DeHjOZyq3oE02L57UvRzOuEo6v3SRo2cZI2pRNzS8bCQuVJ-uZAqW5V7mmVRmjKIM5ll0HNUPJq6D1KqpyCnQLnfAyMkC9rNv_I7zjTwWJptJNOSQH5x2L3tvPfepCFc92HsfWJ3DQ3Eh0a",
+      "enc": "FsxXo0_iel1oseL4vkv-MFn-L8yBL-Wti_aUzLPfdSA",
+      "ikm_e": "2w8QbcHW4oehnQuk5UR8WJtAS7aVYCrpQ5lCbSjuhU8",
+      "info": "nodkey/v1/request",
+      "name": "request_bundle_project_session",
+      "plaintext": "{\"v\":1,\"request_id\":\"pzYC4ryqNnIMWI4CgHIGaA\",\"kind\":\"bundle\",\"target\":\"\",\"reason\":\"Release the new version\",\"agent\":\"Agent · Horizon\",\"ts\":1791620000,\"bundle\":{\"items\":[{\"id\":\"1\",\"kind\":\"secret\",\"target\":\"OPENAI_API_KEY\"}],\"session\":1800},\"project\":\"sparrow\"}",
+      "plaintext_b64u": "eyJ2IjoxLCJyZXF1ZXN0X2lkIjoicHpZQzRyeXFObklNV0k0Q2dISUdhQSIsImtpbmQiOiJidW5kbGUiLCJ0YXJnZXQiOiIiLCJyZWFzb24iOiJSZWxlYXNlIHRoZSBuZXcgdmVyc2lvbiIsImFnZW50IjoiQWdlbnQgwrcgSG9yaXpvbiIsInRzIjoxNzkxNjIwMDAwLCJidW5kbGUiOnsiaXRlbXMiOlt7ImlkIjoiMSIsImtpbmQiOiJzZWNyZXQiLCJ0YXJnZXQiOiJPUEVOQUlfQVBJX0tFWSJ9XSwic2Vzc2lvbiI6MTgwMH0sInByb2plY3QiOiJzcGFycm93In0",
+      "purpose": "request",
+      "recipient_kem_pk": "Td-3-HXWLqROvCB5uulMNssHXo3O2K_LQIby38T-z28",
+      "recipient_kem_sk": "vazvVwr6Ybz3fJM8Ey3EblV_Ow4P6yCovbNOvWY7IiI",
+      "sender": "agent"
+    },
+    {
+      "aad": "7hAoA8S9VNwKnB4dRlEK-wIdQP77UDyu6DAF-4aCs1-Q",
+      "ct": "bGNy-XUBfou3PPJ3hx8biLKyozL4QsS67FbzC0mB5EokRRWxEILr9X7-WM_icLyEuSZ6F4kbOiEO7uhOY8WINzZ3PSFVlISSGs-kxyO-NdWaI23FY2M8lyYpTI3Ec_0j79DwFfUKisuGO3RBhoSdt1g8wWUsO425AeMwuuy61fxdGzUod8vHo4iepNaclftTkganMYYXA_mltuks9OIqlyM7UhtZvnczfrV2_3ragdJuxH5G1KmI-IaitkXOMh9QV73TuG2C36b8VKGQ2EWnDn9koJ7B15e_KScMtXnrfnyqk8PAgB8tc1QaEvzA0s8JsBB2Dg7d4iMWuJZ-TCeAz7bOfre1QmWYrCoSgBDBLb5NIQtwqZSYcFvX8qdRew5_GQ4LjB2enxPfTUsPCbcS5kYy1DjzYU6R2Jl7SMyooIdf0eJITpXxuu3fMe9v6NZwAv-smoD9jRP3p3_oqC6lxZxMaf7gvDcOJqvXq6_ZqQfs82vfE1TPE2HyraqyOF8yjQkXW2syPdfSZf1iVm8ZuPtGUuUIfpq0GJe5xR1k_tfQyJPzNLE9mMe0c4-5qFxjAqiFT1b9EdS75pa95LQZrq5tsQ",
+      "enc": "mRH-ofKBcbAxo0_HuHI-cLHOgoRaAl4tznIILKrG1RQ",
+      "ikm_e": "sRd-HiVs-ZkUhGDZdDJeytvECiVfotT1wLGDMGNG4fg",
+      "info": "nodkey/v1/request",
+      "name": "request_save_secret_projects",
+      "plaintext": "{\"v\":1,\"request_id\":\"7hAoA8S9VNwKnB4dRlEK-w\",\"kind\":\"save_secret\",\"target\":\"openai.com/OPENAI_API_KEY\",\"reason\":\"Save the API key I just made for Sparrow\",\"agent\":\"Agent · Horizon\",\"ts\":1791620000,\"save_secret\":{\"variable\":\"OPENAI_API_KEY\",\"service\":\"openai.com\",\"title\":\"OpenAI for Sparrow\",\"projects\":[\"Sparrow\"],\"value\":{\"enc\":\"KQ-6lXlJ5xD5zJeGmuuySZYBthG8GUvokRt_ph9Mkw8\",\"ct\":\"wkNN7Leo417MkYme7ZgMxvtdORvEWEtNNMk-9ed_-AaodkaW\"}}}",
+      "plaintext_b64u": "eyJ2IjoxLCJyZXF1ZXN0X2lkIjoiN2hBb0E4UzlWTndLbkI0ZFJsRUstdyIsImtpbmQiOiJzYXZlX3NlY3JldCIsInRhcmdldCI6Im9wZW5haS5jb20vT1BFTkFJX0FQSV9LRVkiLCJyZWFzb24iOiJTYXZlIHRoZSBBUEkga2V5IEkganVzdCBtYWRlIGZvciBTcGFycm93IiwiYWdlbnQiOiJBZ2VudCDCtyBIb3Jpem9uIiwidHMiOjE3OTE2MjAwMDAsInNhdmVfc2VjcmV0Ijp7InZhcmlhYmxlIjoiT1BFTkFJX0FQSV9LRVkiLCJzZXJ2aWNlIjoib3BlbmFpLmNvbSIsInRpdGxlIjoiT3BlbkFJIGZvciBTcGFycm93IiwicHJvamVjdHMiOlsiU3BhcnJvdyJdLCJ2YWx1ZSI6eyJlbmMiOiJLUS02bFhsSjV4RDV6SmVHbXV1eVNaWUJ0aEc4R1V2b2tSdF9waDlNa3c4IiwiY3QiOiJ3a05ON0xlbzQxN01rWW1lN1pnTXh2dGRPUnZFV0V0Tk5Nay05ZWRfLUFhb2RrYVcifX19",
+      "purpose": "request",
+      "recipient_kem_pk": "Td-3-HXWLqROvCB5uulMNssHXo3O2K_LQIby38T-z28",
+      "recipient_kem_sk": "vazvVwr6Ybz3fJM8Ey3EblV_Ow4P6yCovbNOvWY7IiI",
+      "sender": "agent"
+    },
+    {
+      "aad": "kWvFlEJjfdwE1ukkVv0TiA0g0Bt23Hxsm5z-wpZp2lpA",
+      "ct": "f6o3Hn-kdoKV3vre7AvKXO_JrJ9A9KjABMOlqUR32yBdC1gPQuiyg5mIIG3cYE6WHPnYoIeiJYtrziPXIkBU2CF9w_ck21p2VYNa65FzV0jLE5kUAGPtYYY1iY09VuSRv1U61WRMGuY0jjDov1UY9SR7SYIBEhd4YFT9txN6rGuO8iV6FwAiMXR2_FXPjK_FXPUiI4ihFoo0GYgCNyjZ2_RHdeoh7qOQOrswXXI1n6WQUUahKhMs372oE_Xdym6hAho8cSZx__2x3bPtwEgbpvy2UDD3hnLcawQNXbVBUNU7Y-1iKmQ9Dkb3jGHqCStb9pXDRGLbsJGj",
+      "enc": "EjwnmqwRdCO58s0IUjgaLybBRKxcnlE0Ux_6Z4SFbxs",
+      "ikm_e": "C61vnmQsPc0fPoAKs56hcpaB0rweqhSBs43SZ-ESN0s",
+      "info": "nodkey/v1/answer",
+      "name": "answer_secret_project",
+      "plaintext": "{\"v\":1,\"request_id\":\"kWvFlEJjfdwE1ukkVv0TiA\",\"decision\":\"approved\",\"lease\":{\"kind\":\"once\"},\"secret\":{\"title\":\"OPENAI_API_KEY (Sparrow)\",\"variable\":\"OPENAI_API_KEY\",\"value\":\"sk-test-sparrow-0000\",\"from\":\"project\",\"project\":\"Sparrow\"}}",
+      "plaintext_b64u": "eyJ2IjoxLCJyZXF1ZXN0X2lkIjoia1d2RmxFSmpmZHdFMXVra1Z2MFRpQSIsImRlY2lzaW9uIjoiYXBwcm92ZWQiLCJsZWFzZSI6eyJraW5kIjoib25jZSJ9LCJzZWNyZXQiOnsidGl0bGUiOiJPUEVOQUlfQVBJX0tFWSAoU3BhcnJvdykiLCJ2YXJpYWJsZSI6Ik9QRU5BSV9BUElfS0VZIiwidmFsdWUiOiJzay10ZXN0LXNwYXJyb3ctMDAwMCIsImZyb20iOiJwcm9qZWN0IiwicHJvamVjdCI6IlNwYXJyb3cifX0",
+      "purpose": "answer",
+      "recipient_kem_pk": "fE5zmodqNC-MJSk500yxJtz4i2vlbx3Hpg2qO712pTQ",
+      "recipient_kem_sk": "WVg29q7eTJuYsXMJkPAqAx2veoBDBCceAKKxCEs90KU",
+      "sender": "phone"
+    },
+    {
+      "aad": "kWvFlEJjfdwE1ukkVv0TiA0g0Bt23Hxsm5z-wpZp2lpA",
+      "ct": "y5VopzinEzb-9-RKUfhSY3BjA5sh8EB50DDCv2Ao4MP32k2DErnfYySNwGu9OwD5-7EjvWIlqL7zzGB3Urep4kkYF-P2RbwcKu6XITeyVwuEXdHAh93azGHixVd7f3fBNZfR1faGzVeaysHL6xopzGbgh9pi6lu-t-mf6XFarisnI5aTg-CY5d3aAtrtj-wPcLpDIcD1JpcT9HnK3uJoTsr0DuFEQk6hXvF-9MoKsn22Iq0US5-aOXC32WwGkNOLhAvFpZuOuSQPlRmhZC2seceUOtsbK3994g",
+      "enc": "OOBzD-qkLK3J7-ndgOH6mdSI-OXoDPLIUxNfS-BEXGw",
+      "ikm_e": "onMmGzB2zoSms3kjdJXe1QMLmYT0H6eeGmFG9jpZHcA",
+      "info": "nodkey/v1/answer",
+      "name": "answer_secret_project_global",
+      "plaintext": "{\"v\":1,\"request_id\":\"kWvFlEJjfdwE1ukkVv0TiA\",\"decision\":\"approved\",\"lease\":{\"kind\":\"once\"},\"secret\":{\"title\":\"OPENAI_API_KEY\",\"variable\":\"OPENAI_API_KEY\",\"value\":\"sk-test-global-0000\",\"from\":\"global\"}}",
+      "plaintext_b64u": "eyJ2IjoxLCJyZXF1ZXN0X2lkIjoia1d2RmxFSmpmZHdFMXVra1Z2MFRpQSIsImRlY2lzaW9uIjoiYXBwcm92ZWQiLCJsZWFzZSI6eyJraW5kIjoib25jZSJ9LCJzZWNyZXQiOnsidGl0bGUiOiJPUEVOQUlfQVBJX0tFWSIsInZhcmlhYmxlIjoiT1BFTkFJX0FQSV9LRVkiLCJ2YWx1ZSI6InNrLXRlc3QtZ2xvYmFsLTAwMDAiLCJmcm9tIjoiZ2xvYmFsIn19",
+      "purpose": "answer",
+      "recipient_kem_pk": "fE5zmodqNC-MJSk500yxJtz4i2vlbx3Hpg2qO712pTQ",
+      "recipient_kem_sk": "WVg29q7eTJuYsXMJkPAqAx2veoBDBCceAKKxCEs90KU",
+      "sender": "phone"
+    },
+    {
+      "aad": "kWvFlEJjfdwE1ukkVv0TiA0g0Bt23Hxsm5z-wpZp2lpA",
+      "ct": "K8ByAZQrSBTXBWggGjH4yF0ephAogpSGzfk8vcFHyWulndyVWIbpIR8wC6TyQ9BvVLQaPtAaq4jHYlojelNH8G3qfKl9fMfeDTM7Gwidafx1a1LqmCbNnXGE1_wB4rVSU1v8mbl1WDDW6EOApsVe1B49TmqpByzrL1l2hS4YZ_Nj_YZ0iTzc79mvhXShfCrEqw4Ikms7hsll7A7xwx2QambCfnKKjXjaau8hn8PN4hicTNQXxvd9wnD4_-Wwxz_z7PsbBxegagkZvOoI0zDAv4sUhGkCSMsP",
+      "enc": "vxtA38AXAbjfzNVal_nCoTaJuChOxnrI0mns9ghiDw8",
+      "ikm_e": "2uMTVStzyfEJaWP0isciK8ss4QYICGKUzcrZ0yu3FT0",
+      "info": "nodkey/v1/answer",
+      "name": "answer_secret_project_chosen",
+      "plaintext": "{\"v\":1,\"request_id\":\"kWvFlEJjfdwE1ukkVv0TiA\",\"decision\":\"approved\",\"lease\":{\"kind\":\"once\"},\"secret\":{\"title\":\"OPENAI_API_KEY\",\"variable\":\"OPENAI_API_KEY\",\"value\":\"sk-test-otter-0000\",\"from\":\"chosen\"}}",
+      "plaintext_b64u": "eyJ2IjoxLCJyZXF1ZXN0X2lkIjoia1d2RmxFSmpmZHdFMXVra1Z2MFRpQSIsImRlY2lzaW9uIjoiYXBwcm92ZWQiLCJsZWFzZSI6eyJraW5kIjoib25jZSJ9LCJzZWNyZXQiOnsidGl0bGUiOiJPUEVOQUlfQVBJX0tFWSIsInZhcmlhYmxlIjoiT1BFTkFJX0FQSV9LRVkiLCJ2YWx1ZSI6InNrLXRlc3Qtb3R0ZXItMDAwMCIsImZyb20iOiJjaG9zZW4ifX0",
+      "purpose": "answer",
+      "recipient_kem_pk": "fE5zmodqNC-MJSk500yxJtz4i2vlbx3Hpg2qO712pTQ",
+      "recipient_kem_sk": "WVg29q7eTJuYsXMJkPAqAx2veoBDBCceAKKxCEs90KU",
+      "sender": "phone"
+    },
+    {
+      "aad": "YVrqkWGUf0FAi011hvESOQ0g0Bt23Hxsm5z-wpZp2lpA",
+      "ct": "cvwqS_xP9FseFRMWK9lvWlFtNZKW3fk_AmyhqeppLSFI3z-vhtFHKzS1T94QgR0f_wxFVod7KfnLZYkFeIe62yxCI09NZ093LTVLV7l5OQnst9xV4iWzNuKA05CKh7nBYM2MfXuIpkE0jNkaXIjRHWFTX-Q1WcUBZCHoUR4sOC6ex6dALs2DD0_qY4ig3BD_d5XH6KdLGPljwAnj_zHM9DK4e6d9YS6Rg59Pf3F-zTapSMnY5n_Lz3q5LyVQAsKMNAGmqqWD9GhD93eEGzZj-55US_H8WM16Mw",
+      "enc": "JQuZ37vLiEGeF9HBIjPUpaCH_ZcNwUgAOV9nbpTDVQg",
+      "ikm_e": "DlomJu_gJepeMxuQLZcFXhWx8uGyZi8othqcVQul8qg",
+      "info": "nodkey/v1/answer",
+      "name": "answer_secret_global",
+      "plaintext": "{\"v\":1,\"request_id\":\"YVrqkWGUf0FAi011hvESOQ\",\"decision\":\"approved\",\"lease\":{\"kind\":\"once\"},\"secret\":{\"title\":\"OPENAI_API_KEY\",\"variable\":\"OPENAI_API_KEY\",\"value\":\"sk-test-global-0000\",\"from\":\"global\"}}",
+      "plaintext_b64u": "eyJ2IjoxLCJyZXF1ZXN0X2lkIjoiWVZycWtXR1VmMEZBaTAxMWh2RVNPUSIsImRlY2lzaW9uIjoiYXBwcm92ZWQiLCJsZWFzZSI6eyJraW5kIjoib25jZSJ9LCJzZWNyZXQiOnsidGl0bGUiOiJPUEVOQUlfQVBJX0tFWSIsInZhcmlhYmxlIjoiT1BFTkFJX0FQSV9LRVkiLCJ2YWx1ZSI6InNrLXRlc3QtZ2xvYmFsLTAwMDAiLCJmcm9tIjoiZ2xvYmFsIn19",
+      "purpose": "answer",
+      "recipient_kem_pk": "fE5zmodqNC-MJSk500yxJtz4i2vlbx3Hpg2qO712pTQ",
+      "recipient_kem_sk": "WVg29q7eTJuYsXMJkPAqAx2veoBDBCceAKKxCEs90KU",
+      "sender": "phone"
+    },
+    {
+      "aad": "3D8yX8EdRfsf6NHlisC5sA0g0Bt23Hxsm5z-wpZp2lpA",
+      "ct": "LGUNxuUlS0V5REfC_VwppJiU4g0Rb5S-tKYCS4bXeWeCNyYnOasypj_4p_YWNft894Zfx9uEMMeuxlzXKUKEpw4J-HrFFJykV3IS4QPo087tlKLIO88iLmQKDYuMQ5olFHgqRfTRCjlHkdPD5liIiGBLCTW31rzF2tTIGHFSrwQHbPx72HkE45fjxDB0wPxzeIBlVDSEaV03LrwBQfsBFqusvPaRhX49PF51TNAqIC_ZgDx51dHObxLdstyH1N37MEcgkoFnloX75_0BwpnYb34c40AQKI6egtIDl8Fdq0qDcd6iPmbuVrFTian9gDpWjLbbt4QG5QlSiD7VfIpYNuSDyLSsW9i1hh-xfQ8aT3jfLlLYUvmOxwdPQTHZByiCp3eRXLqJ87OPf7P1Gm9W0y004i8-k6M9TI9G6caAZnOoN6cfeWMGMxFsj5dv85s2XL3122bKjb061wKAxdKJrKYwsH4UcvayRsNGVQ6Ut8ZtDEW-9caI29XiZ_SNrZRu6A-7zjb_4Yti4Eub_f_OuZnB64DpbKNR9Lu3YcBbJO9ZTXJrDRV-CU7CqcVUsZx3IJz3wiQkzXtwMzO8Dm3GyAVPS6ZplQ8CyG4raZkx3FLFF2FgXWLFdVeWM7WIGUq9Z36a2xLJaIjEBF_7kAhOP7A1Mucx-IiStPXy20VZLpwk8OS2s4yiy9X6007Dcewk0eU666_-OAeZvn5aclY8ReYaPI62V3JjGJ4BHIbPZGv5FCEzvhhuTEiNykTDg7G_Nfh6CnbbLmdEzVSjOMcsXXy7cWOcXsd34Lvj2co8v1pk4PVQp1QzpvODobJkLA0O3xccHPOmTD7oMqo-9LC0BfNwoHPJfT1F",
+      "enc": "qeuL9XtFICMII4G4zMPpAPIGuzX35K0uw0rxcKGHYUQ",
+      "ikm_e": "JfwyUDFWF532elMJShUBDoCPfMYvyn34OnfPsGvBS48",
+      "info": "nodkey/v1/answer",
+      "name": "answer_bundle_project",
+      "plaintext": "{\"v\":1,\"request_id\":\"3D8yX8EdRfsf6NHlisC5sA\",\"decision\":\"approved\",\"items\":[{\"id\":\"1\",\"decision\":\"approved\",\"lease\":{\"kind\":\"once\"},\"secret\":{\"title\":\"OPENAI_API_KEY (Sparrow)\",\"variable\":\"OPENAI_API_KEY\",\"value\":\"sk-test-sparrow-0000\",\"from\":\"project\",\"project\":\"Sparrow\"}},{\"id\":\"2\",\"decision\":\"approved\",\"lease\":{\"kind\":\"once\"},\"secret\":{\"title\":\"ANTHROPIC_API_KEY\",\"variable\":\"ANTHROPIC_API_KEY\",\"value\":\"sk-ant-test-0000\",\"from\":\"global\"}},{\"id\":\"3\",\"decision\":\"approved\",\"lease\":{\"kind\":\"once\"},\"secret\":{\"title\":\"ADMIN_TOKEN (Sparrow)\",\"variable\":\"ADMIN_TOKEN\",\"value\":\"adm-test-2222\",\"from\":\"project\",\"project\":\"Sparrow\"}}]}",
+      "plaintext_b64u": "eyJ2IjoxLCJyZXF1ZXN0X2lkIjoiM0Q4eVg4RWRSZnNmNk5IbGlzQzVzQSIsImRlY2lzaW9uIjoiYXBwcm92ZWQiLCJpdGVtcyI6W3siaWQiOiIxIiwiZGVjaXNpb24iOiJhcHByb3ZlZCIsImxlYXNlIjp7ImtpbmQiOiJvbmNlIn0sInNlY3JldCI6eyJ0aXRsZSI6Ik9QRU5BSV9BUElfS0VZIChTcGFycm93KSIsInZhcmlhYmxlIjoiT1BFTkFJX0FQSV9LRVkiLCJ2YWx1ZSI6InNrLXRlc3Qtc3BhcnJvdy0wMDAwIiwiZnJvbSI6InByb2plY3QiLCJwcm9qZWN0IjoiU3BhcnJvdyJ9fSx7ImlkIjoiMiIsImRlY2lzaW9uIjoiYXBwcm92ZWQiLCJsZWFzZSI6eyJraW5kIjoib25jZSJ9LCJzZWNyZXQiOnsidGl0bGUiOiJBTlRIUk9QSUNfQVBJX0tFWSIsInZhcmlhYmxlIjoiQU5USFJPUElDX0FQSV9LRVkiLCJ2YWx1ZSI6InNrLWFudC10ZXN0LTAwMDAiLCJmcm9tIjoiZ2xvYmFsIn19LHsiaWQiOiIzIiwiZGVjaXNpb24iOiJhcHByb3ZlZCIsImxlYXNlIjp7ImtpbmQiOiJvbmNlIn0sInNlY3JldCI6eyJ0aXRsZSI6IkFETUlOX1RPS0VOIChTcGFycm93KSIsInZhcmlhYmxlIjoiQURNSU5fVE9LRU4iLCJ2YWx1ZSI6ImFkbS10ZXN0LTIyMjIiLCJmcm9tIjoicHJvamVjdCIsInByb2plY3QiOiJTcGFycm93In19XX0",
+      "purpose": "answer",
+      "recipient_kem_pk": "fE5zmodqNC-MJSk500yxJtz4i2vlbx3Hpg2qO712pTQ",
+      "recipient_kem_sk": "WVg29q7eTJuYsXMJkPAqAx2veoBDBCceAKKxCEs90KU",
+      "sender": "phone"
+    },
+    {
+      "aad": "pzYC4ryqNnIMWI4CgHIGaA0g0Bt23Hxsm5z-wpZp2lpA",
+      "ct": "s3qdAfLqBr1Kf_a6Xss6P2ObhmK8CO9yl0iDMEL6xYxhHG6y9G_yvlEbgobAUOP2F4yORt37IoDZUCYkkjYdvYohmedCf0rl62Ui15zE0iEatzlC_72Iru2Y9zQ52GLIK72pxmSH0nzzpwwZO4zbBtPpRBZY_sYx9MaIx2qqzdDcbHzjxsaLsYEuHifv-b0LejmeqVtV3RyjlZdZ647hLPK_kwXu2FLBd2YxTqCEMbjZEWLrKb1rPm5EgqK_EC57F_BLXGy1rMxn-xXiMtP4t4QlWvichKFrBMnqwtQ1m_sN043A01ordlCQ5L9eJOJnaBjH7MmbnE2_8jzXWGNjOrY6vaQdaF_jB0Aoq7KmfGNPzsXG7ZW6WvMMlV7ooJKY35vUB3EpFu0",
+      "enc": "kgNMgiNVrTGQBdrhaTwFRwwiT5qgkYzl-Aecw8FMaDs",
+      "ikm_e": "9wncCZOPl5XSwTNWFd4JZRSvEpENiVZGMSpIcY4vwbM",
+      "info": "nodkey/v1/answer",
+      "name": "answer_bundle_project_session",
+      "plaintext": "{\"v\":1,\"request_id\":\"pzYC4ryqNnIMWI4CgHIGaA\",\"decision\":\"approved\",\"items\":[{\"id\":\"1\",\"decision\":\"approved\",\"secret\":{\"title\":\"OPENAI_API_KEY (Sparrow)\",\"variable\":\"OPENAI_API_KEY\",\"from\":\"project\",\"project\":\"Sparrow\"}}],\"session\":{\"id\":\"UHJvamVjdFNlc3Npb24x\",\"until\":1791621800}}",
+      "plaintext_b64u": "eyJ2IjoxLCJyZXF1ZXN0X2lkIjoicHpZQzRyeXFObklNV0k0Q2dISUdhQSIsImRlY2lzaW9uIjoiYXBwcm92ZWQiLCJpdGVtcyI6W3siaWQiOiIxIiwiZGVjaXNpb24iOiJhcHByb3ZlZCIsInNlY3JldCI6eyJ0aXRsZSI6Ik9QRU5BSV9BUElfS0VZIChTcGFycm93KSIsInZhcmlhYmxlIjoiT1BFTkFJX0FQSV9LRVkiLCJmcm9tIjoicHJvamVjdCIsInByb2plY3QiOiJTcGFycm93In19XSwic2Vzc2lvbiI6eyJpZCI6IlVISnZhbVZqZEZObGMzTnBiMjR4IiwidW50aWwiOjE3OTE2MjE4MDB9fQ",
+      "purpose": "answer",
+      "recipient_kem_pk": "fE5zmodqNC-MJSk500yxJtz4i2vlbx3Hpg2qO712pTQ",
+      "recipient_kem_sk": "WVg29q7eTJuYsXMJkPAqAx2veoBDBCceAKKxCEs90KU",
+      "sender": "phone"
+    },
+    {
+      "aad": "7hAoA8S9VNwKnB4dRlEK-w0g0Bt23Hxsm5z-wpZp2lpA",
+      "ct": "akXeFA03in5gMe4hMhs0bAhY_8TucdHINxJJxuig49ehwQ9cr07iDi-n5b2HA0jmu_uFrHRUTzKjHJMVWv6Cn0a8VihADOA3Lz7McCRMeTUSE9zrHLlIvJDM1vvrAMItu673",
+      "enc": "W-n42faaTQArnUmAvO2XIxQH-y1hwaOGlw2ArDEI9Go",
+      "ikm_e": "ZBwnUmjSrdqKzJarZxdFQttLXTO0Gt718GrQG2FC73U",
+      "info": "nodkey/v1/answer",
+      "name": "answer_save_secret_projects",
+      "plaintext": "{\"v\":1,\"request_id\":\"7hAoA8S9VNwKnB4dRlEK-w\",\"decision\":\"approved\",\"saved\":\"added\"}",
+      "plaintext_b64u": "eyJ2IjoxLCJyZXF1ZXN0X2lkIjoiN2hBb0E4UzlWTndLbkI0ZFJsRUstdyIsImRlY2lzaW9uIjoiYXBwcm92ZWQiLCJzYXZlZCI6ImFkZGVkIn0",
+      "purpose": "answer",
+      "recipient_kem_pk": "fE5zmodqNC-MJSk500yxJtz4i2vlbx3Hpg2qO712pTQ",
+      "recipient_kem_sk": "WVg29q7eTJuYsXMJkPAqAx2veoBDBCceAKKxCEs90KU",
+      "sender": "phone"
+    },
+    {
+      "aad": "V3YOytacJmkm-z-oepnkNw0g0Bt23Hxsm5z-wpZp2lpA",
+      "ct": "Nm03M5AzKn6b0GRwFoqVlBtpPK5FFBQC-ogvt6eQ1GllJYsiqEgirlv1az7Q2X9dGtt13wTn9Vxi2uvtSZohxqXWDYSzqjRz4msbDkFsjHpWITLccX989tjtbi_LiHXc4-cXqiQpTXWf9NLTc-Z5u8eg7_GZ5pLNyw_2h2Ggii0aq_4LOJcdHroTIXmpKwpyIjYWB-jYeHcofm53voF_tIpHX6YtBg3KrbZQjKoqrMOxzDULPJxAtLDeqGCRuJ75MikEaFWlMkJCBMjBL-nopctuke6E615X7XOrW6_Pd1VLOUzFI4MfR8t2HFnn8EarILRMC6C2RoIG7dk16x7T17NjLib9G97H0q6pEjYLm2JJu89dL8FRNLT3VmGiMy6ReM6A2EittXLpNgG4E7H8fEg3qYSk8DAE9mV3DDsNQcvB8J69au7L",
+      "enc": "ooix_hQAbfVPeu8uQ8o_cibD9aaaOBKp5EZAkdm3kGY",
+      "ikm_e": "1ISHyErj_kXklbkS4riKvAIiZlcuH5W7gKOym7l7-Qw",
+      "info": "nodkey/v1/answer",
+      "name": "answer_list_with_key_projects",
+      "plaintext": "{\"v\":1,\"request_id\":\"V3YOytacJmkm-z-oepnkNw\",\"decision\":\"approved\",\"accounts\":[],\"secrets\":[{\"title\":\"OpenAI (Sparrow)\",\"variable\":\"OPENAI_API_KEY\",\"projects\":[\"Sparrow\"]},{\"title\":\"OpenAI (Otter, Heron)\",\"variable\":\"OPENAI_API_KEY\",\"projects\":[\"Otter\",\"Heron\"]},{\"title\":\"OpenAI\",\"variable\":\"OPENAI_API_KEY\"}]}",
+      "plaintext_b64u": "eyJ2IjoxLCJyZXF1ZXN0X2lkIjoiVjNZT3l0YWNKbWttLXotb2VwbmtOdyIsImRlY2lzaW9uIjoiYXBwcm92ZWQiLCJhY2NvdW50cyI6W10sInNlY3JldHMiOlt7InRpdGxlIjoiT3BlbkFJIChTcGFycm93KSIsInZhcmlhYmxlIjoiT1BFTkFJX0FQSV9LRVkiLCJwcm9qZWN0cyI6WyJTcGFycm93Il19LHsidGl0bGUiOiJPcGVuQUkgKE90dGVyLCBIZXJvbikiLCJ2YXJpYWJsZSI6Ik9QRU5BSV9BUElfS0VZIiwicHJvamVjdHMiOlsiT3R0ZXIiLCJIZXJvbiJdfSx7InRpdGxlIjoiT3BlbkFJIiwidmFyaWFibGUiOiJPUEVOQUlfQVBJX0tFWSJ9XX0",
+      "purpose": "answer",
+      "recipient_kem_pk": "fE5zmodqNC-MJSk500yxJtz4i2vlbx3Hpg2qO712pTQ",
+      "recipient_kem_sk": "WVg29q7eTJuYsXMJkPAqAx2veoBDBCceAKKxCEs90KU",
+      "sender": "phone"
     }
   ],
+  "key_projects": {
+    "from": [
+      "project",
+      "global",
+      "chosen"
+    ],
+    "global": "global",
+    "keys": [
+      {
+        "projects": [
+          "Sparrow"
+        ],
+        "service": null,
+        "variable": "OPENAI_API_KEY"
+      },
+      {
+        "projects": [
+          "Otter",
+          "Heron"
+        ],
+        "service": null,
+        "variable": "OPENAI_API_KEY"
+      },
+      {
+        "projects": [],
+        "service": "openai.com",
+        "variable": "OPENAI_API_KEY"
+      },
+      {
+        "projects": [
+          "Sparrow"
+        ],
+        "service": null,
+        "variable": "ADMIN_TOKEN"
+      },
+      {
+        "projects": [],
+        "service": null,
+        "variable": "GITHUB_TOKEN"
+      },
+      {
+        "projects": [],
+        "service": null,
+        "variable": "GITHUB_TOKEN"
+      }
+    ],
+    "lookups": [
+      {
+        "from": "project",
+        "keys": [
+          0
+        ],
+        "project": "sparrow",
+        "target": "OPENAI_API_KEY"
+      },
+      {
+        "from": "project",
+        "keys": [
+          1
+        ],
+        "project": "HERON",
+        "target": "OPENAI_API_KEY"
+      },
+      {
+        "from": "global",
+        "keys": [
+          2
+        ],
+        "project": "Puffin",
+        "target": "OPENAI_API_KEY"
+      },
+      {
+        "from": "global",
+        "keys": [
+          2
+        ],
+        "project": null,
+        "target": "OPENAI_API_KEY"
+      },
+      {
+        "from": "global",
+        "keys": [
+          2
+        ],
+        "project": "Sparrow",
+        "target": "global/OPENAI_API_KEY"
+      },
+      {
+        "from": "project",
+        "keys": [
+          1
+        ],
+        "project": "Sparrow",
+        "target": "otter/OPENAI_API_KEY"
+      },
+      {
+        "from": "project",
+        "keys": [
+          1
+        ],
+        "project": null,
+        "target": "otter/OPENAI_API_KEY"
+      },
+      {
+        "from": "global",
+        "keys": [
+          2
+        ],
+        "project": "Sparrow",
+        "target": "openai.com/OPENAI_API_KEY"
+      },
+      {
+        "from": "global",
+        "keys": [
+          2
+        ],
+        "project": "Otter",
+        "target": "openai.com"
+      },
+      {
+        "from": "project",
+        "keys": [
+          3
+        ],
+        "project": "Sparrow",
+        "target": "ADMIN_TOKEN"
+      },
+      {
+        "from": null,
+        "keys": [],
+        "project": "Otter",
+        "target": "ADMIN_TOKEN"
+      },
+      {
+        "from": null,
+        "keys": [],
+        "project": null,
+        "target": "ADMIN_TOKEN"
+      },
+      {
+        "from": "global",
+        "keys": [
+          4,
+          5
+        ],
+        "project": "Sparrow",
+        "target": "GITHUB_TOKEN"
+      },
+      {
+        "from": null,
+        "keys": [],
+        "project": "Sparrow",
+        "target": "ANTHROPIC_API_KEY"
+      }
+    ],
+    "max_project": 40,
+    "max_projects": 10,
+    "names": [
+      {
+        "name": "Sparrow",
+        "ok": true
+      },
+      {
+        "name": "Otter app",
+        "ok": true
+      },
+      {
+        "name": "otter.example",
+        "ok": true
+      },
+      {
+        "name": "Bådbygger",
+        "ok": true
+      },
+      {
+        "name": "",
+        "ok": false
+      },
+      {
+        "name": " Sparrow",
+        "ok": false
+      },
+      {
+        "name": "a/b",
+        "ok": false
+      },
+      {
+        "name": "a,b",
+        "ok": false
+      },
+      {
+        "name": "a\nb",
+        "ok": false
+      },
+      {
+        "name": "global",
+        "ok": false
+      },
+      {
+        "name": "GLOBAL",
+        "ok": false
+      },
+      {
+        "name": "pppppppppppppppppppppppppppppppppppppppp",
+        "ok": true
+      },
+      {
+        "name": "ppppppppppppppppppppppppppppppppppppppppp",
+        "ok": false
+      }
+    ],
+    "same": [
+      {
+        "a": "sparrow",
+        "b": "Sparrow",
+        "same": true
+      },
+      {
+        "a": "BÅDBYGGER",
+        "b": "Bådbygger",
+        "same": true
+      },
+      {
+        "a": "Sparrow",
+        "b": "Otter",
+        "same": false
+      },
+      {
+        "a": "Otter app",
+        "b": "otter app",
+        "same": true
+      },
+      {
+        "a": "Otter app",
+        "b": "Otterapp",
+        "same": false
+      }
+    ],
+    "saves": [
+      {
+        "projects": [
+          "sparrow"
+        ],
+        "service": null,
+        "updates": 0,
+        "variable": "openai_api_key"
+      },
+      {
+        "projects": [
+          "Heron",
+          "Otter"
+        ],
+        "service": null,
+        "updates": 1,
+        "variable": "OPENAI_API_KEY"
+      },
+      {
+        "projects": [
+          "Otter"
+        ],
+        "service": null,
+        "updates": null,
+        "variable": "OPENAI_API_KEY"
+      },
+      {
+        "projects": [],
+        "service": "openai.com",
+        "updates": 2,
+        "variable": "OPENAI_API_KEY"
+      },
+      {
+        "projects": [],
+        "service": null,
+        "updates": null,
+        "variable": "OPENAI_API_KEY"
+      },
+      {
+        "projects": [],
+        "service": null,
+        "updates": 4,
+        "variable": "GITHUB_TOKEN"
+      },
+      {
+        "projects": [
+          "Otter"
+        ],
+        "service": null,
+        "updates": null,
+        "variable": "ADMIN_TOKEN"
+      }
+    ],
+    "targets": [
+      {
+        "global": false,
+        "ok": true,
+        "project": "sparrow",
+        "service": null,
+        "target": "sparrow/OPENAI_API_KEY",
+        "variable": "OPENAI_API_KEY"
+      },
+      {
+        "global": false,
+        "ok": true,
+        "project": "Otter app",
+        "service": null,
+        "target": "Otter app/ADMIN_TOKEN",
+        "variable": "ADMIN_TOKEN"
+      },
+      {
+        "global": true,
+        "ok": true,
+        "project": null,
+        "service": null,
+        "target": "global/OPENAI_API_KEY",
+        "variable": "OPENAI_API_KEY"
+      },
+      {
+        "global": true,
+        "ok": true,
+        "project": null,
+        "service": null,
+        "target": "Global/OPENAI_API_KEY",
+        "variable": "OPENAI_API_KEY"
+      },
+      {
+        "global": false,
+        "ok": true,
+        "project": null,
+        "service": "openai.com",
+        "target": "openai.com/OPENAI_API_KEY",
+        "variable": "OPENAI_API_KEY"
+      },
+      {
+        "global": false,
+        "ok": true,
+        "project": null,
+        "service": "localhost",
+        "target": "localhost/DEV_TOKEN",
+        "variable": "DEV_TOKEN"
+      },
+      {
+        "global": false,
+        "ok": true,
+        "project": null,
+        "service": "otter.example",
+        "target": "otter.example/OPENAI_API_KEY",
+        "variable": "OPENAI_API_KEY"
+      },
+      {
+        "ok": false,
+        "target": "sparrow/"
+      },
+      {
+        "ok": false,
+        "target": "global/"
+      },
+      {
+        "ok": false,
+        "target": "/OPENAI_API_KEY"
+      },
+      {
+        "ok": false,
+        "target": "a,b/OPENAI_API_KEY"
+      },
+      {
+        "ok": false,
+        "target": "sparrow/OPENAI-KEY"
+      },
+      {
+        "global": false,
+        "ok": true,
+        "project": null,
+        "service": null,
+        "target": "OPENAI_API_KEY",
+        "variable": "OPENAI_API_KEY"
+      }
+    ]
+  },
   "keys": {
     "agent": {
       "id": "IdQP77UDyu6DAF-4aCs1-Q",

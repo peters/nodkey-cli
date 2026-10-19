@@ -286,6 +286,7 @@ mod tests {
             suggest: None,
             wait_seconds: None,
             save_secret: None,
+            project: None,
         }
     }
 

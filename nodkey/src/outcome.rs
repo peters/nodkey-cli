@@ -90,8 +90,9 @@ pub(crate) const OLD_PROTOCOL: &str = "The phone could not read this request: No
     and try again.";
 
 /// Added to a list result with key names.
-const KEYS: &str = " secrets lists the API keys this agent may ask for, by name only. To use one, run \
-    `nodkey run --secret VARIABLE[=SERVICE] -- <command>`: the key goes into the command's environment and never \
+const KEYS: &str = " secrets lists the API keys this agent may ask for, by name only, with their projects (none: a \
+    global key every project may use). To use one, run `nodkey run --secret VARIABLE[=SERVICE] -- <command>` (with \
+    --project NAME, or in a repository with a .nodkey file): the key goes into the command's environment and never \
     into this conversation.";
 
 /// Added to the message when the user picked the account by hand.

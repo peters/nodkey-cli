@@ -22,12 +22,13 @@ Usage:
                                            the full payment card for ONE purchase (spends money;
                                            only when the user turned full card numbers on for
                                            this agent); e.g. nodkey pay shop.example.com 499 NOK
-  nodkey run --secret NAME[=SERVICE]... --reason TEXT -- COMMAND [ARGS]
+  nodkey run [--secret NAME[=SERVICE]]... [--project NAME] [--reason TEXT] -- COMMAND [ARGS]
                                            run COMMAND with API keys from Nodkey in its
                                            environment (NAME is the variable, e.g.
                                            OPENAI_API_KEY); the keys are never printed
-  nodkey secret save NAME [--service HOST] [--title TEXT] [--notes TEXT] [--expires DATE]
-                   --reason TEXT           save a key you made in Nodkey; the key itself comes
+  nodkey secret save NAME [--service HOST] [--project NAMES] [--title TEXT] [--notes TEXT]
+                   [--expires DATE] --reason TEXT
+                                           save a key you made in Nodkey; the key itself comes
                                            from stdin, never from the arguments
   nodkey accounts [--reason TEXT]          the accounts this agent may ask for (no secrets),
                                            and the names of its keys
@@ -64,9 +65,19 @@ Options for pay: --reason, --image, --field (number, cvc, exp_month, ...), --pho
   --effort as above, and --reveal (required: the card number is printed). Without a browser
   host nothing can fill the card for you; the user decides on the iPhone every time.
 
-Options for run: --reason (required), --phone, --model, --effort as above. One key is one
-  request; several keys are one request with one approval (or, in a task session, one request
-  each). The command's own exit code is passed on; when the phone refuses, nothing runs.
+Options for run: --reason (default: \"Run COMMAND\"), --phone, --model, --effort as above.
+  run asks for the keys the nearest .nodkey file lists (from this folder up), in its project:
+      project = \"sparrow\"
+      secrets = [\"OPENAI_API_KEY\", \"ANTHROPIC_API_KEY\", \"global/GITHUB_TOKEN\"]
+  The file holds names only, so it is safe to commit. --secret adds a key (global/NAME: only
+  the global key; PROJECT/NAME: another project's key); --project NAME asks in another project
+  (global: only global keys). The phone gives the project's key, else the global one. One key is
+  one request; several keys are one request with one approval (or, in a task session, one
+  request each). The command's own exit code is passed on; when the phone refuses, nothing runs.
+
+Options for secret save: --project NAMES (comma-separated; default: the .nodkey file's project;
+  global: a key every project may use), --service, --title, --notes, --expires, --reason,
+  --phone, --model, --effort.
 
 Clean-up filter (every one you give must hold; at least one):
   --ip-only  --never-used  --query PATTERN  --username NAME  --domain DOMAIN  --group ID

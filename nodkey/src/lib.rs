@@ -10,6 +10,7 @@ pub mod commands;
 pub mod filter;
 pub mod host;
 pub mod image;
+pub mod keyfile;
 pub mod mcp;
 pub mod outcome;
 pub mod profile;

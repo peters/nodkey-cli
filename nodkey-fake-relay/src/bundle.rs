@@ -33,7 +33,7 @@ pub fn answer(fake: &Fake, request: &Request, rid: &str) -> Answer {
             if item.kind == Kind::Secret {
                 a.account = None;
                 a.match_kind = None;
-                match crate::secrets::find(fake, &item.target) {
+                match crate::secrets::find(fake, &item.target, request.project.as_deref()) {
                     Some(key) => a.secret = Some(key),
                     None => {
                         let mut no = BundleItemAnswer::decision(&item.id, Decision::Denied);

@@ -20,8 +20,9 @@
 //!   Shortcuts automation, for the waiting `sms_code` request; `{"expire": true}` ends the wait.
 //! - `PUT /_fake/quota` with `{"state": "off" | "warning" | "paused" | "paused_by_user", "new_today",
 //!   "limit", "burst"}`: the agent limit (see [`crate::quota`]).
-//! - `GET /_fake/secrets`, `PUT /_fake/secrets` with `[{title, service, variable, value}]`: the
-//!   phone's API keys (test values only; two test keys to begin with).
+//! - `GET /_fake/secrets`, `PUT /_fake/secrets` with `[{title, service, variable, value,
+//!   projects}]`: the phone's API keys (test values only; two global test keys to begin with;
+//!   `projects` absent or empty for a global key).
 
 use std::sync::Arc;
 

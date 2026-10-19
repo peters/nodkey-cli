@@ -25,14 +25,14 @@ fn targets() {
         t("openai.com").unwrap(),
         SecretTarget {
             service: Some("openai.com".into()),
-            variable: None
+            ..SecretTarget::default()
         }
     );
     assert_eq!(
         t(" OPENAI_API_KEY ").unwrap(),
         SecretTarget {
-            service: None,
-            variable: Some("OPENAI_API_KEY".into())
+            variable: Some("OPENAI_API_KEY".into()),
+            ..SecretTarget::default()
         }
     );
     let both = t("api.example.com/EXAMPLE_TOKEN").unwrap();
@@ -101,6 +101,7 @@ fn saves() {
         title: Some("OpenAI".into()),
         notes: None,
         expires: None,
+        projects: vec![],
         value,
     };
     assert_eq!(save.target(), "openai.com/OPENAI_API_KEY");
@@ -118,6 +119,11 @@ fn saves() {
     assert!(with(&|s| s.value.ct = String::new()).is_err());
     assert!(with(&|s| s.title = Some("t".repeat(101))).is_err());
     assert!(with(&|s| s.notes = Some("n".repeat(501))).is_err());
+    assert!(with(&|s| s.projects = vec!["Sparrow".into(), "Otter".into()]).is_ok());
+    assert!(with(&|s| s.projects = vec!["Sparrow".into(), "sparrow".into()]).is_err());
+    assert!(with(&|s| s.projects = vec!["global".into()]).is_err());
+    assert!(with(&|s| s.projects = vec!["a/b".into()]).is_err());
+    assert!(with(&|s| s.projects = (0..11).map(|i| format!("P{i}")).collect()).is_err());
 }
 
 #[test]
@@ -128,10 +134,35 @@ fn wire_names() {
         variable: Some("OPENAI_API_KEY".into()),
         value: Some(Secret::new("sk-test-0000")),
         expires: None,
+        from: None,
+        project: None,
     };
     assert_eq!(
         serde_json::to_string(&a).unwrap(),
         r#"{"title":"OpenAI","service":"openai.com","variable":"OPENAI_API_KEY","value":"sk-test-0000"}"#
     );
     assert!(!format!("{a:?}").contains("sk-test"));
+    let from_sparrow = SecretAnswer {
+        service: None,
+        from: Some(KeyFrom::Project),
+        project: Some("Sparrow".into()),
+        ..a
+    };
+    assert_eq!(
+        serde_json::to_string(&from_sparrow).unwrap(),
+        r#"{"title":"OpenAI","variable":"OPENAI_API_KEY","value":"sk-test-0000","from":"project","project":"Sparrow"}"#
+    );
+    let entry = SecretEntry {
+        title: "OpenAI".into(),
+        service: None,
+        variable: Some("OPENAI_API_KEY".into()),
+        projects: vec!["Sparrow".into(), "Otter".into()],
+    };
+    assert_eq!(
+        serde_json::to_string(&entry).unwrap(),
+        r#"{"title":"OpenAI","variable":"OPENAI_API_KEY","projects":["Sparrow","Otter"]}"#
+    );
+    let global: SecretEntry =
+        serde_json::from_str(r#"{"title":"OpenAI","variable":"OPENAI_API_KEY"}"#).unwrap();
+    assert!(global.projects.is_empty());
 }

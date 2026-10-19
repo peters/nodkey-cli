@@ -3,11 +3,18 @@
 //! one by service and/or variable name; the phone answers only after Face ID, never under a lease.
 //! The preferred way is `nodkey run --secret NAME -- <command>`: the value goes into the child
 //! process's environment and never reaches the model. An agent that made a new key saves it with
-//! `save_secret`; the value is sealed to the phone on its own (`nodkey/v1/secret`).
+//! `save_secret`; the value is sealed to the phone on its own (`nodkey/v1/secret`). Keys belong to
+//! projects or are global ([`project`]).
 
 use serde::{Deserialize, Serialize};
 
 use crate::{Error, Purpose, SealedBox, Secret, client::MAX_TARGET};
+
+pub mod project;
+pub use project::{
+    Found, GLOBAL, KeyFrom, KeyNames, MAX_PROJECT, MAX_PROJECTS, lookup, same_project,
+    same_projects, saved_key, valid_project,
+};
 
 /// Why the phone refused a `secret` or `save_secret` request (`Answer.error`).
 pub mod errors {
@@ -55,27 +62,50 @@ pub fn service_matches(saved: &str, wanted: &str) -> bool {
         || saved.ends_with(&format!(".{wanted}"))
 }
 
-/// What a `secret` target names: a service, a variable name, or both (`service/VARIABLE`).
+/// What a `secret` target names: a service, a variable name, or both (`service/VARIABLE`); or a
+/// variable name in a project (`project/VARIABLE`) or among the global keys (`global/VARIABLE`).
 #[derive(Debug, Clone, PartialEq, Eq, Default)]
 pub struct SecretTarget {
     pub service: Option<String>,
     pub variable: Option<String>,
+    /// `project/VARIABLE`: the project named in the target (it wins over the request's `project`).
+    pub project: Option<String>,
+    /// `global/VARIABLE`: only a global key, whatever project the request names.
+    pub global: bool,
 }
 
 impl SecretTarget {
     /// Reads a target: `openai.com` (a service: it has a dot), `OPENAI_API_KEY` (a variable
-    /// name) or `openai.com/OPENAI_API_KEY` (both). A service must already be in [`service`]
-    /// form; the agent tools tidy it before they send.
+    /// name), `openai.com/OPENAI_API_KEY` (both), `sparrow/OPENAI_API_KEY` (a variable name in a
+    /// project: the part before `/` has no dot and is not `localhost`) or `global/OPENAI_API_KEY`
+    /// (only the global key). A service must already be in [`service`] form; the agent tools tidy
+    /// it before they send. A project whose name has a dot goes in the request's `project`.
     pub fn parse(target: &str) -> Result<SecretTarget, String> {
         let t = target.trim();
         if t.is_empty() || t.chars().count() > MAX_TARGET {
             return Err("a key target is a service, a variable name or service/VARIABLE".into());
         }
-        let (service_part, variable_part) = match t.split_once('/') {
+        let (mut service_part, variable_part) = match t.split_once('/') {
             Some((s, v)) => (Some(s), Some(v)),
             None if valid_variable(t) => (None, Some(t)),
             None => (Some(t), None),
         };
+        let (mut project, mut global) = (None, false);
+        if let (Some(first), Some(_)) = (service_part, variable_part)
+            && !first.contains('.')
+            && first != "localhost"
+        {
+            if first.eq_ignore_ascii_case(GLOBAL) {
+                global = true;
+            } else if valid_project(first) {
+                project = Some(first.to_owned());
+            } else {
+                return Err(format!(
+                    "{first:?} is neither a service host (e.g. openai.com) nor a project name"
+                ));
+            }
+            service_part = None;
+        }
         if let Some(v) = variable_part
             && !valid_variable(v)
         {
@@ -93,16 +123,25 @@ impl SecretTarget {
         Ok(SecretTarget {
             service: service_part.map(str::to_owned),
             variable: variable_part.map(str::to_owned),
+            project,
+            global,
         })
     }
 
-    /// The target string: `service/VARIABLE`, `service` or `VARIABLE`.
+    /// The target string: `service/VARIABLE`, `service`, `VARIABLE`, `project/VARIABLE` or
+    /// `global/VARIABLE` (a project or `global` goes with a variable name only, never a service).
     pub fn to_target(&self) -> String {
-        match (&self.service, &self.variable) {
-            (Some(s), Some(v)) => format!("{s}/{v}"),
-            (Some(s), None) => s.clone(),
-            (None, Some(v)) => v.clone(),
-            (None, None) => String::new(),
+        let scope = if self.global {
+            Some(GLOBAL)
+        } else {
+            self.project.as_deref()
+        };
+        match (scope, &self.service, &self.variable) {
+            (Some(p), _, Some(v)) => format!("{p}/{v}"),
+            (_, Some(s), Some(v)) => format!("{s}/{v}"),
+            (_, Some(s), None) => s.clone(),
+            (_, None, Some(v)) => v.clone(),
+            (_, None, None) => String::new(),
         }
     }
 
@@ -140,6 +179,13 @@ pub struct SecretAnswer {
     /// When the key stops working, if the user noted it (Unix seconds).
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub expires: Option<u64>,
+    /// Where the key comes from: a key of the asked project, a global key, or one the user picked
+    /// by hand. Absent in answers from apps before projects.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub from: Option<KeyFrom>,
+    /// With `from: project`: the project's name as the user wrote it ("Sparrow").
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub project: Option<String>,
 }
 
 /// A key in a `list` answer: names only, never the value.
@@ -150,6 +196,9 @@ pub struct SecretEntry {
     pub service: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub variable: Option<String>,
+    /// The projects the key belongs to; absent (empty) for a global key.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub projects: Vec<String>,
 }
 
 /// The key a `save_secret` request asks the phone to keep. The value is sealed to the phone on
@@ -169,6 +218,9 @@ pub struct SaveSecret {
     /// When the key stops working, if the agent knows (Unix seconds).
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub expires: Option<u64>,
+    /// The projects the key is for (`["Sparrow"]`); absent (empty) saves a global key.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub projects: Vec<String>,
     pub value: SealedBox,
 }
 
@@ -178,6 +230,7 @@ impl SaveSecret {
         SecretTarget {
             service: self.service.clone(),
             variable: Some(self.variable.clone()),
+            ..SecretTarget::default()
         }
         .to_target()
     }
@@ -210,13 +263,15 @@ impl SaveSecret {
                 "the title (at most {MAX_TITLE}) or the notes (at most {MAX_NOTES}) are too long"
             ));
         }
-        Ok(())
+        project::check_projects(&self.projects)
     }
 }
 
-/// The `secret` and `save_secret` rules of [`crate::client::check_request`].
+/// The `secret` and `save_secret` rules of [`crate::client::check_request`], and the request's
+/// `project`.
 pub(crate) fn check_request(r: &crate::Request) -> Result<(), String> {
     use crate::Kind;
+    project::check_request(r)?;
     match (r.kind, &r.save_secret) {
         (Kind::Secret, None) => SecretTarget::parse(&r.target).map(|_| ()),
         (Kind::SaveSecret, None) => Err("a save_secret request needs the key to save".into()),

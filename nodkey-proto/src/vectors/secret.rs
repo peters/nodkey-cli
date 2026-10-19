@@ -22,6 +22,8 @@ fn key(value: Option<&str>) -> SecretAnswer {
         variable: Some("OPENAI_API_KEY".into()),
         value: value.map(Secret::new),
         expires: Some(super::TS + 90 * 86_400),
+        from: None,
+        project: None,
     }
 }
 
@@ -32,6 +34,8 @@ fn example_key() -> SecretAnswer {
         variable: Some("EXAMPLE_TOKEN".into()),
         value: Some(Secret::new("tok-test-1111")),
         expires: None,
+        from: None,
+        project: None,
     }
 }
 
@@ -110,6 +114,7 @@ pub(super) fn add(ctx: &mut Ctx, agent: &Side, phone: &Side) -> Value {
         title: Some("OpenAI".into()),
         notes: Some("Made for the test project".into()),
         expires: Some(super::TS + 90 * 86_400),
+        projects: vec![],
         value,
     };
     let mut r = request(
@@ -207,11 +212,13 @@ pub(super) fn add(ctx: &mut Ctx, agent: &Side, phone: &Side) -> Value {
             title: "OpenAI".into(),
             service: Some("openai.com".into()),
             variable: Some("OPENAI_API_KEY".into()),
+            projects: vec![],
         },
         SecretEntry {
             title: "Example API".into(),
             service: Some("api.example.com".into()),
             variable: Some("EXAMPLE_TOKEN".into()),
+            projects: vec![],
         },
     ]);
     answers.push(("answer_list_with_secrets", a));

@@ -120,7 +120,7 @@ pub fn tools() -> Value {
                         "items": {
                             "type": "object",
                             "properties": {
-                                "kind": { "type": "string", "enum": ["login", "code", "secret", "passkey"], "description": "login: user name and password (and a code when it has one); code: one one-time code; secret: an API key (target = its service, its variable name or service/VARIABLE, e.g. openai.com/OPENAI_API_KEY; with session_minutes it carries no value, and later nodkey run --secret calls for it go through); passkey (only with session_minutes): later passkey sign-ins on that site (target = the site, e.g. github.com) go through in the session." },
+                                "kind": { "type": "string", "enum": ["login", "code", "secret", "passkey"], "description": "login: user name and password (and a code when it has one); code: one one-time code; secret: an API key (target = its service, its variable name, service/VARIABLE, project/VARIABLE or global/VARIABLE, e.g. openai.com/OPENAI_API_KEY or sparrow/OPENAI_API_KEY; with session_minutes it carries no value, and later nodkey run --secret calls for it go through); passkey (only with session_minutes): later passkey sign-ins on that site (target = the site, e.g. github.com) go through in the session." },
                                 "target": target
                             },
                             "required": ["kind", "target"],
@@ -179,17 +179,19 @@ pub fn tools() -> Value {
             "title": "Ask the user's iPhone for an API key",
             "description": format!("Ask Nodkey on the user's iPhone for an API key or other secret, by its variable \
                 name (e.g. OPENAI_API_KEY), its service (e.g. openai.com) or both. Prefer the command line instead: \
-                `nodkey run --secret OPENAI_API_KEY -- <command>` puts the key only into that command's environment, so \
-                it never enters this conversation. Use this tool only when no command can take the key that way. The \
-                user approves with Face ID every time; there is never an \"always allow\". {APPROVAL} Always explain \
-                the reason. Returns JSON with decision and, when approved, secret (title, service, variable, value, \
-                expires). Never put the value in a file, a commit, a chat message or a log, and never repeat it. \
-                error no_secret: the user says Nodkey has no such key."),
+                `nodkey run --secret OPENAI_API_KEY -- <command>` (or just `nodkey run -- <command>` in a repository \
+                with a .nodkey file) puts the key only into that command's environment, so it never enters this \
+                conversation. Use this tool only when no command can take the key that way. The user approves with \
+                Face ID every time; there is never an \"always allow\". {APPROVAL} Always explain the reason. Returns \
+                JSON with decision and, when approved, secret (title, service, variable, value, expires, from: \
+                project or global, project). Never put the value in a file, a commit, a chat message or a log, and \
+                never repeat it. error no_secret: the user says Nodkey has no such key."),
             "inputSchema": {
                 "type": "object",
                 "properties": {
                     "variable": { "type": "string", "description": "The environment variable name of the key, e.g. \"OPENAI_API_KEY\"." },
                     "service": { "type": "string", "description": "The service the key is for, as a host, e.g. \"openai.com\"." },
+                    "project": { "type": "string", "description": "Optional: the project the key is for, e.g. \"sparrow\" (the project of the repository's .nodkey file). The phone gives that project's key, else the global one. \"global\" or none: only a global key." },
                     "reason": reason, "image_path": image, "phone": phone, "model": model, "effort": effort
                 },
                 "required": ["reason"],
@@ -203,10 +205,10 @@ pub fn tools() -> Value {
             "description": format!("Save an API key or other secret in Nodkey on the user's iPhone. Call it at once \
                 after you made a new key (for example in a provider's dashboard), so the key never stays in a file or \
                 in this conversation. The value is encrypted to the phone at once; the user sees the title, service \
-                and variable name (never the value) and saves it with Face ID. A key with the same service and \
-                variable name gets the new value; else a new key is added. {APPROVAL} Returns JSON with decision and \
-                saved (added, updated or unchanged). After that, use the key with `nodkey run --secret VARIABLE -- \
-                <command>` and do not keep the value anywhere else."),
+                and variable name (never the value) and saves it with Face ID. A key with the same service, \
+                variable name and projects gets the new value; else a new key is added. {APPROVAL} Returns JSON with \
+                decision and saved (added, updated or unchanged). After that, use the key with `nodkey run --secret \
+                VARIABLE -- <command>` and do not keep the value anywhere else."),
             "inputSchema": {
                 "type": "object",
                 "properties": {
@@ -216,6 +218,7 @@ pub fn tools() -> Value {
                     "title": { "type": "string", "description": "Optional: a name for the key, e.g. \"OpenAI test project\"." },
                     "notes": { "type": "string", "description": "Optional: a short note, e.g. what the key may do." },
                     "expires": { "type": ["integer", "string"], "description": "Optional: when the key stops working (YYYY-MM-DD or Unix seconds)." },
+                    "projects": { "type": "array", "items": { "type": "string" }, "description": "Optional: the projects the key is for, e.g. [\"sparrow\"] (the project of the repository's .nodkey file). None: a global key every project may use." },
                     "reason": reason, "phone": phone, "model": model, "effort": effort
                 },
                 "required": ["variable", "value", "reason"],

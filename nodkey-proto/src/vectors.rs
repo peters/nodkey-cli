@@ -13,10 +13,9 @@ use sha2::{Digest, Sha256};
 use crate::{
     Account, AccountEntry, Answer, AttachmentInfo, CleanupFilter, Decision, ImageType, KeyPair,
     Kind, Lease, LeaseKind, PairingGrant, Purpose, Request, Scope, Secret, VERSION, auth, b64u,
-    check, code,
-    seal::{ENC_LEN, seal_with_rng},
-    testing::DetRng,
+    check, code, testing::DetRng,
 };
+use ctx::Ctx;
 
 /// Timestamp used throughout the vectors.
 pub const TS: u64 = 1_791_620_000;
@@ -35,9 +34,11 @@ pub const PNG: [u8; 76] = [
 
 mod bundle;
 mod card;
+mod ctx;
 mod matching;
 pub mod passkey;
 pub mod prf;
+mod project;
 mod quota;
 mod save;
 mod secret;
@@ -78,60 +79,6 @@ impl Side {
             "sign_sk": b64u::encode(self.keys.sign_secret()),
             "sign_pk": p.sign_b64u(),
         })
-    }
-}
-
-struct Ctx {
-    rng: DetRng,
-    hpke: Vec<Value>,
-}
-
-impl Ctx {
-    #[allow(clippy::too_many_arguments)]
-    fn seal(
-        &mut self,
-        name: &str,
-        purpose: Purpose,
-        sender: &str,
-        recipient: &Side,
-        aad_str: String,
-        plaintext: &[u8],
-        text: bool,
-    ) -> crate::SealedBox {
-        let ikm_e: [u8; 32] = self.rng.clone().take();
-        let pk = recipient.keys.public().kem;
-        let s = seal_with_rng(
-            purpose.info().as_bytes(),
-            &pk,
-            aad_str.as_bytes(),
-            plaintext,
-            &mut self.rng,
-        )
-        .expect("seal");
-        let mut v = json!({
-            "name": name,
-            "purpose": format!("{purpose:?}").to_lowercase(),
-            "sender": sender,
-            "info": purpose.info(),
-            "aad": aad_str,
-            "recipient_kem_sk": b64u::encode(recipient.keys.kem_secret()),
-            "recipient_kem_pk": b64u::encode(&pk),
-            "ikm_e": b64u::encode(&ikm_e),
-            "enc": b64u::encode(&s.enc),
-            "ct": b64u::encode(&s.ct),
-            "plaintext_b64u": b64u::encode(plaintext),
-        });
-        if text {
-            v["plaintext"] = Value::String(String::from_utf8(plaintext.to_vec()).expect("utf-8"));
-        }
-        if purpose == Purpose::Attachment {
-            let mut body = Vec::with_capacity(ENC_LEN + s.ct.len());
-            body.extend_from_slice(&s.enc);
-            body.extend_from_slice(&s.ct);
-            v["body_b64u"] = Value::String(b64u::encode(&body));
-        }
-        self.hpke.push(v);
-        s.to_box()
     }
 }
 
@@ -182,6 +129,7 @@ fn request(
         suggest: None,
         wait_seconds: None,
         save_secret: None,
+        project: None,
     }
 }
 
@@ -407,6 +355,7 @@ pub fn build() -> Value {
     let quota = quota::add(&mut ctx, &agent, &phone); // After sign-in: earlier bytes stay the same.
     let prf = prf::add(&mut ctx, &agent, &phone); // After the agent limit, for the same reason.
     let secrets = secret::add(&mut ctx, &agent, &phone); // After PRF, for the same reason.
+    let key_projects = project::add(&mut ctx, &agent, &phone); // After the keys, likewise.
 
     // Signed relay calls.
     let agent_info = crate::AgentInfo {
@@ -595,5 +544,6 @@ pub fn build() -> Value {
         "quota": quota,
         "prf": prf,
         "secrets": secrets,
+        "key_projects": key_projects,
     })
 }

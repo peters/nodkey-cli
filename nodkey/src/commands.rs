@@ -366,11 +366,22 @@ fn print_accounts(v: &Value) {
         );
     }
     for k in v["secrets"].as_array().into_iter().flatten() {
+        let projects: Vec<&str> = k["projects"]
+            .as_array()
+            .into_iter()
+            .flatten()
+            .filter_map(Value::as_str)
+            .collect();
         println!(
-            "Key  {}  {}  {}",
+            "Key  {}  {}  {}  {}",
             k["title"].as_str().unwrap_or_default(),
             k["service"].as_str().unwrap_or("-"),
-            k["variable"].as_str().unwrap_or("-")
+            k["variable"].as_str().unwrap_or("-"),
+            if projects.is_empty() {
+                "global".to_owned()
+            } else {
+                projects.join(", ")
+            }
         );
     }
     for c in v["cards"].as_array().into_iter().flatten() {

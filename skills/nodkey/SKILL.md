@@ -25,8 +25,9 @@ for 1 day / 7 days / always"); then the phone answers by itself. You never keep 
   each needs (login, code, passkey). More than one thing: one `request_credentials` with a session
   (see "Plan the task, ask once"). One thing only: `request_login` or `request_code`.
 - **Never paste an API key into a chat or a file** (also not into `.env`, a config file, a commit or
-  a log). Run the command that needs it with `nodkey run --secret NAME -- <command>`. When you made
-  a new key, save it at once with `save_secret`. See "API keys and secrets".
+  a log). Run the command that needs it with `nodkey run -- <command>` (the repository's `.nodkey`
+  file lists the keys) or `nodkey run --secret NAME -- <command>`. When you made a new key, save it
+  at once with `save_secret`. See "API keys and secrets".
 - Tell the user in one line when a request is waiting on their iPhone. It waits up to two minutes.
 - If several accounts match, the phone asks them which one; never guess user names.
 - Pass `model` (the model you run on, e.g. `claude-opus-5-5`) and `effort` (your reasoning effort,
@@ -165,32 +166,56 @@ their iPhone and needs Face ID; there is no "always allow" for cards.
 
 ## API keys and secrets
 
-Nodkey keeps API keys and tokens with a service (`openai.com`) and an environment variable name
-(`OPENAI_API_KEY`). The user approves every key with Face ID; there is no "always allow" for keys.
+Nodkey keeps API keys and tokens with a service (`openai.com`), an environment variable name
+(`OPENAI_API_KEY`) and the projects they belong to ("Sparrow", "Otter"). A key without projects is
+**global**: every project may use it. The phone gives the key of the asked project, else the
+global key with that name. The user approves every key with Face ID; there is no "always allow"
+for keys.
 
-1. **Use a key without seeing it** (preferred): run the command with the key in its environment:
+1. **A repository that needs keys gets a `.nodkey` file** at its root, with names only (never a
+   value), so it is safe to commit, also in a public repository:
 
-   ```sh
-   nodkey run --secret OPENAI_API_KEY --reason "Run the tests that call the OpenAI API" -- npm test
-   nodkey run --secret OPENAI_API_KEY=openai.com --secret EXAMPLE_TOKEN --reason "Deploy the preview" -- ./deploy.sh
+   ```toml
+   project = "sparrow"
+   secrets = ["OPENAI_API_KEY", "ANTHROPIC_API_KEY", "global/GITHUB_TOKEN"]
    ```
 
-   `NAME` is the variable the command reads; `=SERVICE` helps the phone find the key. Several keys
-   are one request. The command's output and exit code are its own; nodkey never prints a key. When
-   the phone refuses, the command does not run (exit 2 denied, 3 expired, 4 paused).
-2. **Only when no command can take it from the environment:** `request_secret(variable, service,
-   reason)` returns the value. Use it once, for that task only; never write it anywhere.
-3. **You made a new key** (for example in a provider's dashboard): save it at once with
-   `save_secret(variable, service, value, reason)`, then use it with `nodkey run`. On the command
-   line: `printf %s "$KEY" | nodkey secret save NAME --service HOST --reason TEXT` (the value comes
-   from stdin, never from the arguments). A key with the same service and variable name gets the
-   new value.
-4. `no_secret`: the user says Nodkey has no such key. Ask them to add it under Passwords, Keys in
-   Nodkey; do not ask them to paste it into the chat.
-5. In a plan, add a key as `{"kind": "secret", "target": "openai.com/OPENAI_API_KEY"}`. With a
-   session, the plan item carries no value, and later `nodkey run --secret` calls for that key go
-   through without asking.
-6. `list_accounts` shows the key names (`secrets`); never a value.
+   `project` is the repository's name in Nodkey (ask the user, or take the repository's name);
+   `global/NAME` takes only the global key. Make the file when a task needs keys and it is missing,
+   and add a name when the code reads a new key. Never put a value, a `.env` line or a comment with
+   a key into it.
+2. **Use the keys without seeing them** (preferred): run the command with the keys in its
+   environment. In the repository (or any folder below it):
+
+   ```sh
+   nodkey run --reason "Run the tests that call the OpenAI API" -- npm test
+   nodkey run --secret EXAMPLE_TOKEN=api.example.com --reason "Deploy the preview" -- ./deploy.sh
+   nodkey run --project otter --secret OPENAI_API_KEY --reason "Try the Otter prompt" -- python try.py
+   ```
+
+   It asks for every key of the nearest `.nodkey` file in one request (one Face ID; the user sees
+   "wants 3 keys from Sparrow"). `--secret NAME[=SERVICE]` adds a key (`=SERVICE` helps the phone
+   find it; `global/NAME` takes only the global key); `--project NAME` asks in another project
+   (`global`: only global keys). On stderr nodkey says which key it got ("OPENAI_API_KEY from
+   Sparrow, GITHUB_TOKEN (global)"). The command's output and exit code are its own; nodkey never
+   prints a key. When the phone refuses, the command does not run (exit 2 denied, 3 expired, 4
+   paused).
+3. **Only when no command can take it from the environment:** `request_secret(variable, service,
+   project, reason)` returns the value. Pass the `project` of the `.nodkey` file. Use it once, for
+   that task only; never write it anywhere.
+4. **You made a new key** (for example in a provider's dashboard): save it at once with
+   `save_secret(variable, service, value, projects, reason)` (`projects`: the `.nodkey` project, or
+   none for a global key), then use it with `nodkey run`. On the command line: `printf %s "$KEY" |
+   nodkey secret save NAME --service HOST --reason TEXT` (the value comes from stdin, never from
+   the arguments; in a folder with a `.nodkey` file the key belongs to its project unless you pass
+   `--project NAME` or `--project global`). A key with the same service, variable name and projects
+   gets the new value.
+5. `no_secret`: the user says Nodkey has no such key. Ask them to add it under Passwords, Keys in
+   Nodkey (in the right project); do not ask them to paste it into the chat.
+6. In a plan, add a key as `{"kind": "secret", "target": "sparrow/OPENAI_API_KEY"}` (or
+   `openai.com/OPENAI_API_KEY`, `global/NAME`). With a session, the plan item carries no value,
+   and later `nodkey run` calls for that key go through without asking.
+7. `list_accounts` shows the key names (`secrets`) with their projects; never a value.
 
 Keys count toward the limit on new items, like logins.
 

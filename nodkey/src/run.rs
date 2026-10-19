@@ -1,17 +1,22 @@
-//! API keys on the command line. `nodkey run --secret NAME[=SERVICE] ... -- <command> [args]` asks
-//! the phone for the keys, puts each one only into the environment of the command it starts,
-//! never prints them and exits with the command's exit code. `nodkey secret save NAME` reads the
-//! value of a new key from stdin (never from the arguments) and asks the phone to keep it.
+//! API keys on the command line. `nodkey run [--secret NAME[=SERVICE]]... [--project NAME] --
+//! <command> [args]` asks the phone for the keys, puts each one only into the environment of the
+//! command it starts, never prints them and exits with the command's exit code. It asks for the
+//! keys the nearest `.nodkey` file lists, in its project (`keyfile.rs`); `--secret` adds keys and
+//! `--project` names another project (`global`: only the global keys).
 
-use std::{io::IsTerminal, process::ExitCode};
+use std::process::ExitCode;
 
-use nodkey_proto::{Answer, BundleItem, BundleRequest, Decision, Kind, apikey};
+use nodkey_proto::{
+    Answer, BundleItem, BundleRequest, Decision, Kind, SecretAnswer, SecretTarget,
+    apikey::{self, KeyFrom},
+};
 use zeroize::Zeroizing;
 
 use crate::{
     agent::{Agent, Reported, new_request},
     cli::{Args, DENIED, EXPIRED, PAUSED, agent_for, fail, usage_error},
-    secret::{NewKey, refusal},
+    keyfile::{self, KeyFile},
+    secret::refusal,
     store::select_phone,
 };
 
@@ -19,8 +24,7 @@ use crate::{
 const NOT_FOUND: u8 = 127;
 const CANNOT_RUN: u8 = 126;
 
-/// One `--secret` option: the variable name in the command's environment and the target the
-/// phone matches.
+/// One key: the variable name in the command's environment and the target the phone matches.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Wanted {
     pub name: String,
@@ -28,35 +32,79 @@ pub struct Wanted {
 }
 
 impl Wanted {
-    /// `NAME` or `NAME=SERVICE` (the service as a host or a URL).
+    /// `NAME`, `NAME=SERVICE` (the service as a host or a URL), `global/NAME` (only the global
+    /// key) or `project/NAME` (another project's key).
     pub fn parse(text: &str) -> Result<Wanted, String> {
-        let (name, service) = match text.split_once('=') {
+        let (left, service) = match text.split_once('=') {
             Some((n, s)) => (n.trim(), Some(s)),
             None => (text.trim(), None),
         };
-        if !apikey::valid_variable(name) {
-            return Err(format!(
-                "--secret {text:?}: give NAME or NAME=SERVICE, NAME a variable name like OPENAI_API_KEY"
-            ));
+        let usage = || {
+            format!(
+                "--secret {text:?}: give NAME, NAME=SERVICE, global/NAME or project/NAME, NAME a variable name like \
+                 OPENAI_API_KEY"
+            )
+        };
+        if left.contains('/') {
+            if service.is_some() {
+                return Err(format!(
+                    "--secret {text:?}: a project or global key takes no service"
+                ));
+            }
+            let t = SecretTarget::parse(left).map_err(|e| format!("--secret {text:?}: {e}"))?;
+            let name = t.variable.clone().ok_or_else(usage)?;
+            return Ok(Wanted {
+                name,
+                target: t.to_target(),
+            });
+        }
+        if !apikey::valid_variable(left) {
+            return Err(usage());
         }
         Ok(Wanted {
-            name: name.to_owned(),
-            target: crate::secret::target(Some(name), service)?,
+            name: left.to_owned(),
+            target: crate::secret::target(Some(left), service)?,
         })
     }
 }
 
+/// What `nodkey run` does: the keys, the project they are asked in, the other options and the
+/// command.
+#[derive(Debug)]
+pub struct Plan {
+    pub wanted: Vec<Wanted>,
+    pub project: Option<String>,
+    pub args: Args,
+    pub command: Vec<String>,
+}
+
+impl Plan {
+    /// `--reason`, or the command itself ("Run npm test").
+    pub fn reason(&self) -> String {
+        if let Some(r) = self.args.value("reason") {
+            return r.to_owned();
+        }
+        let line = format!("Run {}", self.command.join(" "));
+        let max = 200;
+        match line.char_indices().nth(max) {
+            Some((at, _)) => format!("{} ...", &line[..at]),
+            None => line,
+        }
+    }
+}
+
 /// Splits `nodkey run` arguments: the `--secret` options, the other options and the command after
-/// `--`.
-pub fn split(rest: &[String]) -> Result<(Vec<Wanted>, Args, Vec<String>), String> {
-    let usage = "nodkey run takes --secret NAME[=SERVICE] (one or more), --reason TEXT, then -- and the \
-                 command, e.g. nodkey run --secret OPENAI_API_KEY --reason \"Run the tests\" -- npm test";
+/// `--`. `file` is the nearest `.nodkey` file: its keys come first (a `--secret` with the same
+/// name replaces one), and its project unless `--project` names another.
+pub fn plan(rest: &[String], file: Option<&KeyFile>) -> Result<Plan, String> {
+    let usage = "nodkey run takes options (--secret NAME[=SERVICE], --project NAME, --reason TEXT), then -- \
+                 and the command, e.g. nodkey run --secret OPENAI_API_KEY --reason \"Run the tests\" -- npm test";
     let at = rest.iter().position(|a| a == "--").ok_or(usage)?;
     let command = rest[at + 1..].to_vec();
     if command.is_empty() {
         return Err(usage.into());
     }
-    let mut wanted = Vec::new();
+    let mut options: Vec<Wanted> = Vec::new();
     let mut others = Vec::new();
     let mut it = rest[..at].iter();
     while let Some(arg) = it.next() {
@@ -69,13 +117,32 @@ pub fn split(rest: &[String]) -> Result<(Vec<Wanted>, Args, Vec<String>), String
             }
         };
         let w = Wanted::parse(&value)?;
-        if wanted.iter().any(|x: &Wanted| x.name == w.name) {
+        if options.iter().any(|x| x.name == w.name) {
             return Err(format!("--secret {} is given twice", w.name));
         }
+        options.push(w);
+    }
+    let args = Args::parse(&others)?;
+    args.only("run", &["reason", "project", "phone", "model", "effort"])?;
+    args.positionals("run", 0, "options before --, and the command after it")?;
+    let mut wanted: Vec<Wanted> = file
+        .iter()
+        .flat_map(|f| &f.secrets)
+        .map(|t| Wanted {
+            name: keyfile::variable(t).to_owned(),
+            target: t.clone(),
+        })
+        .collect();
+    for w in options {
+        wanted.retain(|x| x.name != w.name);
         wanted.push(w);
     }
     if wanted.is_empty() {
-        return Err(usage.into());
+        return Err(
+            "nodkey run needs the keys to ask for: a .nodkey file in this folder or one above it (project = \"NAME\" \
+             and secrets = [\"OPENAI_API_KEY\"]), or --secret NAME[=SERVICE]"
+                .into(),
+        );
     }
     if wanted.len() > nodkey_proto::bundle::MAX_ITEMS {
         return Err(format!(
@@ -83,18 +150,39 @@ pub fn split(rest: &[String]) -> Result<(Vec<Wanted>, Args, Vec<String>), String
             nodkey_proto::bundle::MAX_ITEMS
         ));
     }
-    let args = Args::parse(&others)?;
-    args.only("run", &["reason", "phone", "model", "effort"])?;
-    args.positionals("run", 0, "options before --, and the command after it")?;
-    args.value("reason")
-        .ok_or("nodkey run needs --reason: say in one sentence what the command does")?;
-    Ok((wanted, args, command))
+    let project = match args.value("project") {
+        Some(p) => crate::secret::project(Some(p))?,
+        None => file.and_then(|f| f.project.clone()),
+    };
+    Ok(Plan {
+        wanted,
+        project,
+        args,
+        command,
+    })
 }
 
-/// What the phone gave: every key, or why not and the exit code.
+/// What the phone gave: every key and where each came from ("OPENAI_API_KEY from Sparrow"), or why
+/// not and the exit code.
 pub enum Fetched {
-    Keys(Vec<(String, Zeroizing<String>)>),
-    Refused { message: String, code: u8 },
+    Keys {
+        keys: Vec<(String, Zeroizing<String>)>,
+        from: Vec<String>,
+    },
+    Refused {
+        message: String,
+        code: u8,
+    },
+}
+
+/// Where a key came from, for stderr; empty when the app does not say.
+fn source(name: &str, key: &SecretAnswer) -> Option<String> {
+    match (key.from?, key.project.as_deref()) {
+        (KeyFrom::Project, Some(p)) => Some(format!("{name} from {p}")),
+        (KeyFrom::Project, None) => Some(format!("{name} from the project")),
+        (KeyFrom::Global, _) => Some(format!("{name} (global)")),
+        (KeyFrom::Chosen, _) => Some(format!("{name} (picked by hand)")),
+    }
 }
 
 fn exit_code(a: &Answer) -> u8 {
@@ -128,11 +216,14 @@ fn expired(agent: &Agent) -> Fetched {
 }
 
 impl Agent {
-    /// Asks the phone for the keys `nodkey run` needs: one request for one key, or while a task
-    /// session runs (each key request in it may go through); else one bundle, one approval.
+    /// Asks the phone for the keys `nodkey run` needs, in `project`: one request for one key, or
+    /// while a task session runs (each key request in it may go through); else one bundle, one
+    /// approval.
+    #[allow(clippy::too_many_arguments)]
     pub async fn fetch_keys(
         &self,
         wanted: &[Wanted],
+        project: Option<&str>,
         reason: &str,
         phone: Option<&str>,
         reported: Reported<'_>,
@@ -144,26 +235,30 @@ impl Agent {
                 crate::session::running(&store).is_some_and(|s| s.phone_id == p.phone_id)
             })
         });
-        let mut keys = Vec::new();
+        let (mut keys, mut from) = (Vec::new(), Vec::new());
         if wanted.len() == 1 || in_session {
             for w in wanted {
-                let request =
+                let mut request =
                     new_request(Kind::Secret, &w.target, reason, self.client_for(reported));
+                request.project = project.map(str::to_owned);
                 let ex = self.exchange(request, None, phone, progress).await?;
                 let Some(a) = ex.answer else {
                     return Ok(expired(self));
                 };
                 note_limit(&a);
-                match a.secret.and_then(|s| s.value) {
-                    Some(v) if a.decision == Decision::Approved => {
+                match &a.secret {
+                    Some(s) if a.decision == Decision::Approved && s.value.is_some() => {
+                        let v = s.value.as_ref().expect("checked");
                         keys.push((w.name.clone(), Zeroizing::new(v.expose().to_owned())));
+                        from.extend(source(&w.name, s));
                     }
                     _ => return Ok(refused(&Answer { secret: None, ..a })),
                 }
             }
-            return Ok(Fetched::Keys(keys));
+            return Ok(Fetched::Keys { keys, from });
         }
         let mut request = new_request(Kind::Bundle, "", reason, self.client_for(reported));
+        request.project = project.map(str::to_owned);
         request.bundle = Some(BundleRequest {
             items: wanted
                 .iter()
@@ -189,9 +284,11 @@ impl Agent {
         for (i, w) in wanted.iter().enumerate() {
             let id = (i + 1).to_string();
             let item = items.iter().find(|x| x.id == id);
-            match item.and_then(|x| x.secret.as_ref()?.value.as_ref()) {
+            let key = item.and_then(|x| x.secret.as_ref());
+            match key.and_then(|k| k.value.as_ref()) {
                 Some(v) if item.is_some_and(|x| x.decision == Decision::Approved) => {
                     keys.push((w.name.clone(), Zeroizing::new(v.expose().to_owned())));
+                    from.extend(key.and_then(|k| source(&w.name, k)));
                 }
                 _ => {
                     let mut one = Answer::decision(&a.request_id, Decision::Denied);
@@ -206,7 +303,7 @@ impl Agent {
                 }
             }
         }
-        Ok(Fetched::Keys(keys))
+        Ok(Fetched::Keys { keys, from })
     }
 }
 
@@ -219,7 +316,7 @@ fn note_limit(a: &Answer) {
 }
 
 /// Prints `note` on stderr once, the first time a wait reports progress.
-fn waiting(note: String) -> impl Fn(u64, u64, &str) + Send + Sync {
+pub(crate) fn waiting(note: String) -> impl Fn(u64, u64, &str) + Send + Sync {
     let shown = std::sync::atomic::AtomicBool::new(false);
     move |_, _, _| {
         if !shown.swap(true, std::sync::atomic::Ordering::Relaxed) {
@@ -228,20 +325,26 @@ fn waiting(note: String) -> impl Fn(u64, u64, &str) + Send + Sync {
     }
 }
 
-fn runtime() -> Result<tokio::runtime::Runtime, String> {
+pub(crate) fn runtime() -> Result<tokio::runtime::Runtime, String> {
     tokio::runtime::Builder::new_current_thread()
         .enable_all()
         .build()
         .map_err(|e| e.to_string())
 }
 
+/// The nearest `.nodkey` file from the current folder up, if there is one.
+fn nearest_file() -> Result<Option<KeyFile>, String> {
+    let dir = std::env::current_dir().map_err(|e| format!("no current folder: {e}"))?;
+    keyfile::find(&dir).map(|p| keyfile::read(&p)).transpose()
+}
+
 /// `nodkey run`.
 pub fn main(rest: &[String]) -> ExitCode {
-    let (wanted, args, command) = match split(rest) {
-        Ok(parts) => parts,
+    let plan = match nearest_file().and_then(|file| plan(rest, file.as_ref())) {
+        Ok(p) => p,
         Err(e) => return usage_error(&e),
     };
-    let agent = match agent_for(&args) {
+    let agent = match agent_for(&plan.args) {
         Ok(a) => a,
         Err(e) => return usage_error(&e),
     };
@@ -250,25 +353,35 @@ pub fn main(rest: &[String]) -> ExitCode {
         Err(e) => return fail(&e),
     };
     let reported = Reported {
-        model: args.value("model"),
-        effort: args.value("effort"),
+        model: plan.args.value("model"),
+        effort: plan.args.value("effort"),
     };
-    let names: Vec<&str> = wanted.iter().map(|w| w.name.as_str()).collect();
+    let names: Vec<&str> = plan.wanted.iter().map(|w| w.name.as_str()).collect();
     let progress = waiting(format!(
-        "Waiting for your answer in Nodkey on your iPhone for {} (up to {} s) ...",
+        "Waiting for your answer in Nodkey on your iPhone for {}{} (up to {} s) ...",
         names.join(", "),
+        plan.project
+            .as_deref()
+            .map(|p| format!(" in {p}"))
+            .unwrap_or_default(),
         agent.timing.request.as_secs()
     ));
     let fetched = runtime.block_on(agent.fetch_keys(
-        &wanted,
-        args.value("reason").unwrap_or_default(),
-        args.value("phone"),
+        &plan.wanted,
+        plan.project.as_deref(),
+        &plan.reason(),
+        plan.args.value("phone"),
         reported,
         &progress,
     ));
     drop(runtime);
     match fetched {
-        Ok(Fetched::Keys(keys)) => spawn(&command, keys),
+        Ok(Fetched::Keys { keys, from }) => {
+            if !from.is_empty() {
+                eprintln!("nodkey: {}.", from.join(", "));
+            }
+            spawn(&plan.command, keys)
+        }
         Ok(Fetched::Refused { message, code }) => {
             eprintln!("nodkey: {message} The command did not run.");
             ExitCode::from(code)
@@ -319,189 +432,5 @@ fn signal_code(_: &std::process::ExitStatus) -> u8 {
     1
 }
 
-/// `nodkey secret save NAME [--service HOST] [--title TEXT] [--notes TEXT] [--expires DATE]
-/// --reason TEXT`: the value comes from stdin.
-pub fn secret_main(rest: &[String]) -> ExitCode {
-    let parsed = (|| -> Result<(NewKey, Args), String> {
-        let usage = "nodkey secret save NAME [--service HOST] --reason TEXT, with the key on stdin";
-        let (Some("save"), Some(tail)) = (rest.first().map(String::as_str), rest.get(1..)) else {
-            return Err(usage.into());
-        };
-        let args = Args::parse(tail)?;
-        args.only(
-            "secret save",
-            &[
-                "service", "title", "notes", "expires", "reason", "phone", "model", "effort",
-            ],
-        )?;
-        args.positionals("secret save", 1, "one NAME, e.g. OPENAI_API_KEY")?;
-        args.value("reason")
-            .ok_or("nodkey secret save needs --reason: say in one sentence what the key is for")?;
-        let expires = args
-            .value("expires")
-            .map(|v| crate::secret::expires(Some(&serde_json::Value::String(v.to_owned()))))
-            .transpose()?
-            .flatten();
-        let key = NewKey {
-            variable: args.positional[0].clone(),
-            service: args.value("service").map(str::to_owned),
-            title: args.value("title").map(str::to_owned),
-            notes: args.value("notes").map(str::to_owned),
-            expires,
-        };
-        crate::secret::target(Some(&key.variable), key.service.as_deref())?;
-        Ok((key, args))
-    })();
-    let (key, args) = match parsed {
-        Ok(p) => p,
-        Err(e) => return usage_error(&e),
-    };
-    let value = match read_value() {
-        Ok(v) => v,
-        Err(e) => return usage_error(&e),
-    };
-    let agent = match agent_for(&args) {
-        Ok(a) => a,
-        Err(e) => return usage_error(&e),
-    };
-    let runtime = match runtime() {
-        Ok(rt) => rt,
-        Err(e) => return fail(&e),
-    };
-    let progress = waiting(format!(
-        "Waiting for you to save the key in Nodkey on your iPhone (up to {} s) ...",
-        agent.timing.request.as_secs()
-    ));
-    let reported = Reported {
-        model: args.value("model"),
-        effort: args.value("effort"),
-    };
-    let result = runtime.block_on(agent.save_secret(
-        key,
-        value,
-        args.value("reason").unwrap_or_default(),
-        args.value("phone"),
-        reported,
-        &progress,
-    ));
-    match result
-        .and_then(|t| serde_json::from_str::<serde_json::Value>(&t).map_err(|e| e.to_string()))
-    {
-        Ok(v) => {
-            let code = crate::commands::exit_for(&v);
-            eprintln!("nodkey: {}", v["message"].as_str().unwrap_or_default());
-            println!(
-                "{}",
-                serde_json::to_string_pretty(&v).expect("serializable")
-            );
-            ExitCode::from(code)
-        }
-        Err(e) => fail(&e),
-    }
-}
-
-/// The key from stdin, without the line break at its end.
-fn read_value() -> Result<Zeroizing<String>, String> {
-    use std::io::Read;
-    if std::io::stdin().is_terminal() {
-        eprintln!("Paste the key, then press Enter and Ctrl-D (Ctrl-Z and Enter on Windows):");
-    }
-    let mut value = Zeroizing::new(String::new());
-    std::io::stdin()
-        .read_to_string(&mut value)
-        .map_err(|e| format!("cannot read the key from stdin: {e}"))?;
-    let end = value.trim_end_matches(['\r', '\n']).len();
-    value.truncate(end);
-    if value.trim().is_empty() {
-        return Err("no key on stdin; pipe it in, e.g. from your clipboard tool".into());
-    }
-    Ok(value)
-}
-
 #[cfg(test)]
-mod tests {
-    use super::*;
-
-    fn strings(list: &[&str]) -> Vec<String> {
-        list.iter().map(|s| s.to_string()).collect()
-    }
-
-    #[test]
-    fn options_and_command() {
-        let (wanted, args, command) = split(&strings(&[
-            "--secret",
-            "OPENAI_API_KEY",
-            "--secret=EXAMPLE_TOKEN=https://api.example.com/v1",
-            "--reason",
-            "Run the tests",
-            "--",
-            "npm",
-            "test",
-            "--secret",
-            "--",
-        ]))
-        .unwrap();
-        assert_eq!(
-            wanted,
-            [
-                Wanted {
-                    name: "OPENAI_API_KEY".into(),
-                    target: "OPENAI_API_KEY".into()
-                },
-                Wanted {
-                    name: "EXAMPLE_TOKEN".into(),
-                    target: "api.example.com/EXAMPLE_TOKEN".into()
-                }
-            ]
-        );
-        assert_eq!(args.value("reason"), Some("Run the tests"));
-        assert_eq!(command, ["npm", "test", "--secret", "--"]);
-
-        for (bad, want) in [
-            (&["--secret", "A", "--reason", "x"][..], "then -- and the"),
-            (
-                &["--secret", "A", "--reason", "x", "--"][..],
-                "then -- and the",
-            ),
-            (&["--reason", "x", "--", "ls"][..], "--secret NAME"),
-            (&["--secret", "A", "--", "ls"][..], "--reason"),
-            (
-                &["--secret", "A-B", "--reason", "x", "--", "ls"][..],
-                "variable name",
-            ),
-            (
-                &[
-                    "--secret",
-                    "A",
-                    "--secret",
-                    "A=x.example",
-                    "--reason",
-                    "x",
-                    "--",
-                    "ls",
-                ][..],
-                "twice",
-            ),
-            (
-                &["--secret", "A", "--reason", "x", "extra", "--", "ls"][..],
-                "options before",
-            ),
-            (
-                &["--secret", "A", "--reason", "x", "--field", "v", "--", "ls"][..],
-                "--field",
-            ),
-            (
-                &["--secret", "A=not a host", "--reason", "x", "--", "ls"][..],
-                "not a service",
-            ),
-        ] {
-            let err = split(&strings(bad)).err().unwrap_or_default();
-            assert!(err.contains(want), "{bad:?}: {err}");
-        }
-        let many: Vec<String> = (0..11)
-            .flat_map(|i| ["--secret".to_owned(), format!("K{i}")])
-            .chain(strings(&["--reason", "x", "--", "ls"]))
-            .collect();
-        assert!(split(&many).err().unwrap().contains("at most 10"));
-    }
-}
+mod tests;
