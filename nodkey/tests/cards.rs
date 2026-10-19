@@ -30,6 +30,7 @@ impl Cli {
         let mut c = Command::new(env!("CARGO_BIN_EXE_nodkey"));
         c.args(args)
             .env("NODKEY_AGENT_DIR", &self.dir)
+            .env("NODKEY_KEYSTORE", "file")
             .env("NODKEY_RELAY", format!("http://{}", self.relay))
             .env("NODKEY_REQUEST_TIMEOUT", "3")
             .env_remove("NODKEY_AGENT")

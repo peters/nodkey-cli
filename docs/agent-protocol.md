@@ -1261,13 +1261,27 @@ change ignore such a request, and the agent sees `expired`.) Requests also carry
 
 - Keys and pairings: `~/.config/nodkey-agent/` (directory 0700, files 0600; `NODKEY_AGENT_DIR`
   overrides it). Each agent on the computer has its own identity and pairing under
-  `agents/<profile>/`: `identity.json` (`agent_id`, name, both private keys) and `phones.json` (paired
-  phones: `phone_id`, public keys, name, check). Profiles: `claude-code`, `codex`, `cursor`,
+  `agents/<profile>/`: `identity.json` (`agent_id`, name, and the private keys or where they are; see
+  the next item) and `phones.json` (paired phones: `phone_id`, public keys, name, check). Profiles: `claude-code`, `codex`, `cursor`,
   `claude-desktop`, `terminal` (the command line), or any name given with `--agent`. The phone shows
   each by its name ("Claude Code @ my-laptop", "Terminal @ my-laptop"), so the user can pause or remove
   one without the others and the history shows who asked. `config.json` in the top folder may set
   `relay`. An identity in the top folder (made before profiles) moves into the profile its name
   belongs to on first use, with its keys, so it stays paired.
+- The agent's private keys go to the keychain of the system when there is one, so a copy of the
+  agent folder alone cannot act as the agent. macOS: the login Keychain (a generic password, service
+  `nodkey-agent`, account = `agent_id`). Windows: DPAPI for the current user; the sealed keys stay in
+  `identity.json` (`sealed_keys`), and only this user on this computer can open them. Linux and
+  other Unix systems: the Secret Service through `secret-tool` (libsecret), when it is installed and
+  a session bus is there; the keys go over stdin and stdout, never in arguments. Otherwise, and with
+  `NODKEY_KEYSTORE=file` (or `"keystore": "file"` in `config.json`), the keys stay in `identity.json`
+  (`kem_sk`, `sign_sk`). With the keys in a keychain, `identity.json` has `keys` (`macos-keychain`,
+  `dpapi` or `secret-service`) and the public keys `sign` and `kem`, and nodkey refuses keys from the
+  keychain that do not match them. Keys that are still in the file move into the keychain the first
+  time the agent uses them (once per process; when that fails, they stay in the file). When the
+  keychain that holds the keys does not open, for example a locked login keychain over SSH, nodkey
+  stops with a message that says what to do. It never makes a new identity in its place.
+  `nodkey agents` shows where the keys of each agent are.
 - One binary `nodkey`. The MCP server is `nodkey mcp` (stdio); `nodkey setup` registers it as
   `nodkey mcp --agent <profile>` in each agent it finds. Without `--agent`, the profile follows the
   MCP client's `clientInfo.name`.

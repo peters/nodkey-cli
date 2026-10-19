@@ -28,8 +28,13 @@ reqwest = { version = "0.13", default-features = false, features = ["rustls"] }
 [target.'cfg(unix)'.dependencies]
 libc = "0.2.180"
 
+# The agent's private keys in the keychain of the system (keystore.rs): security-framework and
+# windows-sys are already in the dependency tree through rustls-platform-verifier.
+[target.'cfg(target_os = "macos")'.dependencies]
+security-framework = { version = "3.7", default-features = false }
+
 [target.'cfg(windows)'.dependencies]
-windows-sys = { version = "0.61", features = ["Win32_System_Console"] }
+windows-sys = { version = "0.61", features = ["Win32_System_Console", "Win32_Foundation", "Win32_Security_Cryptography"] }
 
 [dev-dependencies]
 nodkey-fake-relay.workspace = true

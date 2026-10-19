@@ -20,7 +20,8 @@ mcp`). The iOS app and the relay live in the private repository `peters/nodkey`;
 - `nodkey-fake-relay/`: a relay that plays the phone, for tests (library and binary with `/_fake/...`
   control routes). The extension's tests use it too.
 - `nodkey/`: the library (`agent.rs` what the tools do, `relay.rs` relay calls, `store.rs` the agent
-  folder and profiles, `profile.rs` which agent is asking, `signin.rs` sign-in methods, `suggest` and
+  folder and profiles (`store/identity.rs` the identity), `keystore.rs` where the private keys are
+  (the keychain of the system or the file), `profile.rs` which agent is asking, `signin.rs` sign-in methods, `suggest` and
   `sms_code`, `secret.rs` API keys (`secret/save.rs` `nodkey secret save`), `run.rs` `nodkey run`,
   `keyfile.rs` the `.nodkey` file), the
   MCP server (`mcp.rs`, `tools.rs`), the command line (`cli.rs`, `usage.rs`, `commands.rs`) and

@@ -36,7 +36,7 @@ Usage:
   nodkey cleanup FILTER... --reason TEXT   propose moving old saved logins to Recently deleted
   nodkey phones                            the phones this agent is paired with
   nodkey unpair PHONE                      leave a phone (phone name or id)
-  nodkey agents                            the agents paired on this computer
+  nodkey agents                            the agents on this computer and where their keys are
   nodkey webauthn [--phone PHONE]          sign in with a passkey or make one, also with PRF: one
                                            JSON request on stdin, one JSON result on stdout (for
                                            browser hosts and scripts; nodkey webauthn --help)
@@ -97,5 +97,6 @@ pay and card-fill: 5 over the user's limit, 6 full card numbers off, 7 cards off
 8 the page total is higher than the amount. run: the command's exit code once it ran (126 or
 127 when it cannot start); 2, 3, 4 or 1 as above when the phone did not give the keys.
 Environment: NODKEY_AGENT_DIR (default ~/.config/nodkey-agent), NODKEY_REQUEST_TIMEOUT (120 s),
-NODKEY_PAIR_TIMEOUT (300 s), NODKEY_DEBUG.
+NODKEY_PAIR_TIMEOUT (300 s), NODKEY_KEYSTORE (auto: the private keys in the keychain of the
+system when there is one; file: in identity.json), NODKEY_DEBUG.
 ";

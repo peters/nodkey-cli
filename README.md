@@ -224,14 +224,18 @@ nodkey agents
 | Relay: `--relay URL`, else `NODKEY_RELAY`, else `relay` in `config.json` in the agent folder | `https://relay.nodkey.app` |
 | Agent identity: `--agent NAME`, else `NODKEY_AGENT` | `terminal` for the command line; for `nodkey mcp`, the MCP client |
 | Agent folder: `NODKEY_AGENT_DIR` | `~/.config/nodkey-agent` |
+| Where the agent's private keys go: `NODKEY_KEYSTORE`, else `keystore` in `config.json` (`auto` or `file`) | `auto`: the keychain of the system when there is one |
 | `NODKEY_REQUEST_TIMEOUT` / `NODKEY_PAIR_TIMEOUT` (seconds) | 120 / 300 |
 
 The relay address must use `https`. Plain `http` works only for a relay on this computer
 (`localhost`, `127.0.0.1` or `[::1]`, for tests). `nodkey` does not follow redirects from the relay.
 
-The agent folder (only you can open it) holds one folder per agent under `agents/` with its keys
-(`identity.json`), paired phones (`phones.json`) and, while one runs, the task session
-(`session.json`: its id and end, never a secret).
+The agent folder (only you can open it) holds one folder per agent under `agents/` with its
+identity (`identity.json`), paired phones (`phones.json`) and, while one runs, the task session
+(`session.json`: its id and end, never a secret). The agent's private keys go to the macOS Keychain,
+to the Secret Service on Linux (with `secret-tool` installed), or are sealed with DPAPI for your
+Windows user. Where there is no keychain, they stay in `identity.json`. `nodkey agents` shows where
+they are.
 
 ## Security
 
@@ -240,8 +244,11 @@ The agent folder (only you can open it) holds one folder per agent under `agents
 - Every relay call is signed with the agent's Ed25519 key. Requests, answers and pictures are
   encrypted to the other side with HPKE (X25519, HKDF-SHA256, ChaCha20-Poly1305). The relay sees no
   code, password, account name, reason or picture.
-- Anyone who can read an agent's `identity.json` can ask your phone as that agent. You still have to
-  approve, but keep the folder private. To cut an agent off, remove it under Agents in Nodkey.
+- An agent's private keys are in the keychain of your computer where there is one, so a copy of the
+  agent folder does not work on another computer. Where they stay in `identity.json`, anyone who can
+  read that file can ask your phone as that agent. You still have to approve (a lease you gave
+  answers for you), so keep the folder private. To cut an agent off, remove it under Agents in
+  Nodkey.
 - A tool result goes to the model. The skill tells agents to use a secret only for the task at hand.
 - Every API key needs Face ID; there is no "always allow" for keys. `nodkey run` puts a key only
   into the environment of the command it starts.

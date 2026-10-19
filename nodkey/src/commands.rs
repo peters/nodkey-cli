@@ -309,11 +309,13 @@ fn agents(a: &Args, agent: &Agent) -> Result<u8, String> {
     let mut list = Vec::new();
     for slug in home.agents().map_err(|e| e.to_string())? {
         let store = home.agent(&slug).map_err(|e| e.to_string())?;
-        let id = store.identity().map_err(|e| e.to_string())?;
+        let id = store.identity_summary().map_err(|e| e.to_string())?;
         let phones = store.phones().map_err(|e| e.to_string())?;
         list.push(json!({
             "agent": slug,
-            "name": id.map(|i| i.name),
+            "name": id.as_ref().map(|i| &i.name),
+            "keys": id.as_ref().map(|i| i.keys.name()),
+            "keys_in": id.as_ref().map(|i| i.keys.describe()),
             "phones": phones.iter().map(|p| p.name.clone()).collect::<Vec<_>>(),
         }));
     }
@@ -330,14 +332,15 @@ fn agents(a: &Args, agent: &Agent) -> Result<u8, String> {
                 .filter_map(Value::as_str)
                 .collect();
             println!(
-                "{:<16} {}  ({})",
+                "{:<16} {}  ({}; keys in {})",
                 e["agent"].as_str().unwrap_or_default(),
                 e["name"].as_str().unwrap_or_default(),
                 if phones.is_empty() {
                     "not paired".to_owned()
                 } else {
                     format!("paired with {}", phones.join(", "))
-                }
+                },
+                e["keys_in"].as_str().unwrap_or_default()
             );
         }
     }

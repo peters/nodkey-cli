@@ -3,6 +3,9 @@
 //! identity and paired phones (files 0600). Nothing received from a phone is stored here except
 //! its public keys, name, scope and check number.
 //!
+//! The private keys of an identity are in the keychain of the system when there is one
+//! (`keystore.rs`, `store/identity.rs`).
+//!
 //! Before profiles, nodkey-mcp kept one identity in the top folder. [`Home::agent`] moves it into
 //! the profile it belongs to (by the name it was paired with), so the pairing keeps working.
 
@@ -12,38 +15,20 @@ use std::{
     path::{Path, PathBuf},
 };
 
-use nodkey_proto::{KeyPair, PublicKeys, Scope, b64u};
+use nodkey_proto::{PublicKeys, Scope};
 use serde::{Deserialize, Serialize};
 use zeroize::Zeroizing;
+
+pub use identity::{Identity, IdentitySummary};
+
+use crate::keystore::Policy;
+
+mod identity;
 
 const IDENTITY: &str = "identity.json";
 const PHONES: &str = "phones.json";
 const CONFIG: &str = "config.json";
 const AGENTS: &str = "agents";
-
-/// The agent's own identity.
-pub struct Identity {
-    pub agent_id: String,
-    pub name: String,
-    pub keys: KeyPair,
-}
-
-#[derive(Serialize, Deserialize)]
-struct IdentityFile {
-    agent_id: String,
-    name: String,
-    kem_sk: String,
-    sign_sk: String,
-    created: u64,
-}
-
-impl Drop for IdentityFile {
-    fn drop(&mut self) {
-        use zeroize::Zeroize;
-        self.kem_sk.zeroize();
-        self.sign_sk.zeroize();
-    }
-}
 
 /// A paired phone.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -74,12 +59,22 @@ struct PhonesFile {
 #[derive(Debug, Clone)]
 pub struct Store {
     dir: PathBuf,
+    /// Where new keys, and keys still in the file, go.
+    keystore: Policy,
 }
 
 impl Store {
-    /// A store in `dir`.
+    /// A store in `dir`, with the keystore policy from `NODKEY_KEYSTORE`.
     pub fn at(dir: impl Into<PathBuf>) -> Self {
-        Store { dir: dir.into() }
+        Store {
+            dir: dir.into(),
+            keystore: Policy::from_env().unwrap_or_default(),
+        }
+    }
+
+    /// The same store with another keystore policy.
+    pub fn with_keystore(self, keystore: Policy) -> Self {
+        Store { keystore, ..self }
     }
 
     /// The directory.
@@ -129,74 +124,6 @@ impl Store {
             Ok(b) => Ok(Some(Zeroizing::new(b))),
             Err(e) if e.kind() == io::ErrorKind::NotFound => Ok(None),
             Err(e) => Err(e),
-        }
-    }
-
-    /// The identity, if one was made.
-    pub fn identity(&self) -> io::Result<Option<Identity>> {
-        let Some(bytes) = self.read(IDENTITY)? else {
-            return Ok(None);
-        };
-        let f: IdentityFile = serde_json::from_slice(&bytes).map_err(|e| invalid(IDENTITY, e))?;
-        nodkey_proto::validate_id(&f.agent_id).map_err(|e| invalid(IDENTITY, e))?;
-        let kem =
-            Zeroizing::new(b64u::decode_array::<32>(&f.kem_sk).map_err(|e| invalid(IDENTITY, e))?);
-        let sign =
-            Zeroizing::new(b64u::decode_array::<32>(&f.sign_sk).map_err(|e| invalid(IDENTITY, e))?);
-        Ok(Some(Identity {
-            agent_id: f.agent_id.clone(),
-            name: f.name.clone(),
-            keys: KeyPair::from_bytes(*kem, *sign),
-        }))
-    }
-
-    fn save_identity(&self, id: &Identity, exclusive: bool) -> io::Result<()> {
-        let f = IdentityFile {
-            agent_id: id.agent_id.clone(),
-            name: id.name.clone(),
-            kem_sk: b64u::encode(id.keys.kem_secret()),
-            sign_sk: b64u::encode(id.keys.sign_secret()),
-            created: nodkey_proto::unix_now(),
-        };
-        let mut text = Zeroizing::new(serde_json::to_vec_pretty(&f).expect("serializable"));
-        text.push(b'\n');
-        self.write(IDENTITY, &text, exclusive)
-    }
-
-    /// The identity, made on first use with `name`. When `rename` is given and differs from the
-    /// stored name, the stored name changes (keys and id stay).
-    pub fn identity_or_create(
-        &self,
-        default_name: &str,
-        rename: Option<&str>,
-    ) -> io::Result<Identity> {
-        let id = match self.identity()? {
-            Some(id) => id,
-            None => {
-                let id = Identity {
-                    agent_id: nodkey_proto::random_id(),
-                    name: rename.unwrap_or(default_name).to_owned(),
-                    keys: KeyPair::generate(),
-                };
-                match self.save_identity(&id, true) {
-                    Ok(()) => id,
-                    Err(e) if e.kind() == io::ErrorKind::AlreadyExists => self
-                        .identity()?
-                        .ok_or_else(|| io::Error::other("identity vanished"))?,
-                    Err(e) => return Err(e),
-                }
-            }
-        };
-        match rename {
-            Some(name) if name != id.name => {
-                let id = Identity {
-                    name: name.to_owned(),
-                    ..id
-                };
-                self.save_identity(&id, false)?;
-                Ok(id)
-            }
-            _ => Ok(id),
         }
     }
 
@@ -258,6 +185,7 @@ fn ensure_private_dir(dir: &Path) -> io::Result<()> {
 #[derive(Default, Deserialize)]
 struct ConfigFile {
     relay: Option<String>,
+    keystore: Option<String>,
 }
 
 /// The agent directory with the relay setting and one [`Store`] per agent profile.
@@ -298,7 +226,7 @@ impl Home {
                 format!("bad agent profile {profile:?}"),
             ));
         }
-        let store = Store::at(self.dir.join(AGENTS).join(profile));
+        let store = Store::at(self.dir.join(AGENTS).join(profile)).with_keystore(self.keystore());
         if !store.dir().join(IDENTITY).exists()
             && self.legacy_profile()?.as_deref() == Some(profile)
         {
@@ -309,7 +237,7 @@ impl Home {
 
     /// The profile a pre-profile identity in the top folder belongs to, from its name.
     pub fn legacy_profile(&self) -> io::Result<Option<String>> {
-        let Some(id) = Store::at(&self.dir).identity()? else {
+        let Some(id) = Store::at(&self.dir).identity_summary()? else {
             return Ok(None);
         };
         let app = id.name.split(" @ ").next().unwrap_or_default();
@@ -356,16 +284,27 @@ impl Home {
         Ok(out)
     }
 
-    /// `relay` from `config.json`, if set.
-    pub fn configured_relay(&self) -> io::Result<Option<String>> {
+    fn config(&self) -> io::Result<ConfigFile> {
         match fs::read(self.dir.join(CONFIG)) {
-            Ok(bytes) => Ok(serde_json::from_slice::<ConfigFile>(&bytes)
-                .map_err(|e| invalid(CONFIG, e))?
-                .relay
-                .filter(|r| !r.trim().is_empty())),
-            Err(e) if e.kind() == io::ErrorKind::NotFound => Ok(None),
+            Ok(bytes) => serde_json::from_slice(&bytes).map_err(|e| invalid(CONFIG, e)),
+            Err(e) if e.kind() == io::ErrorKind::NotFound => Ok(ConfigFile::default()),
             Err(e) => Err(e),
         }
+    }
+
+    /// `relay` from `config.json`, if set.
+    pub fn configured_relay(&self) -> io::Result<Option<String>> {
+        Ok(self.config()?.relay.filter(|r| !r.trim().is_empty()))
+    }
+
+    /// Where keys go: `NODKEY_KEYSTORE`, else `keystore` in `config.json`, else `auto`.
+    pub fn keystore(&self) -> Policy {
+        Policy::from_env()
+            .or_else(|| {
+                let configured = self.config().ok()?.keystore?;
+                (!configured.trim().is_empty()).then(|| Policy::parse(&configured))
+            })
+            .unwrap_or_default()
     }
 }
 

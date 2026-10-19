@@ -48,6 +48,7 @@ impl Cli {
         c.args(args)
             .current_dir(cwd)
             .env("NODKEY_AGENT_DIR", self.dir.join("agent"))
+            .env("NODKEY_KEYSTORE", "file")
             .env("NODKEY_RELAY", format!("http://{}", self.relay))
             .env("NODKEY_REQUEST_TIMEOUT", "3")
             .env_remove("NODKEY_AGENT")

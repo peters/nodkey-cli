@@ -30,6 +30,7 @@ impl Client {
         cmd.arg("mcp")
             .env_remove("NODKEY_AGENT")
             .env("NODKEY_AGENT_DIR", &dir)
+            .env("NODKEY_KEYSTORE", "file")
             .env("NODKEY_RELAY", format!("http://{relay}"))
             .env("TMPDIR", env!("CARGO_TARGET_TMPDIR"))
             .stdin(Stdio::piped())

@@ -32,6 +32,7 @@ impl Cli {
         let mut c = Command::new(env!("CARGO_BIN_EXE_nodkey"));
         c.args(args)
             .env("NODKEY_AGENT_DIR", &self.dir)
+            .env("NODKEY_KEYSTORE", "file")
             .env("NODKEY_RELAY", format!("http://{}", self.relay))
             .env("NODKEY_REQUEST_TIMEOUT", "3")
             .env_remove("NODKEY_AGENT")
@@ -193,6 +194,14 @@ fn pair_then_ask_from_the_terminal() {
 
     let out = cli.run(&["agents"]);
     assert!(stdout(&out).starts_with("terminal"), "{}", stdout(&out));
+    assert!(
+        stdout(&out).contains("keys in the file identity.json"),
+        "{}",
+        stdout(&out)
+    );
+    let out = cli.run(&["agents", "--json"]);
+    let v: Value = serde_json::from_slice(&out.stdout).unwrap();
+    assert_eq!(v["agents"][0]["keys"], "file");
     let out = cli.run(&["phones", "--json"]);
     let v: Value = serde_json::from_slice(&out.stdout).unwrap();
     assert_eq!(v["phones"][0]["name"], fake_relay::PHONE_NAME);
