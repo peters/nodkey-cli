@@ -931,12 +931,14 @@ dependencies = [
 name = "nodkey"
 version = "0.2.0"
 dependencies = [
+ "libc",
  "nodkey-fake-relay",
  "nodkey-proto",
  "reqwest",
  "serde",
  "serde_json",
  "tokio",
+ "windows-sys 0.61.2",
  "zeroize",
 ]
 

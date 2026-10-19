@@ -23,6 +23,14 @@ zeroize = "1"
 tokio = { version = "1.47", default-features = false, features = ["rt", "macros", "io-std", "io-util", "sync", "time", "fs"] }
 reqwest = { version = "0.13", default-features = false, features = ["rustls"] }
 
+# Terminal echo off while `nodkey secret save` reads a pasted key (secret/noecho.rs). Both are
+# already in the dependency tree (tokio, reqwest).
+[target.'cfg(unix)'.dependencies]
+libc = "0.2.180"
+
+[target.'cfg(windows)'.dependencies]
+windows-sys = { version = "0.61", features = ["Win32_System_Console"] }
+
 [dev-dependencies]
 nodkey-fake-relay.workspace = true
 tokio = { version = "1.47", features = ["rt-multi-thread", "net", "process"] }

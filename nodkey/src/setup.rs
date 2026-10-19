@@ -275,15 +275,53 @@ fn json_step(env: &Env, agent: &str, file: &Path, entry: Option<Value>) -> Strin
     }
 }
 
+/// Replaces `file` through a temporary file and a rename. Agent config files often hold other
+/// tools' tokens, so the new file keeps the old file's permissions (0600 for a new file on Unix),
+/// and a symlink stays a symlink: the text goes to the file it points to.
 fn write_atomic(file: &Path, bytes: &[u8]) -> std::io::Result<()> {
+    let file = match std::fs::symlink_metadata(file) {
+        Ok(m) if m.file_type().is_symlink() => std::fs::canonicalize(file)?,
+        _ => file.to_owned(),
+    };
     if let Some(dir) = file.parent() {
         std::fs::create_dir_all(dir)?;
     }
     let tmp = file.with_extension(format!("nodkey-{}.tmp", std::process::id()));
-    std::fs::write(&tmp, bytes)?;
-    std::fs::rename(&tmp, file).inspect_err(|_| {
+    let _ = std::fs::remove_file(&tmp);
+    let written = write_new(&tmp, bytes, std::fs::metadata(&file).ok().as_ref())
+        .and_then(|()| std::fs::rename(&tmp, &file));
+    written.inspect_err(|_| {
         let _ = std::fs::remove_file(&tmp);
     })
+}
+
+/// Writes a new file that only this user can read while it is written, then gives it the
+/// permissions of `like` (the file it replaces), or keeps 0600.
+#[cfg(unix)]
+fn write_new(path: &Path, bytes: &[u8], like: Option<&std::fs::Metadata>) -> std::io::Result<()> {
+    use std::{io::Write, os::unix::fs::OpenOptionsExt};
+    let mut f = std::fs::OpenOptions::new()
+        .write(true)
+        .create_new(true)
+        .mode(0o600)
+        .open(path)?;
+    f.write_all(bytes)?;
+    f.sync_all()?;
+    match like {
+        Some(m) => std::fs::set_permissions(path, m.permissions()),
+        None => Ok(()),
+    }
+}
+
+#[cfg(not(unix))]
+fn write_new(path: &Path, bytes: &[u8], _like: Option<&std::fs::Metadata>) -> std::io::Result<()> {
+    use std::io::Write;
+    let mut f = std::fs::OpenOptions::new()
+        .write(true)
+        .create_new(true)
+        .open(path)?;
+    f.write_all(bytes)?;
+    f.sync_all()
 }
 
 /// Writes (or removes) `skills/nodkey/SKILL.md` for every agent folder that exists.

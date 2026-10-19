@@ -192,3 +192,69 @@ fn old_pairing_is_kept_for_its_agent() {
         .unwrap();
     assert_eq!(moved.agent_id, old.agent_id);
 }
+
+#[cfg(unix)]
+#[test]
+fn config_files_keep_their_mode_and_links() {
+    use std::os::unix::fs::{PermissionsExt, symlink};
+    let fx = Fixture::new("modes");
+    let mode = |rel: &str| {
+        std::fs::metadata(fx.root.join(rel))
+            .unwrap()
+            .permissions()
+            .mode()
+            & 0o777
+    };
+    // Claude Desktop's file holds a token and is 0600; Cursor's file is a link into a dotfiles folder.
+    let desktop = ".config/Claude/claude_desktop_config.json";
+    std::fs::write(fx.root.join(desktop), r#"{"token": "test-token"}"#).unwrap();
+    std::fs::set_permissions(
+        fx.root.join(desktop),
+        std::fs::Permissions::from_mode(0o600),
+    )
+    .unwrap();
+    std::fs::create_dir_all(fx.root.join("dotfiles")).unwrap();
+    std::fs::write(fx.root.join("dotfiles/mcp.json"), "{}").unwrap();
+    std::fs::set_permissions(
+        fx.root.join("dotfiles/mcp.json"),
+        std::fs::Permissions::from_mode(0o640),
+    )
+    .unwrap();
+    symlink(
+        fx.root.join("dotfiles/mcp.json"),
+        fx.root.join(".cursor/mcp.json"),
+    )
+    .unwrap();
+
+    fx.with(false, install);
+    assert_eq!(mode(desktop), 0o600);
+    assert_eq!(fx.json(desktop)["token"], "test-token");
+    assert!(
+        std::fs::symlink_metadata(fx.root.join(".cursor/mcp.json"))
+            .unwrap()
+            .file_type()
+            .is_symlink()
+    );
+    assert_eq!(mode("dotfiles/mcp.json"), 0o640);
+    assert!(fx.json("dotfiles/mcp.json")["mcpServers"]["nodkey"].is_object());
+
+    // A file setup makes is 0600, whatever the umask.
+    let fresh = Fixture::new("modes-new");
+    fresh.with(false, install);
+    assert_eq!(
+        std::fs::metadata(fresh.root.join(desktop))
+            .unwrap()
+            .permissions()
+            .mode()
+            & 0o777,
+        0o600
+    );
+    fx.with(false, remove);
+    assert_eq!(mode(desktop), 0o600);
+    assert!(
+        std::fs::symlink_metadata(fx.root.join(".cursor/mcp.json"))
+            .unwrap()
+            .file_type()
+            .is_symlink()
+    );
+}

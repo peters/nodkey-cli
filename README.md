@@ -117,7 +117,9 @@ nodkey setup --remove   # take it all away again (your pairings stay)
 `setup` uses `claude mcp` and `codex mcp` for Claude Code and Codex, edits `~/.cursor/mcp.json`
 and Claude Desktop's `claude_desktop_config.json`, and writes the skill to `~/.claude/skills`,
 `~/.codex/skills` and `~/.agents/skills` (only for the folders that exist). Agents that are not
-installed are skipped. Restart the agents afterwards, then ask each one to pair with Nodkey.
+installed are skipped. A changed config file keeps its permissions (a new one only you can read),
+and a config file that is a symlink stays one. Restart the agents afterwards, then ask each one to
+pair with Nodkey.
 
 Any other MCP client can start the server itself:
 
@@ -170,7 +172,8 @@ nodkey agents
 - `run` gets API keys from Nodkey and gives them only to the command it starts, as environment
   variables. Nothing prints the key, so your agent can use it without seeing it, and no `.env` file
   is needed. `secret save` keeps a new key in Nodkey; it reads the key from stdin, never from the
-  command line. Your iPhone asks with Face ID for every key. Keys need Nodkey 1.4 or later.
+  command line, and on a terminal the key does not show while you paste it. Your iPhone asks with
+  Face ID for every key. Keys need Nodkey 1.4 or later.
 - Keys can belong to projects. A key without a project is global: every project can use it. Put a
   `.nodkey` file in a repository to say which keys it needs. It holds names only, so it is safe to
   commit, also in a public repository:

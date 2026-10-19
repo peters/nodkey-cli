@@ -119,13 +119,17 @@ fn from_file() -> Result<Option<String>, String> {
 /// The key from stdin, without the line break at its end.
 fn read_value() -> Result<Zeroizing<String>, String> {
     use std::io::Read;
-    if std::io::stdin().is_terminal() {
-        eprintln!("Paste the key, then press Enter and Ctrl-D (Ctrl-Z and Enter on Windows):");
-    }
+    // On a terminal the key does not show while it is pasted, so it stays out of the scrollback.
+    let quiet = std::io::stdin().is_terminal().then(|| {
+        eprintln!(
+            "Paste the key (it does not show), then press Enter and Ctrl-D (Ctrl-Z and Enter on Windows):"
+        );
+        super::noecho::NoEcho::stdin()
+    });
     let mut value = Zeroizing::new(String::new());
-    std::io::stdin()
-        .read_to_string(&mut value)
-        .map_err(|e| format!("cannot read the key from stdin: {e}"))?;
+    let read = std::io::stdin().read_to_string(&mut value);
+    drop(quiet);
+    read.map_err(|e| format!("cannot read the key from stdin: {e}"))?;
     let end = value.trim_end_matches(['\r', '\n']).len();
     value.truncate(end);
     if value.trim().is_empty() {

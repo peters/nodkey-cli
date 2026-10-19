@@ -404,6 +404,7 @@ fn string_list(v: Option<&Value>) -> Result<Vec<String>, String> {
     }
 }
 
+mod noecho;
 pub mod save;
 
 #[cfg(test)]
