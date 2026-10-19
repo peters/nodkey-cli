@@ -37,6 +37,8 @@ pub fn check_request(r: &Request) -> Result<(), String> {
             | Kind::Card
             | Kind::Suggest
             | Kind::SmsCode
+            | Kind::Secret
+            | Kind::SaveSecret
     );
     if needs_target && r.target.trim().is_empty() {
         return Err(
@@ -97,6 +99,7 @@ pub fn check_request(r: &Request) -> Result<(), String> {
         _ => Ok(()),
     }?;
     check_signin(r)?;
+    crate::apikey::check_request(r)?;
     check_session(r)?;
     if sealed_ct_len(r) > REQUEST_CT_MAX {
         return Err(
@@ -143,8 +146,11 @@ fn check_session(r: &Request) -> Result<(), String> {
         (_, Some(id)) if !crate::session::valid_id(id) => {
             Err("session_id must be 22 base64url characters".into())
         }
-        (Kind::Code | Kind::Login | Kind::Passkey | Kind::SessionEnd, _) | (_, None) => Ok(()),
-        (_, Some(_)) => Err("only code, login and passkey requests belong to a session".into()),
+        (Kind::Code | Kind::Login | Kind::Passkey | Kind::Secret | Kind::SessionEnd, _)
+        | (_, None) => Ok(()),
+        (_, Some(_)) => {
+            Err("only code, login, passkey and secret requests belong to a session".into())
+        }
     }
 }
 
@@ -279,6 +285,7 @@ mod tests {
             session_id: None,
             suggest: None,
             wait_seconds: None,
+            save_secret: None,
         }
     }
 

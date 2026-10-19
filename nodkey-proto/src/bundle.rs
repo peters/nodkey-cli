@@ -1,7 +1,8 @@
 //! Bundles (`kind: bundle`): several codes and logins in one request, so a sign-in that needs a
 //! login on one site and a code on another asks the user once. The phone answers each item on its
 //! own; the bundle is `approved` when the user approved at least one item. A bundle with `session`
-//! starts a task session (see [`crate::session`]) and may also hold `passkey` items.
+//! starts a task session (see [`crate::session`]) and may also hold `passkey` items. `secret` items
+//! (API keys) may be in any bundle; in a task plan they carry no value.
 
 use serde::{Deserialize, Serialize};
 
@@ -35,7 +36,8 @@ pub struct BundleRequest {
 pub struct BundleItem {
     /// The agent's name for the item, unique in the bundle ("1", "chatgpt"); the answer uses it.
     pub id: String,
-    /// `code` or `login`; also `passkey` (a relying party) in a bundle with `session`.
+    /// `code`, `login` or `secret` (a key target, [`crate::SecretTarget`]); also `passkey` (a
+    /// relying party) in a bundle with `session`.
     pub kind: Kind,
     /// As in a single request: a site or issuer, optionally `/account`.
     pub target: String,
@@ -59,10 +61,14 @@ impl BundleRequest {
                 return Err(format!("the item id {id:?} is used twice"));
             }
             let passkey_ok = self.session.is_some() && item.kind == Kind::Passkey;
-            if !matches!(item.kind, Kind::Code | Kind::Login) && !passkey_ok {
+            if !matches!(item.kind, Kind::Code | Kind::Login | Kind::Secret) && !passkey_ok {
                 return Err(format!(
-                    "item {id:?}: a bundle holds code and login items (passkey items need a session)"
+                    "item {id:?}: a bundle holds code, login and secret items (passkey items need a session)"
                 ));
+            }
+            if item.kind == Kind::Secret {
+                crate::SecretTarget::parse(&item.target)
+                    .map_err(|e| format!("item {id:?}: {e}"))?;
             }
             let target = item.target.trim();
             if target.is_empty() {
@@ -133,6 +139,9 @@ pub struct BundleItemAnswer {
         skip_serializing_if = "Option::is_none"
     )]
     pub second_step: Option<crate::SecondStepOrder>,
+    /// A `secret` item: the key (without its value in a task plan).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub secret: Option<crate::SecretAnswer>,
 }
 
 impl BundleItemAnswer {
@@ -154,6 +163,7 @@ impl BundleItemAnswer {
             method: None,
             via: None,
             second_step: None,
+            secret: None,
         }
     }
 }
@@ -204,12 +214,12 @@ mod tests {
         assert!(
             with(&|b| b.items[0].kind = Kind::List)
                 .unwrap_err()
-                .contains("code and login items")
+                .contains("code, login and secret items")
         );
         assert!(
             with(&|b| b.items[0].kind = Kind::Card)
                 .unwrap_err()
-                .contains("code and login items")
+                .contains("code, login and secret items")
         );
         assert!(
             with(&|b| b.items[0].target = " ".into())
@@ -223,6 +233,14 @@ mod tests {
         );
         assert!(with(&|b| b.follow_up = Some(601)).is_err());
         assert!(with(&|b| b.follow_up = None).is_ok());
+        assert!(
+            with(&|b| b.items[0] = item("1", Kind::Secret, "openai.com/OPENAI_API_KEY")).is_ok()
+        );
+        assert!(
+            with(&|b| b.items[0] = item("1", Kind::Secret, "openai.com/OPENAI-KEY"))
+                .unwrap_err()
+                .contains("not a variable name")
+        );
     }
 
     #[test]

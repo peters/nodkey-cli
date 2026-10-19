@@ -52,6 +52,7 @@ fn request(name: &str, passkey: PasskeyRequest, reason: &str) -> Request {
         session_id: None,
         suggest: None,
         wait_seconds: None,
+        save_secret: None,
     }
 }
 

@@ -72,6 +72,7 @@ fn every_hpke_vector_opens_and_reseals() {
             "attachment" => Purpose::Attachment,
             "password" => Purpose::Password,
             "card" => Purpose::Card,
+            "secret" => Purpose::Secret,
             other => panic!("{other}"),
         };
         assert_eq!(purpose.info(), s(h, "info"), "{name}");
@@ -144,7 +145,7 @@ fn aad_rules() {
             "request" => format!("{}{agent}", s(&pt, "request_id")),
             "answer" => format!("{}{phone}", s(&pt, "request_id")),
             "pairing" => format!("{}{phone}", s(&v["pairing_code"], "code")),
-            "password" | "card" => agent.to_owned(),
+            "password" | "card" | "secret" => agent.to_owned(),
             _ => {
                 // attachment: request_id of the login request with the attachment.
                 let req = v["hpke"]

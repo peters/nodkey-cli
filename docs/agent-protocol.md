@@ -42,6 +42,7 @@ HPKE (RFC 9180) base mode, suite DHKEM(X25519, HKDF-SHA256) / HKDF-SHA256 / ChaC
 | attachment (agent → phone) | `nodkey/v1/attachment` | `request_id` ‖ `agent_id` |
 | saved password (agent → phone, inside a `save` request) | `nodkey/v1/password` | `agent_id` |
 | saved card number or CVC (agent → phone, inside a `save` request) | `nodkey/v1/card` | `agent_id` |
+| saved key (agent → phone, inside a `save_secret` request) | `nodkey/v1/secret` | `agent_id` |
 
 ## Signing relay calls
 
@@ -99,7 +100,7 @@ Pairing grant (phone → agent):
 Request (agent → phone):
 
 ```json
-{"v":1, "request_id":"…", "kind":"code|login|list|insights|cleanup|save|passkey|bundle|card|session_end|suggest|sms_code", "target":"github.com/alex",
+{"v":1, "request_id":"…", "kind":"code|login|list|insights|cleanup|save|passkey|bundle|card|session_end|suggest|sms_code|secret|save_secret", "target":"github.com/alex",
  "reason":"Merge PR #42", "agent":"Claude · Horizon", "ts":1791620000}
 ```
 
@@ -327,13 +328,14 @@ belongs to the same agent, and the request asks for an approved item:
 | `code` | it matches the account of an approved `code` or `login` item (also the code account linked to an approved login: same site and user name) |
 | `login` | it matches the account of an approved `login` item |
 | `passkey` with `op: get` | its `rp_id` is the relying party of an approved `passkey` item, or a site below it, with the same passkey, and it has no PRF inputs (see "PRF") |
+| `secret` | it matches the key of an approved `secret` item (see "API keys and secrets") |
 
 An account the user picked by hand for an item (no saved account matched its site) covers later
 requests for that site in the session, as in the follow-up window.
 
 Such an answer carries `lease: {"kind":"session", "until":…}`. Anything else is asked as usual,
 with or without `session_id`: another site or account, a passkey create, a passkey get with PRF
-inputs, `save`, `save_card`,
+inputs, `save`, `save_card`, `save_secret`,
 `card`, `list`, `insights`, `cleanup` and `bundle`. A request with an unknown or ended `session_id`
 is also asked as usual; its answer carries `session_ended: true`, so the agent stops sending the id.
 
@@ -673,6 +675,129 @@ Vectors: `request_card_fill`, `request_card_reveal`, `request_card_missing_amoun
 `save_card_cvc`, `request_save_card`, `answer_save_card`, `answer_list_with_cards`, and the `cards`
 section. Test card numbers only.
 
+## API keys and secrets
+
+Nodkey keeps API keys and other secrets ("keys"), so a user does not paste a key into a chat or
+keep it in a plain `.env` file. A key has a title, a service (a host, `openai.com`), an environment
+variable name (`OPENAI_API_KEY`), the value, notes and an optional expiry date. The value stays in
+the phone's keychain. `nodkey_proto::apikey` implements this section.
+
+### Asking for a key
+
+`kind: secret` asks for one key. `target` names it:
+
+| `target` | Means |
+| --- | --- |
+| `openai.com` | a service: the key's service is this host, or one is a subdomain of the other (`api.openai.com`) |
+| `OPENAI_API_KEY` | a variable name: letters, digits and `_`, not a digit first, at most 100 characters; compared without regard to case |
+| `openai.com/OPENAI_API_KEY` | both must match |
+
+A target with a dot and no slash is a service. A service is in the form of
+`nodkey_proto::signin::site` (lower case, no scheme, port, path or `www.`); the agent tools tidy
+it before they send. The phone checks the target too and refuses a bad one at once with
+`bad_secret_request`.
+
+```json
+{"v":1, "request_id":"…", "kind":"secret", "target":"openai.com/OPENAI_API_KEY",
+ "reason":"Run the test suite that calls the OpenAI API", "agent":"Claude Code @ my-laptop", "ts":1791620000}
+```
+
+The phone shows the keys that match (the user picks one when several match) with the reason and
+asks for Face ID **every time**. When no key matches, the phone still asks: the user can pick a key
+by hand, add one, or tell the agent that there is none (`error: "no_secret"`, sent only after the
+user answered, so an agent cannot probe for keys). An approved answer carries the key:
+
+```json
+{"v":1, "request_id":"…", "decision":"approved", "lease":{"kind":"once"},
+ "secret":{"title":"OpenAI", "service":"openai.com", "variable":"OPENAI_API_KEY",
+           "value":"sk-test-0000", "expires":1799396000}}
+```
+
+`service`, `variable` and `expires` are absent when the key has none.
+
+Rules on the phone:
+
+- A key is **never covered by a lease** ("Always allow" is not offered) and never by the follow-up
+  window. The notification offers Open and Deny; the user approves in the app with Face ID or the
+  passcode.
+- A key counts against the agent limit like a login (see "Agent limit").
+- Scopes: allowed for `selected`, `logins` and `all`; refused at once for `codes` with
+  `error: "not_allowed"`.
+- The history on the phone records which agent got which key, and when. The key shows "Last used
+  by <agent>".
+- Refusals at once: `bad_secret_request`, `not_allowed`, and `paused`, `unsupported_kind`,
+  `unsupported_version` as for every kind. An older app answers `unsupported_kind`.
+
+### Keys in bundles and task plans
+
+A bundle may hold `secret` items (`target` as above). In a bundle without `session`, an approved
+item carries `secret` with its value, as a single answer does. `nodkey run` asks this way for
+several keys at once, with one approval.
+
+In a task plan (a bundle with `session`), a `secret` item carries `secret` **without** `value` and
+without `lease`: the plan only lets later `secret` requests for that key go through in the session
+(see "Task sessions"), with `lease: {"kind":"session", …}`. So `nodkey run --secret` gets the key
+later and the model never sees it. An older app refuses a bundle with a `secret` item with
+`error: "bad_bundle"`.
+
+### Saving a key
+
+`kind: save_secret` asks the phone to keep a key that an agent made, for example in a provider's
+dashboard. `target` is `service/VARIABLE` from the fields of `save_secret` (or `VARIABLE` when there is no
+service):
+
+```json
+{"v":1, "request_id":"…", "kind":"save_secret", "target":"openai.com/OPENAI_API_KEY",
+ "reason":"Save the API key I just made in the OpenAI dashboard", "agent":"Claude Code @ my-laptop", "ts":1791620000,
+ "save_secret":{"variable":"OPENAI_API_KEY", "service":"openai.com", "title":"OpenAI",
+                "notes":"Made for the test project", "expires":1799396000, "value":{"enc":"…", "ct":"…"}}}
+```
+
+`value` is sealed to the phone **on its own** with HPKE (`info` = `nodkey/v1/secret`, `aad` =
+`agent_id`), like the password of a `save` request. `variable` is required; `service`, `title`
+(at most 100 characters), `notes` (at most 500) and `expires` are optional. The agent tools send a
+value of at most 1500 bytes (`MAX_SAVE_VALUE`), so the request fits the relay; a longer key is
+added in the app.
+
+The phone shows the title, the service and the variable name (never the value) and asks the user
+to save it with Face ID. A key with the same service and variable name (the name compared without
+regard to case; no service matches no service) gets the new value; otherwise the phone adds a key.
+A save is **never covered by a lease** and is never part of a bundle or a task session. It does
+not count against the agent limit. Every scope may save a key. The answer carries `saved`:
+`added`, `updated` or `unchanged`, or a refusal (`bad_secret_request`, `paused`,
+`unsupported_kind`, `unsupported_version`).
+
+### Lists
+
+A `list` answer carries `secrets`, the names of the keys the agent may ask for (never a value),
+when its scope allows keys:
+
+```json
+"secrets":[{"title":"OpenAI", "service":"openai.com", "variable":"OPENAI_API_KEY"}]
+```
+
+### The agent side
+
+- `nodkey run --secret NAME[=SERVICE] [--secret ...] --reason TEXT -- <command> [args]` asks for
+  the keys, puts each value only into the environment of the command as `NAME`, and never prints a
+  value. One key is one `secret` request; several keys are one bundle (or, while a task session
+  runs, one `secret` request each, which the session may cover). The command runs only when the
+  phone gave every key. **This is the preferred way:** the model never sees the value.
+- `nodkey secret save NAME [--service HOST] [--title TEXT] [--notes TEXT] [--expires DATE]
+  --reason TEXT` reads the value from stdin, never from the arguments.
+- The MCP tool `request_secret` returns the value, with a message to prefer `nodkey run`;
+  `save_secret` saves a key; `list_accounts` shows the key names.
+- An agent never pastes a key into a chat, a file, a commit or a log, and saves a key it made at
+  once with `save_secret`.
+
+Vectors: `request_secret`, `request_secret_by_variable`, `answer_secret`,
+`answer_secret_quota_warning`, `answer_secret_no_secret`, `save_secret_value`,
+`request_save_secret`, `answer_save_secret`, `request_bundle_secrets`, `answer_bundle_secrets`,
+`request_bundle_secret_session`, `answer_bundle_secret_session`, `request_secret_in_session`,
+`answer_secret_in_session`, `answer_list_with_secrets`, and the `secrets` section: how targets
+read (`targets`), which keys match which targets (`matches`), the limits and the errors. Test
+values only.
+
 ## Sign-in methods
 
 Many sites are signed in to with "Sign in with Google" (or Apple, GitHub, Microsoft, Facebook), a
@@ -870,7 +995,7 @@ long as the request (120 s). Without a picture everything works the same.
 ## Leases
 
 A lease is `(agent_id, account_id, kind: code|login, until)` (for passkeys see "Passkeys"; cards,
-`suggest` and `sms_code` never have one), kept only on the phone (keychain-backed
+keys, `suggest` and `sms_code` never have one), kept only on the phone (keychain-backed
 store shared with the notification extensions). While a matching lease is valid the phone answers by
 itself and shows a quiet notification ("Claude got the password for vg.no"). Durations: once (no lease),
 1 day, 7 days, always (until revoked). The user sees and revokes leases under Agents; removing an agent
@@ -879,22 +1004,23 @@ do not answer (see "Agent limit").
 
 ## Agent limit
 
-The phone limits how many different logins and codes one agent gets, so that an agent cannot take
+The phone limits how many different logins, codes and keys one agent gets, so that an agent cannot take
 everything out of Nodkey. The phone counts and decides; the agent sees the limit only in answers.
 `nodkey_proto::quota` holds the numbers below.
 
-- **What counts:** new items only. An item is one saved login or code account; it is new when this
+- **What counts:** new items only. An item is one saved login, code account or key; it is new when this
   agent has not received it in the last 30 days. An agent that uses the same few logins every day
   almost never reaches the limit; an agent that goes through many accounts reaches it fast.
 - An item is received when an approved answer gives it: a `code` or `login` answer, an approved
-  `login` or `code` item of a bundle, the provider login in `via`, and answers that a lease, a task
+  `login` or `code` item of a bundle, the provider login in `via`, a `secret` answer or an approved
+  `secret` item of a bundle (also a plan item without a value), and answers that a lease, a task
   session or the follow-up window gave. Passkey signatures (the key never leaves the phone), cards
-  (they have their own limits), `sms_code`, `list`, `insights`, `cleanup`, `save` and `suggest` do
-  not count.
+  (they have their own limits), `sms_code`, `list`, `insights`, `cleanup`, `save`, `save_secret` and
+  `suggest` do not count.
 - The count is per agent, over a rolling 24 hours.
 - The limit is per agent: 5, 10 or 25 (the user picks it under Agents; 10 when they did not).
 
-Before it answers a `code`, `login` or `bundle` request, the phone adds the new items of the request
+Before it answers a `code`, `login`, `secret` or `bundle` request, the phone adds the new items of the request
 to the count of the last 24 hours:
 
 | Count with this request | What the phone does |
@@ -910,12 +1036,12 @@ phone shows the warning at once, whatever the daily count.
 12 new logins and codes today. Is this expected?"), and the user holds the button and confirms with
 Face ID. While the warning applies to an agent:
 
-- leases, the follow-up window and task sessions do not answer for it: each `code`, `login` and
-  `bundle` request is asked on its own. A bundle with `session` is asked as a bundle without one and
+- leases, the follow-up window and task sessions do not answer for it: each `code`, `login`,
+  `secret` and `bundle` request is asked on its own. A bundle with `session` is asked as a bundle without one and
   starts no session. The phone ends the running session of that agent; a request with its
   `session_id` is asked as usual, and the answer carries `session_ended: true`.
 - the notification of its requests offers only Open: the user approves in the app.
-- every answer to its `code`, `login` and `bundle` requests carries `error: "quota_warning"` and
+- every answer to its `code`, `login`, `secret` and `bundle` requests carries `error: "quota_warning"` and
   `quota`, with the decision the user made (`approved` too). `quota_warning` is informational: it
   says why the user was asked, not that anything failed.
 
@@ -985,22 +1111,27 @@ change ignore such a request, and the agent sees `expired`.) Requests also carry
   `cleanup_logins(filter, reason)` (dates as Unix seconds or `YYYY-MM-DD`; an unknown filter key is an
   error, so a typo cannot widen the filter), `suggest_sign_in_method(target, kind, provider?, mailbox?,
   outcome, reason)` (`provider` is a known name or the provider's own; a `signed_in` suggestion
-  goes as `seen`, a `failed` one without `certainty`) and `request_sms_code(target, reason,
-  wait_seconds?)`. A `request_login` result shows `via` with `fill_only_on` (`via_sites`), and its
+  goes as `seen`, a `failed` one without `certainty`), `request_sms_code(target, reason,
+  wait_seconds?)`, `request_secret(variable?, service?, reason, image_path?)` and
+  `save_secret(variable, service?, value, title?, notes?, expires?, reason)` (see "API keys and
+  secrets"). A `request_login` result shows `via` with `fill_only_on` (`via_sites`), and its
   message says what to do with `method`, `via` and `second_step`. `image_path` is an optional PNG/JPEG/GIF file (for example
   a browser screenshot) sent as the attachment. Results go to the model; the server keeps no secret.
   A running task session (its id, end, phone and the approved items, never a secret) is kept in
   `agents/<profile>/session.json`, so the MCP server, the command line and `nodkey webauthn` of one
   profile share it; `end_session()` and `nodkey end-session` end it.
 - The command line does the same in one process: `nodkey pair` shows the code and then the check
-  number; `nodkey code`, `login`, `credentials`, `pay`, `suggest`, `sms-code`, `accounts`, `insights`,
-  `cleanup`, `phones`, `unpair`. `nodkey suggest SITE --kind KIND [--provider NAME] [--mailbox ADDR]
+  number; `nodkey code`, `login`, `credentials`, `pay`, `suggest`, `sms-code`, `run`, `secret save`,
+  `accounts`, `insights`, `cleanup`, `phones`, `unpair`. `nodkey suggest SITE --kind KIND [--provider NAME] [--mailbox ADDR]
   [--outcome failed] --reason TEXT`; `nodkey sms-code TARGET --reason TEXT [--wait SECS]`. Exit codes:
   0 approved (or queued), 1 error, 2 denied (or rejected), 3 expired, 4 paused (`error: paused`),
   64 bad arguments; for `pay` and `card-fill` also 5
   `over_limit`, 6 `reveal_off`, 7 `cards_off` or `no_card`, 8 `total_mismatch`. `nodkey pay MERCHANT
   AMOUNT CURRENCY --reason TEXT --reveal` prints the full card, so it requires `--reveal`; without a
   host nothing can fill a card for it. A missing amount is refused before anything is sent.
+  `nodkey run` passes on the exit code of the command it ran (126 or 127 when the command cannot
+  start); when the phone does not give every key, the command does not run and the exit code is 2,
+  3, 4 or 1 as above.
 - `nodkey webauthn --agent <profile> [--phone PHONE]` is the authenticator a browser host (Horizon)
   calls; `nodkey card-fill --agent <profile> [--phone PHONE]` gives such a host a card to fill. See
   below.

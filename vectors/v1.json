@@ -1436,6 +1436,215 @@
       "recipient_kem_pk": "fE5zmodqNC-MJSk500yxJtz4i2vlbx3Hpg2qO712pTQ",
       "recipient_kem_sk": "WVg29q7eTJuYsXMJkPAqAx2veoBDBCceAKKxCEs90KU",
       "sender": "phone"
+    },
+    {
+      "aad": "IdQP77UDyu6DAF-4aCs1-Q",
+      "ct": "iTU4KMkOrFgMCJe7uLpbq0TzCnHOYc3FR6o11Q",
+      "enc": "FJfpjhCaioYzL-HEZR07zmnqGNOvcC41oCphygBYaB4",
+      "ikm_e": "bFjXBIsqIlBe0oNKDW8ib9A8qXAQASS-9_7QSUsCGmQ",
+      "info": "nodkey/v1/secret",
+      "name": "save_secret_value",
+      "plaintext_b64u": "c2stdGVzdC0wMDAw",
+      "purpose": "secret",
+      "recipient_kem_pk": "Td-3-HXWLqROvCB5uulMNssHXo3O2K_LQIby38T-z28",
+      "recipient_kem_sk": "vazvVwr6Ybz3fJM8Ey3EblV_Ow4P6yCovbNOvWY7IiI",
+      "sender": "agent"
+    },
+    {
+      "aad": "nW1OaXiaD-aiGHVnGskt5AIdQP77UDyu6DAF-4aCs1-Q",
+      "ct": "V9R-kbbiT3d7kUQf2WhqXks7wuo89xhtbJMrHdqlqoLw846BT03Nj57qnYEZbWkRo3OYYb11HxdYo0bwJjoC17yP0Xqs4Q98h5wEVNrh9YCGTuKjeeVCIKf-0N5GzqjA8dOTGwQf2r1_oKXqN3_8oASNH0rvsrypq5qOKH7nhKsgNh_fblSXNCgbipunQx7EfV8LOC_w1XeEP70FPBkokO1GK61xOSRophMmJUFUEdoGiRtCynJ9A3L8H2BEPl4ri2Q8jRbZxfuCRhqeUG5ym9xVwUct",
+      "enc": "vOcJ7gkwY3M8dPERHDxIxg5R_5PSyaDaiMMx-IrK5gE",
+      "ikm_e": "ls5m6WLECjXK8cBFSZaYYy0cHsaLkDBWvbqJa8wB1Ok",
+      "info": "nodkey/v1/request",
+      "name": "request_secret",
+      "plaintext": "{\"v\":1,\"request_id\":\"nW1OaXiaD-aiGHVnGskt5A\",\"kind\":\"secret\",\"target\":\"openai.com/OPENAI_API_KEY\",\"reason\":\"Run the test suite that calls the OpenAI API\",\"agent\":\"Agent · Horizon\",\"ts\":1791620000}",
+      "plaintext_b64u": "eyJ2IjoxLCJyZXF1ZXN0X2lkIjoiblcxT2FYaWFELWFpR0hWbkdza3Q1QSIsImtpbmQiOiJzZWNyZXQiLCJ0YXJnZXQiOiJvcGVuYWkuY29tL09QRU5BSV9BUElfS0VZIiwicmVhc29uIjoiUnVuIHRoZSB0ZXN0IHN1aXRlIHRoYXQgY2FsbHMgdGhlIE9wZW5BSSBBUEkiLCJhZ2VudCI6IkFnZW50IMK3IEhvcml6b24iLCJ0cyI6MTc5MTYyMDAwMH0",
+      "purpose": "request",
+      "recipient_kem_pk": "Td-3-HXWLqROvCB5uulMNssHXo3O2K_LQIby38T-z28",
+      "recipient_kem_sk": "vazvVwr6Ybz3fJM8Ey3EblV_Ow4P6yCovbNOvWY7IiI",
+      "sender": "agent"
+    },
+    {
+      "aad": "eTqTMYyZJ0aneqQhGygzsAIdQP77UDyu6DAF-4aCs1-Q",
+      "ct": "kvlAcdXnJLq5H-tafP2x4gdp8nMgX2na5AMWhZVjmMAMIxFG4MnEwKP6g3orqqi-pvi2PgLZ3SlRVTFnTfUsR-9bNziSeEc4quWK7FpQmevQpPUG_tkfmKMSFyLzwoY61yDliNiUMl5Vs8uf66DfF7qK0PkuvvT_tZrLbcBFQzt05mRZUAjL2xy27pT3DieV-sHOpqjbzLeV5omkewPwyXX6vIGbRs5Paq1p0MnmjRx-iPU2cibKksMFBYz37i2FNMaxjQ",
+      "enc": "Spexa3bYXDIMY9lhO5mJ4lyD4D46jZC7_mfZV4SOymc",
+      "ikm_e": "FjhLp3arVcPDqhL7BmanmN3Umlu7C98euRqfrknHqBw",
+      "info": "nodkey/v1/request",
+      "name": "request_secret_by_variable",
+      "plaintext": "{\"v\":1,\"request_id\":\"eTqTMYyZJ0aneqQhGygzsA\",\"kind\":\"secret\",\"target\":\"EXAMPLE_TOKEN\",\"reason\":\"Deploy the preview with the example API\",\"agent\":\"Agent · Horizon\",\"ts\":1791620000}",
+      "plaintext_b64u": "eyJ2IjoxLCJyZXF1ZXN0X2lkIjoiZVRxVE1ZeVpKMGFuZXFRaEd5Z3pzQSIsImtpbmQiOiJzZWNyZXQiLCJ0YXJnZXQiOiJFWEFNUExFX1RPS0VOIiwicmVhc29uIjoiRGVwbG95IHRoZSBwcmV2aWV3IHdpdGggdGhlIGV4YW1wbGUgQVBJIiwiYWdlbnQiOiJBZ2VudCDCtyBIb3Jpem9uIiwidHMiOjE3OTE2MjAwMDB9",
+      "purpose": "request",
+      "recipient_kem_pk": "Td-3-HXWLqROvCB5uulMNssHXo3O2K_LQIby38T-z28",
+      "recipient_kem_sk": "vazvVwr6Ybz3fJM8Ey3EblV_Ow4P6yCovbNOvWY7IiI",
+      "sender": "agent"
+    },
+    {
+      "aad": "JO8FxQOL0XLLb7QRXTBhTQIdQP77UDyu6DAF-4aCs1-Q",
+      "ct": "q1Rx8335w1bUdtnix6fcMTpnc-jTjczrDScD89npK89BPvvJNgUhAIhPx4HWA7FPKQbSrdGWp6iPzwx0M5ve0uajPFmx_gJQaovnGL1qu785zqr1NCf8LuiLWcOV7ukpTm9sMiIldfi1iBkuYayD9ZZ9olXlFMdYQ8-edawP3idKB2eD8bVrn_blWiapyaShrcVgaijFsPYBXigvWcELGqr2Bn4tvKyfefUV4PwcHls_ZfWoG2diUPWloZz-_HddYveqFa5cK1Ex3EF6C6B4q8UFfQj8HEXjeVkfZeHn4woEO-xzWW-8OmkAzwX7IKHXS42isEeYckj3yhDDtDF6grSySA4Ej0d-ovbhH7uqntrdiaNkgLbhjYKPY02a12MrlbsDDziNYMOEUl1l0DL5ViWyXgpO79JYtU_kmHhVK-Y6AKb_cmp35Ee-VTUcb2I9ODIVJq-ZTixNaw_1y9biTJhrA5SgcEIZQwDO3q0SR_GV5AyFefazX0E4IqTCx5EFe5rYxh8EBhWzcZab5EPPHaoM-qKhGwGC5i0U1WlVq9PFW6w-GZFq39GzY5_rABoT9H7aFPln81SomxlXa68lm_Ykzw0V1eyZis-DQ5ScYNo00zShSSxJz-oihg",
+      "enc": "vZseExHR41hy1jEXKUF4_46y9bFVFIPYypJHVZIVkX8",
+      "ikm_e": "mcVLXGJDySsbWVp_fJ-NzB-RE3gqcqApNnqCZa3nZcc",
+      "info": "nodkey/v1/request",
+      "name": "request_save_secret",
+      "plaintext": "{\"v\":1,\"request_id\":\"JO8FxQOL0XLLb7QRXTBhTQ\",\"kind\":\"save_secret\",\"target\":\"openai.com/OPENAI_API_KEY\",\"reason\":\"Save the API key I just made in the OpenAI dashboard\",\"agent\":\"Agent · Horizon\",\"ts\":1791620000,\"save_secret\":{\"variable\":\"OPENAI_API_KEY\",\"service\":\"openai.com\",\"title\":\"OpenAI\",\"notes\":\"Made for the test project\",\"expires\":1799396000,\"value\":{\"enc\":\"FJfpjhCaioYzL-HEZR07zmnqGNOvcC41oCphygBYaB4\",\"ct\":\"iTU4KMkOrFgMCJe7uLpbq0TzCnHOYc3FR6o11Q\"}}}",
+      "plaintext_b64u": "eyJ2IjoxLCJyZXF1ZXN0X2lkIjoiSk84RnhRT0wwWExMYjdRUlhUQmhUUSIsImtpbmQiOiJzYXZlX3NlY3JldCIsInRhcmdldCI6Im9wZW5haS5jb20vT1BFTkFJX0FQSV9LRVkiLCJyZWFzb24iOiJTYXZlIHRoZSBBUEkga2V5IEkganVzdCBtYWRlIGluIHRoZSBPcGVuQUkgZGFzaGJvYXJkIiwiYWdlbnQiOiJBZ2VudCDCtyBIb3Jpem9uIiwidHMiOjE3OTE2MjAwMDAsInNhdmVfc2VjcmV0Ijp7InZhcmlhYmxlIjoiT1BFTkFJX0FQSV9LRVkiLCJzZXJ2aWNlIjoib3BlbmFpLmNvbSIsInRpdGxlIjoiT3BlbkFJIiwibm90ZXMiOiJNYWRlIGZvciB0aGUgdGVzdCBwcm9qZWN0IiwiZXhwaXJlcyI6MTc5OTM5NjAwMCwidmFsdWUiOnsiZW5jIjoiRkpmcGpoQ2Fpb1l6TC1IRVpSMDd6bW5xR05PdmNDNDFvQ3BoeWdCWWFCNCIsImN0IjoiaVRVNEtNa09yRmdNQ0plN3VMcGJxMFR6Q25IT1ljM0ZSNm8xMVEifX19",
+      "purpose": "request",
+      "recipient_kem_pk": "Td-3-HXWLqROvCB5uulMNssHXo3O2K_LQIby38T-z28",
+      "recipient_kem_sk": "vazvVwr6Ybz3fJM8Ey3EblV_Ow4P6yCovbNOvWY7IiI",
+      "sender": "agent"
+    },
+    {
+      "aad": "PaOPl9lyawoCy1wDLDVO0gIdQP77UDyu6DAF-4aCs1-Q",
+      "ct": "jVcBzrhrR-q83Dgj3vLfkpbS37twB10T3Dog9gWNkIBSSeN9wxiAaisd5TFqUkAqUocCwR6q402DWB0rZd3rTItSNMuyjAwM0TX0iIE8qdxVcPEKwRHCiNJ06eTl_MYmumAQAZNRcDwVXGG6f6GYR9QEasYSF5UiNqgEH-fTU1q2yQ8WCfyiyAHJwgVXi0bYyLUWPNYM4OtbfBoIwaK_3RtHtujfSvmeYgrEdgilTZAjahVhr9vLw_hDygJ2SxWq_oko4iUE4ITGzWWTKuTb-v-kL8GAIiDrRRTiMIWIHCaxKuxNvinpYtfCyAO5a8PzZ6YP_0x-mmHvBUhjnTnCEYeOTP8Qrn57_4g_jaj7yiXvGQ4LNnhWzs3G7ZVSHBWSLM3B-GkrurWVXDTuX5WWFaC-WxCuG4U",
+      "enc": "Yd-NDrVoNPBmN8qJed2_vp4qkNI2R7IzQz5yqphEFDs",
+      "ikm_e": "s5Sycl8rKveBdqdSjrL-jMhq2DxeRUGVjtVG1pe3zTs",
+      "info": "nodkey/v1/request",
+      "name": "request_bundle_secrets",
+      "plaintext": "{\"v\":1,\"request_id\":\"PaOPl9lyawoCy1wDLDVO0g\",\"kind\":\"bundle\",\"target\":\"\",\"reason\":\"Run the integration tests\",\"agent\":\"Agent · Horizon\",\"ts\":1791620000,\"bundle\":{\"items\":[{\"id\":\"1\",\"kind\":\"secret\",\"target\":\"OPENAI_API_KEY\"},{\"id\":\"2\",\"kind\":\"secret\",\"target\":\"api.example.com/EXAMPLE_TOKEN\"}]}}",
+      "plaintext_b64u": "eyJ2IjoxLCJyZXF1ZXN0X2lkIjoiUGFPUGw5bHlhd29DeTF3RExEVk8wZyIsImtpbmQiOiJidW5kbGUiLCJ0YXJnZXQiOiIiLCJyZWFzb24iOiJSdW4gdGhlIGludGVncmF0aW9uIHRlc3RzIiwiYWdlbnQiOiJBZ2VudCDCtyBIb3Jpem9uIiwidHMiOjE3OTE2MjAwMDAsImJ1bmRsZSI6eyJpdGVtcyI6W3siaWQiOiIxIiwia2luZCI6InNlY3JldCIsInRhcmdldCI6Ik9QRU5BSV9BUElfS0VZIn0seyJpZCI6IjIiLCJraW5kIjoic2VjcmV0IiwidGFyZ2V0IjoiYXBpLmV4YW1wbGUuY29tL0VYQU1QTEVfVE9LRU4ifV19fQ",
+      "purpose": "request",
+      "recipient_kem_pk": "Td-3-HXWLqROvCB5uulMNssHXo3O2K_LQIby38T-z28",
+      "recipient_kem_sk": "vazvVwr6Ybz3fJM8Ey3EblV_Ow4P6yCovbNOvWY7IiI",
+      "sender": "agent"
+    },
+    {
+      "aad": "OOtifbo0P_JzU0n9oO_OzAIdQP77UDyu6DAF-4aCs1-Q",
+      "ct": "9vJuJshmvEOw8T_Kb3Fv08m6KdIuJgYbDxr1mqoSyLTDNY_ZUTN6HQ0dFu4DWs72IU62mIYociKIh9PV0CLSHfWrK8XtCJ2Y5Z1RO2l3c69w3ete5q8G4QVyxspnU8P7buD2BiH7ZkOqGm167CMECSWfJ1qAf6iCSEmSiSmEZu1lpmRVjcfUwwqXo4jNiIZOzEKY6x__WLk6neEKIVyLXMin16uqP6BwJNUn-7BehA_dYl_r7Cr0Aoo1FXWjUP_fbUKlLHptlKPCScTpIS-53X-3rBQcIlq-I7gxVi4DpBw5pxos9sWMPRYm4MD8FxDddcd_kIa3G3lQrkA-Ajz-UzAMAxdfB6JVjMzBDSxTBLz8eelK-N1IMOArNmYGgBlTnrkHAU5phgqb7EFcQaRoPZ4m68Czsm5pLGUGOL2DBE60ezZo0w",
+      "enc": "YQ5a-8VQjqB3idGatsZiGjhIK7StxmxVfIhL7TpuUkc",
+      "ikm_e": "PqWbH7Yly-I5Bzo-vTyjTuzRg4aJ-LNHd77j-SRcCuI",
+      "info": "nodkey/v1/request",
+      "name": "request_bundle_secret_session",
+      "plaintext": "{\"v\":1,\"request_id\":\"OOtifbo0P_JzU0n9oO_OzA\",\"kind\":\"bundle\",\"target\":\"\",\"reason\":\"Release the new version\",\"agent\":\"Agent · Horizon\",\"ts\":1791620000,\"bundle\":{\"items\":[{\"id\":\"1\",\"kind\":\"login\",\"target\":\"accounts.example.com\"},{\"id\":\"2\",\"kind\":\"secret\",\"target\":\"openai.com/OPENAI_API_KEY\"}],\"session\":1800}}",
+      "plaintext_b64u": "eyJ2IjoxLCJyZXF1ZXN0X2lkIjoiT090aWZibzBQX0p6VTBuOW9PX096QSIsImtpbmQiOiJidW5kbGUiLCJ0YXJnZXQiOiIiLCJyZWFzb24iOiJSZWxlYXNlIHRoZSBuZXcgdmVyc2lvbiIsImFnZW50IjoiQWdlbnQgwrcgSG9yaXpvbiIsInRzIjoxNzkxNjIwMDAwLCJidW5kbGUiOnsiaXRlbXMiOlt7ImlkIjoiMSIsImtpbmQiOiJsb2dpbiIsInRhcmdldCI6ImFjY291bnRzLmV4YW1wbGUuY29tIn0seyJpZCI6IjIiLCJraW5kIjoic2VjcmV0IiwidGFyZ2V0Ijoib3BlbmFpLmNvbS9PUEVOQUlfQVBJX0tFWSJ9XSwic2Vzc2lvbiI6MTgwMH19",
+      "purpose": "request",
+      "recipient_kem_pk": "Td-3-HXWLqROvCB5uulMNssHXo3O2K_LQIby38T-z28",
+      "recipient_kem_sk": "vazvVwr6Ybz3fJM8Ey3EblV_Ow4P6yCovbNOvWY7IiI",
+      "sender": "agent"
+    },
+    {
+      "aad": "rKHibTlcXsM5_0uQhmppoAIdQP77UDyu6DAF-4aCs1-Q",
+      "ct": "GCk1-d7zuuvMEykjwkQptlm-zCA7dZwV6xYASOu2aPmelZjP9vi-3S6HFGeX5vhhCoCCzh14Y1S6XrAaNKstw6qX8qe4khVQK9Hlycxyk2iJyC7lCokpIwFdIAnxx-VG5uPKa-3XzuLehjH-hKLdnFord9dBdI9iiCUzqBrXLVYSirn0nBaYhR-XwHPvwQEcUFoWw2n2fKmhoQSXvAnUivrjAEIqxkz2XF-kXnlDtuH76AYyM3ek4yzOjUi-EwOl2l1xS2AJOmGeE0VmpWc8eAUwBSvHJYgyclv9IH7TozvIdrUf0Q",
+      "enc": "tieo9lotnjfuXAOx0gWr5GOrhH9nTAgxvm7SuXWYPT4",
+      "ikm_e": "BivJ2LFGywoFm9gLKb8OKhFBazlwe0pZ3P9PGwzPUf8",
+      "info": "nodkey/v1/request",
+      "name": "request_secret_in_session",
+      "plaintext": "{\"v\":1,\"request_id\":\"rKHibTlcXsM5_0uQhmppoA\",\"kind\":\"secret\",\"target\":\"openai.com/OPENAI_API_KEY\",\"reason\":\"Run the release checks\",\"agent\":\"Agent · Horizon\",\"ts\":1791620000,\"session_id\":\"U2VjcmV0U2Vzc2lvbklkMQ\"}",
+      "plaintext_b64u": "eyJ2IjoxLCJyZXF1ZXN0X2lkIjoicktIaWJUbGNYc001XzB1UWhtcHBvQSIsImtpbmQiOiJzZWNyZXQiLCJ0YXJnZXQiOiJvcGVuYWkuY29tL09QRU5BSV9BUElfS0VZIiwicmVhc29uIjoiUnVuIHRoZSByZWxlYXNlIGNoZWNrcyIsImFnZW50IjoiQWdlbnQgwrcgSG9yaXpvbiIsInRzIjoxNzkxNjIwMDAwLCJzZXNzaW9uX2lkIjoiVTJWamNtVjBVMlZ6YzJsdmJrbGtNUSJ9",
+      "purpose": "request",
+      "recipient_kem_pk": "Td-3-HXWLqROvCB5uulMNssHXo3O2K_LQIby38T-z28",
+      "recipient_kem_sk": "vazvVwr6Ybz3fJM8Ey3EblV_Ow4P6yCovbNOvWY7IiI",
+      "sender": "agent"
+    },
+    {
+      "aad": "nW1OaXiaD-aiGHVnGskt5A0g0Bt23Hxsm5z-wpZp2lpA",
+      "ct": "CIsMSom3nctET4qWlaEBlZ__EKJPXmPxp6wvI-6VWi7q0MZFWAWkgil274COGs0sXJzXi-eLkfNPIKFel65ConeNqjmu9Co6j9i5fCxo4S8YuWCR8MJPJfZeWMis-5HN8kT7YEtQlKpb0VSToPu3kAVmuLWxNAevVutNPRbBH935UfYoI6689SvTAsIMgJvx-21z8NsRMnCVkjrGdnNEgTJzg2AN2aYwGPP0hdrBdRunkezIMLuR5Q0y7DphYbb4Cb7xKootWVwMjW-R7aXyPE9_c_JwCSXgxLdDuPdOV7xLIWvL3zA",
+      "enc": "y-uGU4Qoc99y2cuuNeGAfz9C9ofGrJkhyM-dkKhf9iI",
+      "ikm_e": "c0S61Hmzp2Q8SzlDZRsDCzt8eMTNepnrnsdiJw3E3iw",
+      "info": "nodkey/v1/answer",
+      "name": "answer_secret",
+      "plaintext": "{\"v\":1,\"request_id\":\"nW1OaXiaD-aiGHVnGskt5A\",\"decision\":\"approved\",\"lease\":{\"kind\":\"once\"},\"secret\":{\"title\":\"OpenAI\",\"service\":\"openai.com\",\"variable\":\"OPENAI_API_KEY\",\"value\":\"sk-test-0000\",\"expires\":1799396000}}",
+      "plaintext_b64u": "eyJ2IjoxLCJyZXF1ZXN0X2lkIjoiblcxT2FYaWFELWFpR0hWbkdza3Q1QSIsImRlY2lzaW9uIjoiYXBwcm92ZWQiLCJsZWFzZSI6eyJraW5kIjoib25jZSJ9LCJzZWNyZXQiOnsidGl0bGUiOiJPcGVuQUkiLCJzZXJ2aWNlIjoib3BlbmFpLmNvbSIsInZhcmlhYmxlIjoiT1BFTkFJX0FQSV9LRVkiLCJ2YWx1ZSI6InNrLXRlc3QtMDAwMCIsImV4cGlyZXMiOjE3OTkzOTYwMDB9fQ",
+      "purpose": "answer",
+      "recipient_kem_pk": "fE5zmodqNC-MJSk500yxJtz4i2vlbx3Hpg2qO712pTQ",
+      "recipient_kem_sk": "WVg29q7eTJuYsXMJkPAqAx2veoBDBCceAKKxCEs90KU",
+      "sender": "phone"
+    },
+    {
+      "aad": "nW1OaXiaD-aiGHVnGskt5A0g0Bt23Hxsm5z-wpZp2lpA",
+      "ct": "Oc5M_nUdPBGMycp6g2Tzoc3AbnRS3IxQ187EFUV7ZjA6MKi5R5gFO8JxL7Oi1IzQVj1ymo9BT4jX3iFbrvosKdR1H_ekjn9JFl6sC4TN5SopT5PzNELmFUjBNVKHPTlNksDUN-gPAnAci8yDeJw7tIwVkiSSaVYyrhXlw-rKJkj_812U2fpRxEycoiErHFIcUvcek72uHaYhGH4L0_p7WslCJ3suX-0n4d5QWAPc8eptbc2Gg_MK6It6K6KjWlalNz5YXjCrCdRojESKgPlVnqcIQXHnczjXzFE0tGv9njllRj9vo97fkh_AyfeyAWg5W81kkaJgyNMZkhMv3n-_8YZ4jk1WlmFjoaakd5OwU_1oESR20oQ4zFcKKTHAHA2MoLM",
+      "enc": "-mIhHnXvaGAu2Ym-t-VdYR9O8jSMFpkaJq-9cySWFGs",
+      "ikm_e": "2wbGxFQx72G4JQsRUZfYNW6PCntQbPRsWICkwXKMDX8",
+      "info": "nodkey/v1/answer",
+      "name": "answer_secret_quota_warning",
+      "plaintext": "{\"v\":1,\"request_id\":\"nW1OaXiaD-aiGHVnGskt5A\",\"decision\":\"approved\",\"lease\":{\"kind\":\"once\"},\"error\":\"quota_warning\",\"quota\":{\"new_today\":11,\"limit\":10},\"secret\":{\"title\":\"OpenAI\",\"service\":\"openai.com\",\"variable\":\"OPENAI_API_KEY\",\"value\":\"sk-test-0000\",\"expires\":1799396000}}",
+      "plaintext_b64u": "eyJ2IjoxLCJyZXF1ZXN0X2lkIjoiblcxT2FYaWFELWFpR0hWbkdza3Q1QSIsImRlY2lzaW9uIjoiYXBwcm92ZWQiLCJsZWFzZSI6eyJraW5kIjoib25jZSJ9LCJlcnJvciI6InF1b3RhX3dhcm5pbmciLCJxdW90YSI6eyJuZXdfdG9kYXkiOjExLCJsaW1pdCI6MTB9LCJzZWNyZXQiOnsidGl0bGUiOiJPcGVuQUkiLCJzZXJ2aWNlIjoib3BlbmFpLmNvbSIsInZhcmlhYmxlIjoiT1BFTkFJX0FQSV9LRVkiLCJ2YWx1ZSI6InNrLXRlc3QtMDAwMCIsImV4cGlyZXMiOjE3OTkzOTYwMDB9fQ",
+      "purpose": "answer",
+      "recipient_kem_pk": "fE5zmodqNC-MJSk500yxJtz4i2vlbx3Hpg2qO712pTQ",
+      "recipient_kem_sk": "WVg29q7eTJuYsXMJkPAqAx2veoBDBCceAKKxCEs90KU",
+      "sender": "phone"
+    },
+    {
+      "aad": "nW1OaXiaD-aiGHVnGskt5A0g0Bt23Hxsm5z-wpZp2lpA",
+      "ct": "aakGqzqGYr2YvEDfruNAcDOgim5yOP448vpcwz-U6Zp3BEe3z5qPUxh6hWRwJeDuDEP-4AXpUltSn1osbmdt8g7KbAErdXTB2G7xrUrx4ixcK0d5PeqzyF1M1SkaQR_PcZWKmco",
+      "enc": "C5NOs3Dj8L3yBBUrygWVVwAb7GuO4Nv_VxvX0JGeniY",
+      "ikm_e": "54ZE2i5vq5urwT9skPy4vVvTZJbL8hoHV-9k3d8yFJM",
+      "info": "nodkey/v1/answer",
+      "name": "answer_secret_no_secret",
+      "plaintext": "{\"v\":1,\"request_id\":\"nW1OaXiaD-aiGHVnGskt5A\",\"decision\":\"denied\",\"error\":\"no_secret\"}",
+      "plaintext_b64u": "eyJ2IjoxLCJyZXF1ZXN0X2lkIjoiblcxT2FYaWFELWFpR0hWbkdza3Q1QSIsImRlY2lzaW9uIjoiZGVuaWVkIiwiZXJyb3IiOiJub19zZWNyZXQifQ",
+      "purpose": "answer",
+      "recipient_kem_pk": "fE5zmodqNC-MJSk500yxJtz4i2vlbx3Hpg2qO712pTQ",
+      "recipient_kem_sk": "WVg29q7eTJuYsXMJkPAqAx2veoBDBCceAKKxCEs90KU",
+      "sender": "phone"
+    },
+    {
+      "aad": "JO8FxQOL0XLLb7QRXTBhTQ0g0Bt23Hxsm5z-wpZp2lpA",
+      "ct": "N-zu7SreZPCpliLh8URPDlLTbDuieu6jegt0T9-0kv-tL2YwhUJ886aWDNjcRy8DsUB1nCN8jW2J6qVR914MES_FN_Pk_mex9ZlZjzTs1kQeAkQBCBKrEZSnipcwS_5d_aHB",
+      "enc": "6u_hTC5oInB7ZjqU2Pjmk9gJwt4ctL4JbdPsZo-2hWo",
+      "ikm_e": "3j26xwMHOwJ4FSNqvM43JFcWY14IN2zZ-18SdVbi0Qg",
+      "info": "nodkey/v1/answer",
+      "name": "answer_save_secret",
+      "plaintext": "{\"v\":1,\"request_id\":\"JO8FxQOL0XLLb7QRXTBhTQ\",\"decision\":\"approved\",\"saved\":\"added\"}",
+      "plaintext_b64u": "eyJ2IjoxLCJyZXF1ZXN0X2lkIjoiSk84RnhRT0wwWExMYjdRUlhUQmhUUSIsImRlY2lzaW9uIjoiYXBwcm92ZWQiLCJzYXZlZCI6ImFkZGVkIn0",
+      "purpose": "answer",
+      "recipient_kem_pk": "fE5zmodqNC-MJSk500yxJtz4i2vlbx3Hpg2qO712pTQ",
+      "recipient_kem_sk": "WVg29q7eTJuYsXMJkPAqAx2veoBDBCceAKKxCEs90KU",
+      "sender": "phone"
+    },
+    {
+      "aad": "PaOPl9lyawoCy1wDLDVO0g0g0Bt23Hxsm5z-wpZp2lpA",
+      "ct": "xETD6i5pXo3iA1kOOR0s4x96y4CTjpiqjVabQ-AE5xAXIQy_yxeGqtzJi0U8Vlsi_gtzzxBpZsLNOoMLhPvWu-E4ttA6lsaVwoy_MKB08fWQjEKhNk1fHfUJsC-2ObylK9lzjOxz3eGc9ul6_T3PITgFgRxc6ExHkw4qxoJ1iWumSOU2tQF6BQ8Mo7m6hKdy-H6ffJDb2-Of66egfytqO7oPUOUDlR9dK2c3HDCuXlfmDGQ22Z4ciHr1WpUg45ur3sA2RVZAxeHA7aWLsOEGnLtisWnQcNf8JqoUTK-dg2EQyEO-1-C6RbC9vB9urS73dDQU1qOvy7NEIX7ORagpBhEhCGVjPonBvEMYJtzHEH06Ejdd7f4nElALdxHTDQ3eXyx8uWEJoqaD7rw9xIzPVglOH-6ud1DahCh1mbICd8aRgcT9TtPw7RFkpFoY4vODF8VF-pnsC36fNpSzEkPFXYMmj5n5lNuV1s0RIf1tv8zbEp6uRxs3J536jms8WPlR0ad8zKVmfwzpbh_x2UmIkoeFjPwcv8UUULmS2VkdtN5M3DPL4xbW1HqFdStvG8l16Omy1Yvz7YwO6Q",
+      "enc": "d6Io11lzVmbjLhDwcE3CVb1MBBTuFfga7VGDHt59OxM",
+      "ikm_e": "T2EP72kqVCPJkyeqCB7cBihzGNTM_kLKlCPjGmk3ruE",
+      "info": "nodkey/v1/answer",
+      "name": "answer_bundle_secrets",
+      "plaintext": "{\"v\":1,\"request_id\":\"PaOPl9lyawoCy1wDLDVO0g\",\"decision\":\"approved\",\"items\":[{\"id\":\"1\",\"decision\":\"approved\",\"lease\":{\"kind\":\"once\"},\"secret\":{\"title\":\"OpenAI\",\"service\":\"openai.com\",\"variable\":\"OPENAI_API_KEY\",\"value\":\"sk-test-0000\",\"expires\":1799396000}},{\"id\":\"2\",\"decision\":\"approved\",\"lease\":{\"kind\":\"once\"},\"secret\":{\"title\":\"Example API\",\"service\":\"api.example.com\",\"variable\":\"EXAMPLE_TOKEN\",\"value\":\"tok-test-1111\"}}]}",
+      "plaintext_b64u": "eyJ2IjoxLCJyZXF1ZXN0X2lkIjoiUGFPUGw5bHlhd29DeTF3RExEVk8wZyIsImRlY2lzaW9uIjoiYXBwcm92ZWQiLCJpdGVtcyI6W3siaWQiOiIxIiwiZGVjaXNpb24iOiJhcHByb3ZlZCIsImxlYXNlIjp7ImtpbmQiOiJvbmNlIn0sInNlY3JldCI6eyJ0aXRsZSI6Ik9wZW5BSSIsInNlcnZpY2UiOiJvcGVuYWkuY29tIiwidmFyaWFibGUiOiJPUEVOQUlfQVBJX0tFWSIsInZhbHVlIjoic2stdGVzdC0wMDAwIiwiZXhwaXJlcyI6MTc5OTM5NjAwMH19LHsiaWQiOiIyIiwiZGVjaXNpb24iOiJhcHByb3ZlZCIsImxlYXNlIjp7ImtpbmQiOiJvbmNlIn0sInNlY3JldCI6eyJ0aXRsZSI6IkV4YW1wbGUgQVBJIiwic2VydmljZSI6ImFwaS5leGFtcGxlLmNvbSIsInZhcmlhYmxlIjoiRVhBTVBMRV9UT0tFTiIsInZhbHVlIjoidG9rLXRlc3QtMTExMSJ9fV19",
+      "purpose": "answer",
+      "recipient_kem_pk": "fE5zmodqNC-MJSk500yxJtz4i2vlbx3Hpg2qO712pTQ",
+      "recipient_kem_sk": "WVg29q7eTJuYsXMJkPAqAx2veoBDBCceAKKxCEs90KU",
+      "sender": "phone"
+    },
+    {
+      "aad": "OOtifbo0P_JzU0n9oO_OzA0g0Bt23Hxsm5z-wpZp2lpA",
+      "ct": "yHPynUUXnx11FK9y1ItR6Yoh_EacO45QgSWQhIx_KVT7hF_TbfpP_vMpqDih3lqkPSOlJ4GHwf43TbNL_SIJdMIjf0m7o0vGEvCNjC-eaqxt6kQojJzBIwlhPxetX58NR_8p4CMEI87fupN_i5ZOol4K7carUoCYsFe5PMMCibKeUGIq9cBE-KqjpImyVN2U2JP5H1oZl7Xl_ZkUdVPDEK4uKuJiyNA63OTGDJnL1ucFTeT-3XeO0OC-leNEApjDh4PlUdxxvk2tnjYX7XHRwYg1Fv4aYLQWC2zk70jhv-aPGvtuJy2oqi0QqjRkzvMFWx2jzK10GrIDXD8YmxUUH7y7rKpFGa7ljLMxJOnzH-_11QhvRMr8gedQyA6GYCTMDPk4fRimW1qc08NKXxzicWcCND_RTcxA4Sgnv6ivwKp2fqSngtu1FDK0OyT6TdZN0CxyFgygFKm-8zZ1I-EaZKI8P2y8Wvcen1ORePPbCFUfhEkQqr5bv76DKoGSQ9GrhQroWzjfFX39p2GcYGD8pBChoV04qB617PyKmpcx5hXwTNC_4nUYqhNsYNRphl6KjPHjPA8OOa8eJlqlHmOTN9TlZrz6NzXQEFvEdMSeCstPU3xNIxn8IVtAhK-XeLIa6SNRs5pJoqJ5m4LblV0VociKAK1GnxlSAIBKlugRO7leERcfTQCvwX-Yfs6E",
+      "enc": "BaVANlZKet4RRJ1MNqwhX0BHJ3_84P6Q5YB-EtMCLn4",
+      "ikm_e": "K0XEdGp3Py8hsEwYKnHcUBb06twwTuZPFy9tVuTZAew",
+      "info": "nodkey/v1/answer",
+      "name": "answer_bundle_secret_session",
+      "plaintext": "{\"v\":1,\"request_id\":\"OOtifbo0P_JzU0n9oO_OzA\",\"decision\":\"approved\",\"items\":[{\"id\":\"1\",\"decision\":\"approved\",\"account\":{\"issuer\":\"Example\",\"name\":\"alex@example.com\",\"site\":\"accounts.example.com\"},\"username\":\"alex@example.com\",\"password\":\"correct horse battery staple\",\"lease\":{\"kind\":\"session\",\"until\":1791621800}},{\"id\":\"2\",\"decision\":\"approved\",\"secret\":{\"title\":\"OpenAI\",\"service\":\"openai.com\",\"variable\":\"OPENAI_API_KEY\",\"expires\":1799396000}}],\"session\":{\"id\":\"U2VjcmV0U2Vzc2lvbklkMQ\",\"until\":1791621800}}",
+      "plaintext_b64u": "eyJ2IjoxLCJyZXF1ZXN0X2lkIjoiT090aWZibzBQX0p6VTBuOW9PX096QSIsImRlY2lzaW9uIjoiYXBwcm92ZWQiLCJpdGVtcyI6W3siaWQiOiIxIiwiZGVjaXNpb24iOiJhcHByb3ZlZCIsImFjY291bnQiOnsiaXNzdWVyIjoiRXhhbXBsZSIsIm5hbWUiOiJhbGV4QGV4YW1wbGUuY29tIiwic2l0ZSI6ImFjY291bnRzLmV4YW1wbGUuY29tIn0sInVzZXJuYW1lIjoiYWxleEBleGFtcGxlLmNvbSIsInBhc3N3b3JkIjoiY29ycmVjdCBob3JzZSBiYXR0ZXJ5IHN0YXBsZSIsImxlYXNlIjp7ImtpbmQiOiJzZXNzaW9uIiwidW50aWwiOjE3OTE2MjE4MDB9fSx7ImlkIjoiMiIsImRlY2lzaW9uIjoiYXBwcm92ZWQiLCJzZWNyZXQiOnsidGl0bGUiOiJPcGVuQUkiLCJzZXJ2aWNlIjoib3BlbmFpLmNvbSIsInZhcmlhYmxlIjoiT1BFTkFJX0FQSV9LRVkiLCJleHBpcmVzIjoxNzk5Mzk2MDAwfX1dLCJzZXNzaW9uIjp7ImlkIjoiVTJWamNtVjBVMlZ6YzJsdmJrbGtNUSIsInVudGlsIjoxNzkxNjIxODAwfX0",
+      "purpose": "answer",
+      "recipient_kem_pk": "fE5zmodqNC-MJSk500yxJtz4i2vlbx3Hpg2qO712pTQ",
+      "recipient_kem_sk": "WVg29q7eTJuYsXMJkPAqAx2veoBDBCceAKKxCEs90KU",
+      "sender": "phone"
+    },
+    {
+      "aad": "rKHibTlcXsM5_0uQhmppoA0g0Bt23Hxsm5z-wpZp2lpA",
+      "ct": "d8r1HADiRlRKVycjFDIEdFSZwmPfjP3E_aTa6q2OlX_SFbyklCoWj1dwflxgWzJPy-G-1-aNPpL2XITyB6XcH9sEOYL1dF5fios4KXcTK3M-4dBFEBcwyZE0b8seMNscM6XH3J4h-p6oJa-G0DZgj_qkcC86LNHBmingxW_J-HOOHOEnFZP8S_Y64UhxKzaX_TR3LZqwla54mRrHKTirKpFePTNu8koIOKkiwGlkMIYstro7uFw92uhtKmuvRmrhEoGcto6PN0cwvt49Rs6rpLWTmzYKOl47mua922nA7g4N7b83JWs8ML1jeJfsntOoiMnOzLYf6ojQwqOZ",
+      "enc": "8vyQmH9Fkxkr4C_HVS0GiVwyCgwvqTSV0CYNULMQRmc",
+      "ikm_e": "xisEU8hPKLE-eXI5x9o8bPkiKleZMRH7d2tz6YQSUwc",
+      "info": "nodkey/v1/answer",
+      "name": "answer_secret_in_session",
+      "plaintext": "{\"v\":1,\"request_id\":\"rKHibTlcXsM5_0uQhmppoA\",\"decision\":\"approved\",\"lease\":{\"kind\":\"session\",\"until\":1791621800},\"secret\":{\"title\":\"OpenAI\",\"service\":\"openai.com\",\"variable\":\"OPENAI_API_KEY\",\"value\":\"sk-test-0000\",\"expires\":1799396000}}",
+      "plaintext_b64u": "eyJ2IjoxLCJyZXF1ZXN0X2lkIjoicktIaWJUbGNYc001XzB1UWhtcHBvQSIsImRlY2lzaW9uIjoiYXBwcm92ZWQiLCJsZWFzZSI6eyJraW5kIjoic2Vzc2lvbiIsInVudGlsIjoxNzkxNjIxODAwfSwic2VjcmV0Ijp7InRpdGxlIjoiT3BlbkFJIiwic2VydmljZSI6Im9wZW5haS5jb20iLCJ2YXJpYWJsZSI6Ik9QRU5BSV9BUElfS0VZIiwidmFsdWUiOiJzay10ZXN0LTAwMDAiLCJleHBpcmVzIjoxNzk5Mzk2MDAwfX0",
+      "purpose": "answer",
+      "recipient_kem_pk": "fE5zmodqNC-MJSk500yxJtz4i2vlbx3Hpg2qO712pTQ",
+      "recipient_kem_sk": "WVg29q7eTJuYsXMJkPAqAx2veoBDBCceAKKxCEs90KU",
+      "sender": "phone"
+    },
+    {
+      "aad": "V3YOytacJmkm-z-oepnkNw0g0Bt23Hxsm5z-wpZp2lpA",
+      "ct": "FefcEVRxKcj_oFihsHCn4kB5JzgoN42BsuYKGQQfSUrNdIYC_HqN8QdK4atnlGTGHydyskhnBgbc_OmQUnBBpeDqma7ICIaib4XYGHD5tc3iKUmozyFbKR6xffwWtsKdH-1byIB-sOi63k2hIBo0LtxoU6qQdSgv9urhNj9Bk4AAeWzaA6nSoKa4R9qNPAW8utfu8sYFm1mgquV4EltMLLjQiptBwxvKbrq10xvr5v6wufQmhzWdSvnhkcxqO92jBa42z_YxXtD3YnN4lk4b6brTx-WrybCmpUYTc44aYm_DfO7UCNLkrQHJHu_79VDkoE16_JnaCTFhFQhO0Q8LyXfK",
+      "enc": "Jf_p-Yss97LONGiznqZ5wM4n_OGHPRF6wjr78jjmUjE",
+      "ikm_e": "Lr0cc1RIg0vo7Xe0iUHhhM92MKvdFKv7HAff4TSQ5Os",
+      "info": "nodkey/v1/answer",
+      "name": "answer_list_with_secrets",
+      "plaintext": "{\"v\":1,\"request_id\":\"V3YOytacJmkm-z-oepnkNw\",\"decision\":\"approved\",\"accounts\":[],\"secrets\":[{\"title\":\"OpenAI\",\"service\":\"openai.com\",\"variable\":\"OPENAI_API_KEY\"},{\"title\":\"Example API\",\"service\":\"api.example.com\",\"variable\":\"EXAMPLE_TOKEN\"}]}",
+      "plaintext_b64u": "eyJ2IjoxLCJyZXF1ZXN0X2lkIjoiVjNZT3l0YWNKbWttLXotb2VwbmtOdyIsImRlY2lzaW9uIjoiYXBwcm92ZWQiLCJhY2NvdW50cyI6W10sInNlY3JldHMiOlt7InRpdGxlIjoiT3BlbkFJIiwic2VydmljZSI6Im9wZW5haS5jb20iLCJ2YXJpYWJsZSI6Ik9QRU5BSV9BUElfS0VZIn0seyJ0aXRsZSI6IkV4YW1wbGUgQVBJIiwic2VydmljZSI6ImFwaS5leGFtcGxlLmNvbSIsInZhcmlhYmxlIjoiRVhBTVBMRV9UT0tFTiJ9XX0",
+      "purpose": "answer",
+      "recipient_kem_pk": "fE5zmodqNC-MJSk500yxJtz4i2vlbx3Hpg2qO712pTQ",
+      "recipient_kem_sk": "WVg29q7eTJuYsXMJkPAqAx2veoBDBCceAKKxCEs90KU",
+      "sender": "phone"
     }
   ],
   "keys": {
@@ -1668,6 +1877,203 @@
     "ok_for_today_seconds": 86400,
     "pause_above": 25,
     "window_seconds": 86400
+  },
+  "secrets": {
+    "errors": [
+      "no_secret",
+      "bad_secret_request",
+      "not_allowed"
+    ],
+    "matches": [
+      {
+        "match": true,
+        "service": "openai.com",
+        "target": "openai.com",
+        "variable": "OPENAI_API_KEY"
+      },
+      {
+        "match": false,
+        "service": "api.example.com",
+        "target": "openai.com",
+        "variable": "EXAMPLE_TOKEN"
+      },
+      {
+        "match": true,
+        "service": "openai.com",
+        "target": "api.openai.com",
+        "variable": "OPENAI_API_KEY"
+      },
+      {
+        "match": false,
+        "service": "api.example.com",
+        "target": "api.openai.com",
+        "variable": "EXAMPLE_TOKEN"
+      },
+      {
+        "match": true,
+        "service": "openai.com",
+        "target": "platform.openai.com/OPENAI_API_KEY",
+        "variable": "OPENAI_API_KEY"
+      },
+      {
+        "match": false,
+        "service": "api.example.com",
+        "target": "platform.openai.com/OPENAI_API_KEY",
+        "variable": "EXAMPLE_TOKEN"
+      },
+      {
+        "match": true,
+        "service": "openai.com",
+        "target": "openai_api_key",
+        "variable": "OPENAI_API_KEY"
+      },
+      {
+        "match": false,
+        "service": "api.example.com",
+        "target": "openai_api_key",
+        "variable": "EXAMPLE_TOKEN"
+      },
+      {
+        "match": false,
+        "service": "openai.com",
+        "target": "openai.com/OPENAI_ADMIN_KEY",
+        "variable": "OPENAI_API_KEY"
+      },
+      {
+        "match": false,
+        "service": "api.example.com",
+        "target": "openai.com/OPENAI_ADMIN_KEY",
+        "variable": "EXAMPLE_TOKEN"
+      },
+      {
+        "match": false,
+        "service": "openai.com",
+        "target": "notopenai.com",
+        "variable": "OPENAI_API_KEY"
+      },
+      {
+        "match": false,
+        "service": "api.example.com",
+        "target": "notopenai.com",
+        "variable": "EXAMPLE_TOKEN"
+      },
+      {
+        "match": false,
+        "service": "openai.com",
+        "target": "openai.com.evil.example",
+        "variable": "OPENAI_API_KEY"
+      },
+      {
+        "match": false,
+        "service": "api.example.com",
+        "target": "openai.com.evil.example",
+        "variable": "EXAMPLE_TOKEN"
+      },
+      {
+        "match": false,
+        "service": "openai.com",
+        "target": "example.com",
+        "variable": "OPENAI_API_KEY"
+      },
+      {
+        "match": true,
+        "service": "api.example.com",
+        "target": "example.com",
+        "variable": "EXAMPLE_TOKEN"
+      },
+      {
+        "match": false,
+        "service": "openai.com",
+        "target": "EXAMPLE_TOKEN",
+        "variable": "OPENAI_API_KEY"
+      },
+      {
+        "match": true,
+        "service": "api.example.com",
+        "target": "EXAMPLE_TOKEN",
+        "variable": "EXAMPLE_TOKEN"
+      },
+      {
+        "match": false,
+        "service": "openai.com",
+        "target": "ANTHROPIC_API_KEY",
+        "variable": "OPENAI_API_KEY"
+      },
+      {
+        "match": false,
+        "service": "api.example.com",
+        "target": "ANTHROPIC_API_KEY",
+        "variable": "EXAMPLE_TOKEN"
+      }
+    ],
+    "max_notes": 500,
+    "max_save_value": 1500,
+    "max_title": 100,
+    "max_variable": 100,
+    "targets": [
+      {
+        "ok": true,
+        "service": "openai.com",
+        "target": "openai.com",
+        "variable": null
+      },
+      {
+        "ok": true,
+        "service": null,
+        "target": "OPENAI_API_KEY",
+        "variable": "OPENAI_API_KEY"
+      },
+      {
+        "ok": true,
+        "service": "openai.com",
+        "target": "openai.com/OPENAI_API_KEY",
+        "variable": "OPENAI_API_KEY"
+      },
+      {
+        "ok": true,
+        "service": "localhost",
+        "target": "localhost/DEV_TOKEN",
+        "variable": "DEV_TOKEN"
+      },
+      {
+        "ok": true,
+        "service": null,
+        "target": "_PRIVATE",
+        "variable": "_PRIVATE"
+      },
+      {
+        "ok": false,
+        "target": "OpenAI.com"
+      },
+      {
+        "ok": false,
+        "target": "https://openai.com"
+      },
+      {
+        "ok": false,
+        "target": "www.openai.com"
+      },
+      {
+        "ok": false,
+        "target": "openai.com/"
+      },
+      {
+        "ok": false,
+        "target": "/OPENAI_API_KEY"
+      },
+      {
+        "ok": false,
+        "target": "openai.com/OPENAI-KEY"
+      },
+      {
+        "ok": false,
+        "target": "1PASSWORD"
+      },
+      {
+        "ok": false,
+        "target": ""
+      }
+    ]
   },
   "signin": {
     "methods": [

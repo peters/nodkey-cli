@@ -162,6 +162,12 @@ pub enum Kind {
     /// within [`Request::wait_seconds`]. Never covered by a lease, a bundle or a session.
     #[serde(rename = "sms_code")]
     SmsCode,
+    /// An API key or other secret ([`crate::apikey`]); `target` names its service and/or variable
+    /// name. Face ID every time: never covered by a lease; a task session may cover it.
+    Secret,
+    /// Keep a key an agent made ([`crate::SaveSecret`]); never covered by a lease.
+    #[serde(rename = "save_secret")]
+    SaveSecret,
 }
 
 /// The login a `save` request asks the phone to keep.
@@ -330,6 +336,9 @@ pub struct Request {
     /// `sms_code`: how long the phone waits for the SMS (30 to 300 s; absent means 120).
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub wait_seconds: Option<u32>,
+    /// The key a `save_secret` request asks the phone to keep; absent for the other kinds.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub save_secret: Option<crate::SaveSecret>,
 }
 
 /// the user's decision.
@@ -457,7 +466,7 @@ pub struct Answer {
     /// `unsupported_version`, `unsupported_kind`, for passkeys `bad_client_data`, `no_passkey`,
     /// `unsupported_algorithm` or `excluded` (see [`crate::passkey::errors`]), and for cards
     /// [`crate::card::errors`]. Also `quota_warning`, with any decision: the phone asked with the
-    /// agent limit warning ([`crate::quota::errors`]).
+    /// agent limit warning ([`crate::quota::errors`]). For keys [`crate::apikey::errors`].
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<String>,
     /// `insights`: counts, age buckets and anonymous groups (docs/agent-protocol.md), passed on as is.
@@ -489,6 +498,12 @@ pub struct Answer {
     /// With `quota_warning`, or `paused` by the agent limit: the count behind it.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub quota: Option<crate::Quota>,
+    /// An approved `secret` request: the key.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub secret: Option<crate::SecretAnswer>,
+    /// `list`: the keys this agent may ask for (names only), when its scope allows keys.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub secrets: Option<Vec<crate::SecretEntry>>,
 }
 
 impl Answer {
@@ -522,6 +537,8 @@ impl Answer {
             via: None,
             second_step: None,
             quota: None,
+            secret: None,
+            secrets: None,
         }
     }
 }

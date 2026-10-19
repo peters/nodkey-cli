@@ -40,6 +40,9 @@ pub enum Purpose {
     /// The number or CVC of a card in a `save` request, agent → phone, sealed on its own like a
     /// password. `aad` = `agent_id`.
     Card,
+    /// The value of a `save_secret` request (an API key), agent → phone, sealed on its own like a
+    /// password. `aad` = `agent_id`.
+    Secret,
 }
 
 impl Purpose {
@@ -52,6 +55,7 @@ impl Purpose {
             Purpose::Attachment => "nodkey/v1/attachment",
             Purpose::Password => "nodkey/v1/password",
             Purpose::Card => "nodkey/v1/card",
+            Purpose::Secret => "nodkey/v1/secret",
         }
     }
 

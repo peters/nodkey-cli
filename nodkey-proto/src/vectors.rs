@@ -40,6 +40,7 @@ pub mod passkey;
 pub mod prf;
 mod quota;
 mod save;
+mod secret;
 mod session;
 mod signin;
 fn label32(label: &str) -> [u8; 32] {
@@ -153,7 +154,6 @@ fn to_json<T: serde::Serialize>(v: &T) -> Vec<u8> {
     serde_json::to_vec(v).expect("serialize")
 }
 
-/// Builds the whole vector document.
 /// A request as the vectors' agent sends it.
 fn request(
     rid: &str,
@@ -181,9 +181,11 @@ fn request(
         session_id: None,
         suggest: None,
         wait_seconds: None,
+        save_secret: None,
     }
 }
 
+/// Builds the whole vector document.
 pub fn build() -> Value {
     let agent = Side::fixed("agent");
     let phone = Side::fixed("phone");
@@ -395,7 +397,6 @@ pub fn build() -> Value {
             true,
         );
     }
-
     save::add(&mut ctx, &agent, &phone);
     let webauthn = passkey::add(&mut ctx, &agent, &phone); // After the others: their bytes stay.
     matching::add(&mut ctx, &agent, &phone);
@@ -405,6 +406,7 @@ pub fn build() -> Value {
     let (signin, sms_auth) = signin::add(&mut ctx, &agent, &phone); // Last, for the same reason.
     let quota = quota::add(&mut ctx, &agent, &phone); // After sign-in: earlier bytes stay the same.
     let prf = prf::add(&mut ctx, &agent, &phone); // After the agent limit, for the same reason.
+    let secrets = secret::add(&mut ctx, &agent, &phone); // After PRF, for the same reason.
 
     // Signed relay calls.
     let agent_info = crate::AgentInfo {
@@ -592,5 +594,6 @@ pub fn build() -> Value {
         "signin": signin,
         "quota": quota,
         "prf": prf,
+        "secrets": secrets,
     })
 }
