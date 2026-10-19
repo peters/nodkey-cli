@@ -19,7 +19,7 @@ pub mod secrets;
 pub mod sessions;
 pub mod signin;
 
-pub use phone::{SAVED_LOGINS, cleanup_matches};
+pub use phone::{FakeAccount, SAVED_LOGINS, cleanup_matches};
 
 use std::{
     collections::HashMap,
@@ -115,6 +115,8 @@ pub struct Fake {
     pub quota: Mutex<quota::FakeQuota>,
     /// The phone's API keys (two test keys to begin with).
     pub secrets: Mutex<Vec<secrets::FakeKey>>,
+    /// The account every code and login answer names, when a test set one.
+    pub account: Mutex<Option<phone::FakeAccount>>,
     /// Where this relay listens; the phone calls it for the pairing lookup.
     addr: std::sync::OnceLock<SocketAddr>,
     inner: Mutex<Inner>,
@@ -545,6 +547,7 @@ pub fn start_on(bind: &str, claim_on_poll: u32) -> (Shared, SocketAddr) {
         signin: Mutex::new(signin::FakeSignin::default()),
         quota: Mutex::new(quota::FakeQuota::default()),
         secrets: Mutex::new(secrets::test_keys()),
+        account: Mutex::new(None),
         addr: std::sync::OnceLock::new(),
         inner: Mutex::new(Inner::default()),
     });

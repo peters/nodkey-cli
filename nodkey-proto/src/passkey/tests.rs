@@ -25,6 +25,12 @@ fn client_data_rules() {
     assert!(ok("www.webauthn.io", "https://webauthn.io").is_err());
     assert!(ok("io", "https://webauthn.io").is_err());
     assert!(ok("127.0.0.1", "https://127.0.0.1").is_err());
+    // A public suffix is never an rp_id: shared hosting and country endings alike.
+    assert!(ok("github.io", "https://alice.github.io").is_err());
+    assert!(ok("co.uk", "https://shop.example.co.uk").is_err());
+    assert!(ok("herokuapp.com", "https://app.herokuapp.com").is_err());
+    assert!(ok("alice.github.io", "https://alice.github.io").is_ok());
+    assert!(ok("example.co.uk", "https://shop.example.co.uk").is_ok());
     assert!(ok("webauthn.io", "https://webauthn.io/").is_err());
     assert!(ok("webauthn.io", "https://webauthn.io:").is_err());
     assert!(ok("webauthn.io", "https://webauthn.io:99999").is_err());

@@ -24,13 +24,15 @@ const APPROVAL: &str = "The user approves or denies every request on their iPhon
 2 minutes for them.";
 
 const MATCH: &str = "account.sites lists more websites the account is used on; match says how the phone found \
-it: direct (its name or site), alias (one of its extra websites) or chosen (nothing matched and the user picked it \
-by hand).";
+it: direct (its site), alias (one of its extra websites) or chosen (it is not saved for the site you asked for, and \
+the user picked it by hand for that site). fill_only_on lists where you may fill it: only on a page whose host is \
+one of those sites or below one. Check the address bar before you fill; if the page is elsewhere, stop and tell \
+the user.";
 
 const METHOD: &str = "When the phone knows how the user signs in to the site, the result has method (kind: \
 password, federated = \"Sign in with\" a provider, passkey, email_code, sso or sms; provider; certainty) and, for \
-federated, via: the provider login (for example the Google login) with fill_only_on. Fill via ONLY on those \
-provider sites, never on the target site. second_step says which second step to choose (prefer) and which to \
+federated, via: the provider login (for example the Google login) with its own fill_only_on: the provider's \
+sign-in hosts (accounts.google.com for Google). Fill via ONLY there, never on the target site. second_step says which second step to choose (prefer) and which to \
 avoid; the message says how.";
 
 /// The tool definitions.
@@ -47,8 +49,11 @@ pub fn tools() -> Value {
     });
     let target = json!({
         "type": "string",
-        "description": "The account: a site or issuer, optionally followed by /account, e.g. \"github.com/alex\", \
-                        \"vg.no\" or \"GitHub\". The phone matches it against the user's accounts."
+        "description": "The website you are about to sign in to: the host of that page (look at the address \
+                        bar), optionally followed by /account, e.g. \"github.com\", \"github.com/alex\" or \
+                        \"accounts.example.com\". The phone matches its registrable domain against the sites the \
+                        user saved. A bare name such as \"GitHub\" works too, but the user must then check it on \
+                        the phone every time (no lease or task session answers it)."
     });
     let model = json!({
         "type": "string",
@@ -107,8 +112,10 @@ pub fn tools() -> Value {
                 code, or after the site logged you out); call end_session when the task is done. Returns JSON with \
                 decision (approved when at least one item was approved), approved and of (counts), session (id, until) \
                 when one started, and items: one per item in your order with id, kind, target, decision and, when \
-                approved, username and password (logins), code and seconds_left (codes), account and match. Use each \
-                item only for its own sign-in; never store, log or repeat the secrets."),
+                approved, username and password (logins), code and seconds_left (codes), account, match and \
+                fill_only_on (fill the item only on a page whose host is one of those sites or below one). Use each \
+                item only for its own sign-in; never store, log or repeat the secrets. Name each site by the host of \
+                its sign-in page: a task session answers only requests for the approved items' own websites."),
             "inputSchema": {
                 "type": "object",
                 "properties": {

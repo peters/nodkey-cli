@@ -242,7 +242,7 @@ impl Agent {
             .exchange(request, image_path, phone_selector, progress)
             .await?;
         Ok(text(&match &ex.answer {
-            Some(a) => Outcome::from_answer(a, Kind::SmsCode, &ex.phone, None),
+            Some(a) => Outcome::from_answer(a, Kind::SmsCode, &ex.phone, "", None),
             None => Outcome::expired(&ex.request_id, &ex.phone, total, None)
                 .with_message(SMS_EXPIRED.into()),
         }))

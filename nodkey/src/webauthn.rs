@@ -45,7 +45,8 @@ RP ID rule:
   - rp_id is a domain name with a dot (not an IP address), or "localhost".
   - The host of the origin is rp_id, or it ends with "." + rp_id. Case does not matter.
   - The origin uses https. Only localhost can use http. A port is allowed; a path is not.
-  - There is no public suffix check: use the domain of your service as rp_id.
+  - rp_id is not a public suffix: not an ending such as "co.uk" and not a shared hosting
+    domain such as "github.io" ("alice.github.io" is fine).
 
 PRF (the WebAuthn "prf" extension, CTAP2 hmac-secret): add "extensions":{"prf":{...}} in the
 WebAuthn JSON form.

@@ -112,18 +112,19 @@ Request (agent → phone):
 - `kind: code` returns a one-time code; `login` returns user name, password and, when the login has a
   TOTP key (linked, or a code account with the same site and user name), a code. For 120 s after
   the user approves a login or code once, a `code` request from the same agent for that account is
-  answered without asking (a follow-up window, not shown as a lease); `list` returns the names of the accounts this agent may ask for (no secrets).
-- `target` is free text the phone matches against its accounts: a site or issuer, optionally
-  `/account` (`vg.no`, `github.com/alex`, `GitHub`). The phone asks the user when several match. A
-  named account that is not there matches nothing (no other account on the site is offered); after a
-  scheme (`https://vg.no/login`) the tail is a path, not an account.
+  answered without asking when it is an exact match for it (a follow-up window, not shown as a
+  lease; see "Websites"); `list` returns the names of the accounts this agent may ask for (no secrets).
+- `target` is the website the agent is about to sign in to: the host of that page, optionally
+  `/account` (`vg.no`, `login.example.com`, `github.com/alex`); a bare name (`GitHub`) is allowed
+  but always asks the user. The phone matches it by registrable domain (see "Websites") and asks the
+  user when several match. A named account that is not there matches nothing (no other account on
+  the site is offered); after a scheme (`https://vg.no/login`) the tail is a path, not an account.
   An account may have extra websites ("Also used on" in the app, for example chatgpt.com on a login
-  saved for openai.com). They match strictly by registrable domain: `chatgpt.com` and
-  `auth.chatgpt.com` match the extra website `chatgpt.com`, `chatgpt.ru` and `chatgpt.com.evil.io`
-  do not. Own names and sites rank before extra websites. When nothing matches, the user may pick
-  another account by hand in the app (and may let the phone remember the requested site as an extra
-  website of that account); the answer then says `match: "chosen"`, and a fresh `code` for the same
-  site in the follow-up window is answered with that account.
+  saved for openai.com). They match the same way: `chatgpt.com` and `auth.chatgpt.com` match the
+  extra website `chatgpt.com`, `chatgpt.ru` and `chatgpt.com.evil.io` do not. Own sites rank
+  before extra websites. When nothing matches, the user may pick another account by hand in the app
+  (and may let the phone remember the requested site as an extra website of that account, so the
+  next request matches); the answer then says `match: "chosen"`.
   Empty (`""`) for `list` and `cleanup`.
 - `kind: insights` asks for clean-up help **without identifying data**. The user approves it like a
   list (no lease). The answer's `insights` holds counts and anonymous groups, never a site, user name
@@ -204,9 +205,9 @@ means the answer came from a task session (see "Task sessions"). `decision` is a
 `rejected`, only for `suggest`. `login` and `code` answers may carry `method`, `via` and
 `second_step` (see "Sign-in methods").
 
-A `code` or `login` answer also carries `match`: `direct` (the account's name or site matched the
-target), `alias` (one of its extra websites matched) or `chosen` (nothing matched and the user picked
-it by hand). `account.sites` and the `sites` of each `accounts` entry list the account's extra
+A `code` or `login` answer also carries `match`: `direct` (the account's own site is the target's
+website), `alias` (one of its extra websites is) or `chosen` (the account is not saved for the
+target's website: nothing matched, or only its name did, and the user picked it by hand in the app). `account.sites` and the `sites` of each `accounts` entry list the account's extra
 websites, absent when it has none. Older apps send neither. Vectors: `request_login_chosen`,
 `answer_login_chosen`, `answer_list_with_sites`.
 
@@ -230,6 +231,61 @@ version the app speaks) or `unsupported_kind` (the app does not know the request
 {"v":1, "request_id":"…", "decision":"denied", "error":"empty_filter"}
 {"v":1, "request_id":"…", "decision":"denied", "error":"paused"}
 ```
+
+## Websites
+
+How the phone decides that an account belongs to the website a request names, and where an agent
+may fill what it gets. `nodkey_proto::site` implements this section, the app has the same rules
+(`LoginSite.swift`, `AgentSiteCheck.swift`), and the `sites` vectors keep them in step.
+
+- **Host.** The host of a target or a page is read the way a browser reads a URL: lower case,
+  without scheme, user name, port, path, query or fragment; a backslash ends the host
+  (`evil.example\@github.com` is `evil.example`); one trailing dot is removed; labels with letters
+  outside ASCII are in their `xn--` form. A value with a dot that is not a valid host (a `%`, a
+  space, an empty label, numbers that are not a plain IPv4 address such as `0x7f.0.0.1`) is neither
+  a website nor a bare name: it matches nothing.
+- **Registrable domain.** The public suffix and one label more, from the Public Suffix List with
+  both its sections. The private section makes shared hosting domains endings like `com` and
+  `co.uk`: `github.io`, `herokuapp.com`, `pages.dev`, `vercel.app`. So `alice.github.io` and
+  `bob.github.io` are two websites, and neither is `github.com`. An IP address and `localhost` have
+  no registrable domain; their website is the host itself.
+- **Same website.** Two hosts are the same website when their registrable domains (or, without one,
+  the hosts) are equal. `login.github.com` is github.com; `github.xyz`, `login.github.xyz`,
+  `git-hub.com`, `anyone.github.io` and `github.com.evil.example` are not; `bbc.co.uk` is not
+  `other.co.uk`.
+- **Matching a `code` or `login` target** (and each bundle item):
+  1. A target with a host matches the accounts whose own site (`match: direct`) or one of whose
+     extra websites (`alias`) is the same website. Only such an exact match is ever answered
+     without the user: by a lease, a task session, a bundle under leases or the follow-up window,
+     and only when the host does not look like another saved website (punycode or other letters
+     outside ASCII, an IP address, `localhost`, a name close to a saved one, a saved name inside
+     another domain or under another ending).
+  2. When nothing matches exactly, a code account without any website may match by its name
+     (`GitHub` for `github.com`).
+  3. A bare name (`GitHub`) matches by name only: the account's name, or the name part of its site.
+
+  Anything that is not an exact match (2, 3, a look-alike, or an account the user picks from the
+  list) is decided by the user in the app, with the requested host in view; its notification only
+  opens the app. Once approved it is answered with `match: "chosen"`, and no lease, follow-up or
+  task session ever answers it. "Remember" in the app (not offered for a look-alike) saves the
+  requested host as an extra website of the account, so the next request matches exactly.
+- **Passkeys.** An `rp_id` is never a public suffix ("The client data check").
+- **Where to fill.** The agent tools add `fill_only_on` to every approved login and code (and each
+  bundle item): the registrable domains of the account's site and extra websites, or for
+  `match: "chosen"` the website of the target, which the user approved it for
+  (`nodkey_proto::site::fill_only_on`). The agent fills only on a page whose host is one of them or
+  below one (`nodkey_proto::site::may_fill`; below a public suffix never counts), and stops and tells
+  the user when the page is elsewhere. `via` carries its own `fill_only_on`: the provider's exact
+  sign-in hosts (see "Sign-in methods"). The browser extension checks the same before it fills.
+- **The list.** `nodkey-proto/data/public_suffix_list.dat` is an unchanged copy of
+  https://publicsuffix.org/list/public_suffix_list.dat (MPL 2.0, as its first lines say). Its
+  `VERSION` and `COMMIT` lines name the snapshot; the `sites.psl` vectors carry them and the file's
+  SHA-256, and the app's tests check its own copy against them. To update it, run
+  `scripts/update-psl.sh` (it downloads the list from publicsuffix.org, never from elsewhere, and
+  rewrites the vectors), read the diff of the list for sites people use with Nodkey, run the
+  checks, then copy the file to `ios/Shared/Resources/public_suffix_list.dat` in peters/nodkey with
+  `vectors/v1.json`, and move the `nodkey-proto` revision of peters/nodkey-browser. Do it a few
+  times a year, and when a shared hosting provider people use is added to the list.
 
 ## Bundles
 
@@ -256,7 +312,8 @@ one site and a code on another. `target` is empty; `bundle` holds the items:
 The phone matches each item on its own and shows one sheet: every item with its site, the matching
 account or a picker (as for a single request with no match), the mismatch and look-alike warnings,
 "Remember this site", and a check box per item; "Approve N of M" asks for Face ID once. A bundle is
-covered by leases only when every item is (then the phone answers by itself). The notification
+covered by leases only when every item is an exact match with a lease (then the phone answers by
+itself; see "Websites"). The notification
 (category `AGENT_REQUEST_BUNDLE`) lists the items and offers Open and Deny. The history records one
 line per item. Scopes: a `codes` agent gets its login items refused (`error: "not_allowed"` on the
 item).
@@ -334,8 +391,10 @@ belongs to the same agent, and the request asks for an approved item:
 | `passkey` with `op: get` | its `rp_id` is the relying party of an approved `passkey` item, or a site below it, with the same passkey, and it has no PRF inputs (see "PRF") |
 | `secret` | it matches the key of an approved `secret` item (see "API keys and secrets") |
 
-An account the user picked by hand for an item (no saved account matched its site) covers later
-requests for that site in the session, as in the follow-up window.
+A request is covered only when its target is an exact match for the item's account (see
+"Websites"): any host of the account's website, never a look-alike or a bare name. An account the
+user picked by hand for an item covers nothing later in the session (unless the user let the phone
+remember the site, which makes it an exact match).
 
 Such an answer carries `lease: {"kind":"session", "until":…}`. Anything else is asked as usual,
 with or without `session_id`: another site or account, a passkey create, a passkey get with PRF
@@ -460,7 +519,9 @@ Before it asks the user, the phone checks `client_data_json` (the agent tools ru
 - `origin` is `https://<host>` or `https://<host>:<port>`, where `host` is `rp_id` or ends with
   `"." + rp_id` (compared without regard to case); or `http://localhost` or
   `http://localhost:<port>` with `rp_id` `localhost`. No path, user name or other scheme;
-- `rp_id` is a domain name with a dot (not an IP address), or `localhost`.
+- `rp_id` is a domain name with a dot (not an IP address), or `localhost`, and not a public suffix:
+  not an ending such as `co.uk` and not a shared hosting domain such as `github.io` (see
+  "Websites"; browsers refuse such an `rp_id` too).
 
 If any rule fails, the phone answers `denied` with `error: "bad_client_data"` at once. The vector
 section `webauthn.client_data_checks` lists cases that pass and fail.
@@ -958,12 +1019,15 @@ answer, and the approval sheet names the provider account. `via` has the fields 
   They are absent when the user has no login for the site and signs in only with the method.
 - `via.code` and `via.next_code` follow the rules of "A code with little time left".
 - **The agent fills `via` only on the sign-in pages of the provider, never on the target site.** The
-  pages of the provider are the hosts at or below its registrable domains: Google `google.com`;
-  Apple `apple.com`, `icloud.com`; GitHub `github.com`; Microsoft `microsoft.com`, `live.com`,
-  `microsoftonline.com`, `outlook.com`, `office.com`; Facebook `facebook.com`, `meta.com`. For
-  `other` it is the site of `via.account`. A host at or below the target site is never a page of the
-  provider. `nodkey_proto::signin::may_fill_via` makes this decision; the `signin.via_fill` vectors
-  give cases. When the target site itself asks for the password of the provider, the agent stops
+  pages of the provider are its exact sign-in hosts and the hosts below them, not its whole domain
+  (`google.com` also has pages anyone can make): Google `accounts.google.com`; Apple
+  `appleid.apple.com`, `idmsa.apple.com`, `account.apple.com`; GitHub `github.com`; Microsoft
+  `login.microsoftonline.com`, `login.live.com`, `login.microsoft.com`; Facebook
+  `www.facebook.com`, `m.facebook.com` (`Provider::sign_in_hosts`). For `other` it is the exact site
+  of `via.account`. A host of the target's website is never a page of the provider.
+  `nodkey_proto::signin::may_fill_via` makes this decision; the `signin.via_fill` and
+  `sites.via_fill` vectors give cases, `sites.provider_sign_in_hosts` the lists. (`signin.provider_sites`
+  lists where the app looks for the provider's own saved login, which is a different question.) When the target site itself asks for the password of the provider, the agent stops
   and tells the user.
 - Under a lease or a task session, the phone adds `via` only when the provider login is covered too.
   If it is not, the answer has `method` without `via`, and the agent asks for the provider login
@@ -1102,7 +1166,8 @@ long as the request (120 s). Without a picture everything works the same.
 A lease is `(agent_id, account_id, kind: code|login, until)` (for passkeys see "Passkeys"; cards,
 keys, `suggest` and `sms_code` never have one), kept only on the phone (keychain-backed
 store shared with the notification extensions). While a matching lease is valid the phone answers by
-itself and shows a quiet notification ("Claude got the password for vg.no"). Durations: once (no lease),
+itself and shows a quiet notification ("Claude got the password for vg.no"), but only for a target
+that is an exact match for the account (see "Websites"). Durations: once (no lease),
 1 day, 7 days, always (until revoked). The user sees and revokes leases under Agents; removing an agent
 removes its leases and calls `DELETE …/agents/{agent_id}`. While the agent limit warns for an agent, its leases
 do not answer (see "Agent limit").
@@ -1219,7 +1284,9 @@ change ignore such a request, and the agent sees `expired`.) Requests also carry
   goes as `seen`, a `failed` one without `certainty`), `request_sms_code(target, reason,
   wait_seconds?)`, `request_secret(variable?, service?, project?, reason, image_path?)` and
   `save_secret(variable, service?, value, title?, notes?, expires?, projects?, reason)` (see "API
-  keys and secrets"). A `request_login` result shows `via` with `fill_only_on` (`via_sites`), and its
+  keys and secrets"). Every approved `request_code` and `request_login` result, and each approved
+  login and code item of `request_credentials`, carries `fill_only_on` (see "Websites"). A
+  `request_login` result shows `via` with its own `fill_only_on` (`via_sites`), and its
   message says what to do with `method`, `via` and `second_step`. `image_path` is an optional PNG/JPEG/GIF file (for example
   a browser screenshot) sent as the attachment. Results go to the model; the server keeps no secret.
   A running task session (its id, end, phone and the approved items, never a secret) is kept in
@@ -1297,7 +1364,8 @@ command sends it as `prf` (see "PRF") and puts the answer in `clientExtensionRes
 `clientExtensionResults` is there only when the request had `extensions.prf`. `nodkey webauthn
 --help` prints the whole contract. The RP ID rule is the client data check above: `rp_id` is a
 domain name with a dot or `localhost`, and the host of the origin is `rp_id` or ends with `"." +
-rp_id`. There is no public suffix check.
+rp_id`, and `rp_id` is not a public suffix (`github.io` and `co.uk` are refused; `alice.github.io`
+and `example.co.uk` are fine).
 
 ## The card fill command
 

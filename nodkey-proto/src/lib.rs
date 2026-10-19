@@ -23,6 +23,7 @@ pub mod seal;
 pub mod secret;
 pub mod session;
 pub mod signin;
+pub mod site;
 #[doc(hidden)]
 pub mod testing;
 #[doc(hidden)]

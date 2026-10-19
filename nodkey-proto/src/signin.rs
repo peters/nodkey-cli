@@ -95,8 +95,26 @@ impl Provider {
         }
     }
 
-    /// The registrable domains of the provider's own sign-in pages, as the app has them
-    /// (`accounts.google.com` is below `google.com`). Empty for `Other`.
+    /// The exact hosts of the provider's own sign-in pages: where its login may be filled
+    /// ([`via_sites`]). Not the whole domain: `google.com` also has pages anyone can make
+    /// (`sites.google.com`). Empty for `Other`.
+    pub const fn sign_in_hosts(self) -> &'static [&'static str] {
+        match self {
+            Provider::Google => &["accounts.google.com"],
+            Provider::Apple => &["appleid.apple.com", "idmsa.apple.com", "account.apple.com"],
+            Provider::Github => &["github.com"],
+            Provider::Microsoft => &[
+                "login.microsoftonline.com",
+                "login.live.com",
+                "login.microsoft.com",
+            ],
+            Provider::Facebook => &["www.facebook.com", "m.facebook.com"],
+            Provider::Other => &[],
+        }
+    }
+
+    /// The registrable domains where the provider's own login is saved, as the app has them
+    /// (a login saved for `accounts.google.com` is below `google.com`). Empty for `Other`.
     pub const fn sites(self) -> &'static [&'static str] {
         match self {
             Provider::Google => &["google.com"],
@@ -296,8 +314,9 @@ pub struct Via {
     pub next_seconds_left: Option<u32>,
 }
 
-/// The sites (registrable domains or hosts) where the `via` login of `method` may be filled: the
-/// provider's own ([`Provider::sites`]), or for another provider the site of the via account.
+/// The hosts where the `via` login of `method` may be filled (`fill_only_on` of `via`): the
+/// provider's own sign-in hosts ([`Provider::sign_in_hosts`]), or for another provider the exact
+/// site of the via account.
 pub fn via_sites(method: &SignInMethod, via: &Via) -> Vec<String> {
     match method.provider {
         Some(Provider::Other) | None => via
@@ -307,23 +326,14 @@ pub fn via_sites(method: &SignInMethod, via: &Via) -> Vec<String> {
             .and_then(site)
             .into_iter()
             .collect(),
-        Some(p) => p.sites().iter().map(|s| (*s).to_owned()).collect(),
+        Some(p) => p.sign_in_hosts().iter().map(|s| (*s).to_owned()).collect(),
     }
 }
 
 /// Whether the agent may fill the `via` login on a page at `host`: the host is one of
-/// [`via_sites`] or below one, and it is not the target site (or below it).
+/// [`via_sites`] or below one ([`crate::site::may_fill`]), and it is not on the target's website.
 pub fn may_fill_via(host: &str, target: &str, method: &SignInMethod, via: &Via) -> bool {
-    let Some(host) = site(host) else {
-        return false;
-    };
-    let below = |h: &str, s: &str| h == s || h.ends_with(&format!(".{s}"));
-    if let Some(target) = site(target)
-        && below(&host, &target)
-    {
-        return false;
-    }
-    via_sites(method, via).iter().any(|s| below(&host, s))
+    !crate::site::same_site(host, target) && crate::site::may_fill(host, &via_sites(method, via))
 }
 
 /// A second step a site may ask for after the password or the "Sign in with" page.

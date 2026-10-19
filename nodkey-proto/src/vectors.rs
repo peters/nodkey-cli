@@ -44,6 +44,7 @@ mod save;
 mod secret;
 mod session;
 mod signin;
+mod sites;
 fn label32(label: &str) -> [u8; 32] {
     Sha256::digest(label.as_bytes()).into()
 }
@@ -356,6 +357,7 @@ pub fn build() -> Value {
     let prf = prf::add(&mut ctx, &agent, &phone); // After the agent limit, for the same reason.
     let secrets = secret::add(&mut ctx, &agent, &phone); // After PRF, for the same reason.
     let key_projects = project::add(&mut ctx, &agent, &phone); // After the keys, likewise.
+    let sites = sites::add(); // No HPKE: earlier bytes stay the same.
 
     // Signed relay calls.
     let agent_info = crate::AgentInfo {
@@ -545,5 +547,6 @@ pub fn build() -> Value {
         "prf": prf,
         "secrets": secrets,
         "key_projects": key_projects,
+        "sites": sites,
     })
 }

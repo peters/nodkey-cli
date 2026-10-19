@@ -2,9 +2,7 @@
 //! except items whose target starts with `deny.`, which the user leaves out. The bundle is
 //! `approved` when at least one item is.
 
-use nodkey_proto::{
-    Account, Answer, BundleItemAnswer, Decision, Kind, Lease, LeaseKind, MatchKind, Request, Secret,
-};
+use nodkey_proto::{Answer, BundleItemAnswer, Decision, Kind, Lease, LeaseKind, Request, Secret};
 
 use crate::{CODE, Fake, PASSWORD, USERNAME};
 
@@ -22,14 +20,10 @@ pub fn answer(fake: &Fake, request: &Request, rid: &str) -> Answer {
                 kind: LeaseKind::Once,
                 until: None,
             });
-            a.match_kind = Some(MatchKind::Direct);
-            let site = item.target.split('/').next().unwrap_or_default().to_owned();
-            a.account = Some(Account {
-                issuer: site.clone(),
-                name: USERNAME.into(),
-                site: Some(site),
-                sites: None,
-            });
+            let site = item.target.split('/').next().unwrap_or_default();
+            let (account, match_kind) = crate::phone::account(fake, site, &item.target);
+            a.account = Some(account);
+            a.match_kind = match_kind;
             if item.kind == Kind::Secret {
                 a.account = None;
                 a.match_kind = None;

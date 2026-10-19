@@ -65,7 +65,10 @@ fn site(target: &str) -> String {
 fn covers(item: &(Kind, String), request: &Request) -> bool {
     let wanted = site(&request.target);
     match (request.kind, item.0) {
-        (Kind::Code, Kind::Code | Kind::Login) | (Kind::Login, Kind::Login) => item.1 == wanted,
+        // The same website as the approved item (registrable domain), as the phone matches.
+        (Kind::Code, Kind::Code | Kind::Login) | (Kind::Login, Kind::Login) => {
+            nodkey_proto::site::same_site(&item.1, &wanted)
+        }
         // A key is covered by a key item with the same target in the same project.
         (Kind::Secret, Kind::Secret) => {
             item.1 == crate::secrets::cover(&request.target, request.project.as_deref())

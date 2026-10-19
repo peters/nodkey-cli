@@ -80,7 +80,8 @@ fn login_answers_carry_the_method_via_and_second_step() {
     assert_eq!(v["via"]["username"], GOOGLE_USER);
     assert_eq!(v["via"]["password"], fake_relay::PASSWORD);
     assert_eq!(v["via"]["code"], fake_relay::CODE);
-    assert_eq!(v["via"]["fill_only_on"], json!(["google.com"]));
+    // Only Google's sign-in host, not every google.com page.
+    assert_eq!(v["via"]["fill_only_on"], json!(["accounts.google.com"]));
     assert_eq!(v["second_step"]["prefer"], json!(["passkey", "totp"]));
     let message = v["message"].as_str().unwrap();
     assert!(message.contains("never on the target"), "{message}");
@@ -90,6 +91,7 @@ fn login_answers_carry_the_method_via_and_second_step() {
     assert_eq!(v["method"]["kind"], "password");
     assert_eq!(v["password"], fake_relay::PASSWORD);
     assert!(v.get("via").is_none());
+    assert_eq!(v["fill_only_on"], json!(["vg.no"]));
 
     let (v, _) = cli.json(&["login", "mail.example.com", "--reason", "Read the invoice"]);
     assert_eq!(v["method"]["kind"], "email_code");
@@ -108,7 +110,11 @@ fn login_answers_carry_the_method_via_and_second_step() {
         "Render and publish",
     ]);
     assert_eq!(code, 0, "{v}");
-    assert_eq!(v["items"][0]["via"]["fill_only_on"], json!(["google.com"]));
+    assert_eq!(
+        v["items"][0]["via"]["fill_only_on"],
+        json!(["accounts.google.com"])
+    );
+    assert_eq!(v["items"][1]["fill_only_on"], json!(["github.com"]));
     assert_eq!(v["items"][1]["second_step"]["prefer"][0], "passkey");
     assert!(v["message"].as_str().unwrap().contains("fill_only_on"));
 }

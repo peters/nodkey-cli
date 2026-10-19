@@ -4,7 +4,7 @@ use std::time::Duration;
 
 use nodkey_proto::{
     Account, AccountEntry, Answer, CardEntry, Decision, Kind, Lease, MatchKind, Quota,
-    SecondStepOrder, SignInMethod, quota,
+    SecondStepOrder, SignInMethod, quota, site,
 };
 use serde::Serialize;
 
@@ -19,6 +19,9 @@ pub struct Outcome<'a> {
     /// How the phone found the account: `direct`, `alias` (an extra website) or `chosen` (by hand).
     #[serde(rename = "match", skip_serializing_if = "Option::is_none")]
     match_kind: Option<MatchKind>,
+    /// `code`/`login`: the only sites where the login or code may be filled (or below them).
+    #[serde(skip_serializing_if = "Option::is_none")]
+    fill_only_on: Option<Vec<String>>,
     #[serde(skip_serializing_if = "Option::is_none")]
     code: Option<&'a str>,
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -96,8 +99,27 @@ const KEYS: &str = " secrets lists the API keys this agent may ask for, by name 
     into this conversation.";
 
 /// Added to the message when the user picked the account by hand.
-const CHOSEN: &str = " No saved account matched the site you asked for, so the user picked this one by hand \
-    (account.site may differ). Use it for this sign-in only.";
+const CHOSEN: &str = " The account is not saved for the site you asked for, so the user picked it by hand for \
+    that site (account.site may differ). Use it for this sign-in only.";
+
+/// Added to the message of an approved login or code that names where it may be filled.
+pub(crate) fn fill_note(sites: &[String]) -> String {
+    format!(
+        " Fill it only on a page whose host is {} or below; check the address bar first, and if the page is \
+         elsewhere, stop and tell the user.",
+        sites.join(" or ")
+    )
+}
+
+/// `fill_only_on` of an approved code or login answer with an account (`None` when neither the
+/// account nor the target names a website).
+pub(crate) fn fill_only_on(a: &Answer, kind: Kind, target: &str) -> Option<Vec<String>> {
+    if a.decision != Decision::Approved || !matches!(kind, Kind::Code | Kind::Login) {
+        return None;
+    }
+    let sites = site::fill_only_on(target, a.account.as_ref()?, a.match_kind);
+    (!sites.is_empty()).then_some(sites)
+}
 
 /// A `queued` or `rejected` answer to anything but a `suggest` request.
 pub(crate) const MISFIT: &str =
@@ -151,10 +173,12 @@ pub(crate) fn limit_note(a: &Answer) -> String {
 }
 
 impl<'a> Outcome<'a> {
+    /// The result of `a`, the answer to a `kind` request for `target`.
     pub fn from_answer(
         a: &'a Answer,
         kind: Kind,
         phone: &'a str,
+        target: &str,
         attachment_warning: Option<String>,
     ) -> Self {
         if kind == Kind::Cleanup {
@@ -189,6 +213,10 @@ impl<'a> Outcome<'a> {
         if a.decision == Decision::Approved && a.match_kind == Some(MatchKind::Chosen) {
             message.push_str(CHOSEN);
         }
+        let fill_only_on = fill_only_on(a, kind, target);
+        if let Some(sites) = &fill_only_on {
+            message.push_str(&fill_note(sites));
+        }
         let approved = a.decision == Decision::Approved;
         let method = a.method.as_ref().filter(|_| approved);
         let via = a.via.as_ref().filter(|_| approved);
@@ -208,6 +236,7 @@ impl<'a> Outcome<'a> {
             phone,
             account: a.account.as_ref(),
             match_kind: a.match_kind,
+            fill_only_on,
             code: a.code.as_ref().map(|c| c.expose()),
             seconds_left: a.seconds_left,
             username: a.username.as_deref(),
@@ -251,6 +280,7 @@ impl<'a> Outcome<'a> {
             phone,
             account: None,
             match_kind: None,
+            fill_only_on: None,
             code: None,
             seconds_left: None,
             username: None,
@@ -321,6 +351,7 @@ impl<'a> Outcome<'a> {
             phone,
             account: None,
             match_kind: None,
+            fill_only_on: None,
             code: None,
             seconds_left: None,
             username: None,
@@ -379,7 +410,13 @@ mod tests {
         let mut a = Answer::decision("rid", Decision::Approved);
         a.code = Some(nodkey_proto::Secret::new("123456"));
         a.seconds_left = Some(20);
-        let t = text(&Outcome::from_answer(&a, Kind::Code, "Test iPhone", None));
+        let t = text(&Outcome::from_answer(
+            &a,
+            Kind::Code,
+            "Test iPhone",
+            "",
+            None,
+        ));
         let v: serde_json::Value = serde_json::from_str(&t).unwrap();
         assert_eq!(v["code"], "123456");
         assert_eq!(v["decision"], "approved");
@@ -406,21 +443,32 @@ mod tests {
             sites: Some(vec!["chatgpt.com".into()]),
         });
         a.match_kind = Some(MatchKind::Chosen);
-        let v: serde_json::Value =
-            serde_json::from_str(&text(&Outcome::from_answer(&a, Kind::Login, "P", None))).unwrap();
+        let result = |a: &Answer, target: &str| -> serde_json::Value {
+            serde_json::from_str(&text(&Outcome::from_answer(
+                a,
+                Kind::Login,
+                "P",
+                target,
+                None,
+            )))
+            .unwrap()
+        };
+        let v = result(&a, "sora.com/alex@example.com");
         assert_eq!(v["match"], "chosen");
         assert_eq!(v["account"]["sites"], json!(["chatgpt.com"]));
-        assert!(
-            v["message"]
-                .as_str()
-                .unwrap()
-                .contains("picked this one by hand")
-        );
+        let message = v["message"].as_str().unwrap();
+        assert!(message.contains("picked it by hand"));
+        // Picked by hand for sora.com: filled only there.
+        assert_eq!(v["fill_only_on"], json!(["sora.com"]));
+        assert!(message.contains("host is sora.com or below"));
         a.match_kind = Some(MatchKind::Alias);
-        let v: serde_json::Value =
-            serde_json::from_str(&text(&Outcome::from_answer(&a, Kind::Login, "P", None))).unwrap();
+        let v = result(&a, "https://chatgpt.com/auth/login");
         assert_eq!(v["match"], "alias");
         assert!(!v["message"].as_str().unwrap().contains("by hand"));
+        assert_eq!(v["fill_only_on"], json!(["openai.com", "chatgpt.com"]));
+        // Denied: nothing to fill.
+        let v = result(&Answer::decision("rid", Decision::Denied), "chatgpt.com");
+        assert!(v.get("fill_only_on").is_none());
     }
 
     #[test]
@@ -445,9 +493,14 @@ mod tests {
                 sites: None,
             },
         ]);
-        let v: serde_json::Value =
-            serde_json::from_str(&text(&Outcome::from_answer(&a, Kind::Cleanup, "P", None)))
-                .unwrap();
+        let v: serde_json::Value = serde_json::from_str(&text(&Outcome::from_answer(
+            &a,
+            Kind::Cleanup,
+            "P",
+            "",
+            None,
+        )))
+        .unwrap();
         assert_eq!(v["moved"], 2);
         assert_eq!(
             v["accounts"],
@@ -457,9 +510,14 @@ mod tests {
 
         a.moved = Some(0);
         a.accounts = Some(vec![]);
-        let v: serde_json::Value =
-            serde_json::from_str(&text(&Outcome::from_answer(&a, Kind::Cleanup, "P", None)))
-                .unwrap();
+        let v: serde_json::Value = serde_json::from_str(&text(&Outcome::from_answer(
+            &a,
+            Kind::Cleanup,
+            "P",
+            "",
+            None,
+        )))
+        .unwrap();
         assert_eq!(v["moved"], 0);
         assert!(v["message"].as_str().unwrap().contains("nothing was moved"));
 
@@ -469,6 +527,7 @@ mod tests {
             &refused,
             Kind::Cleanup,
             "P",
+            "",
             None,
         )))
         .unwrap();
@@ -488,7 +547,8 @@ mod tests {
             burst: false,
         });
         let v: serde_json::Value =
-            serde_json::from_str(&text(&Outcome::from_answer(&a, Kind::Code, "P", None))).unwrap();
+            serde_json::from_str(&text(&Outcome::from_answer(&a, Kind::Code, "P", "", None)))
+                .unwrap();
         assert_eq!(v["code"], "123456");
         assert_eq!(v["quota"], json!({"new_today": 12, "limit": 10}));
         let m = v["message"].as_str().unwrap();
@@ -498,7 +558,8 @@ mod tests {
         let mut p = Answer::decision("rid", Decision::Denied);
         p.error = Some("paused".into());
         let v: serde_json::Value =
-            serde_json::from_str(&text(&Outcome::from_answer(&p, Kind::Login, "P", None))).unwrap();
+            serde_json::from_str(&text(&Outcome::from_answer(&p, Kind::Login, "P", "", None)))
+                .unwrap();
         assert!(v.get("quota").is_none());
         assert!(
             v["message"]
@@ -513,7 +574,8 @@ mod tests {
         });
         for kind in [Kind::Login, Kind::Cleanup] {
             let v: serde_json::Value =
-                serde_json::from_str(&text(&Outcome::from_answer(&p, kind, "P", None))).unwrap();
+                serde_json::from_str(&text(&Outcome::from_answer(&p, kind, "P", "", None)))
+                    .unwrap();
             assert_eq!(v["error"], "paused");
             assert_eq!(v["quota"]["new_today"], 25);
             assert!(

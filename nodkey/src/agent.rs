@@ -388,9 +388,13 @@ impl Agent {
             .exchange(request, image_path, phone_selector, progress)
             .await?;
         Ok(text(&match &ex.answer {
-            Some(answer) => {
-                Outcome::from_answer(answer, kind, &ex.phone, ex.attachment_warning.clone())
-            }
+            Some(answer) => Outcome::from_answer(
+                answer,
+                kind,
+                &ex.phone,
+                target,
+                ex.attachment_warning.clone(),
+            ),
             None => Outcome::expired(
                 &ex.request_id,
                 &ex.phone,

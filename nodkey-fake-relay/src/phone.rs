@@ -1,10 +1,43 @@
 //! What the fake phone holds and how it answers an approved request.
 
 use nodkey_proto::{
-    Account, AccountEntry, Answer, CleanupFilter, Kind, Lease, LeaseKind, Request, Secret,
+    Account, AccountEntry, Answer, CleanupFilter, Kind, Lease, LeaseKind, MatchKind, Request,
+    Secret, signin,
 };
+use serde::Deserialize;
 
 use crate::{CODE, Fake, PASSWORD, USERNAME};
+
+/// What a test set with `PUT /_fake/account`: the site, the extra websites and the `match` of
+/// every code and login answer from now on, also one the real phone would never send (an account
+/// saved for another website), to test what an agent does with it.
+#[derive(Debug, Clone, Default, Deserialize)]
+pub struct FakeAccount {
+    #[serde(default)]
+    pub site: Option<String>,
+    #[serde(default)]
+    pub sites: Option<Vec<String>>,
+    #[serde(default, rename = "match")]
+    pub match_kind: Option<MatchKind>,
+}
+
+/// The account of a code or login answer for `target`: by default saved for the target's own site
+/// and found directly, as the phone answers a request whose website it has saved.
+pub(crate) fn account(fake: &Fake, issuer: &str, target: &str) -> (Account, Option<MatchKind>) {
+    let own = target.split('/').next().and_then(signin::site);
+    let set = fake.account.lock().unwrap().clone();
+    let (site, sites, match_kind) = match set {
+        Some(a) => (a.site, a.sites, a.match_kind),
+        None => (own, None, Some(MatchKind::Direct)),
+    };
+    let account = Account {
+        issuer: issuer.into(),
+        name: USERNAME.into(),
+        site,
+        sites,
+    };
+    (account, match_kind)
+}
 
 /// The fake phone's saved logins for clean-up requests (title, user name, site). Invented.
 pub const SAVED_LOGINS: [(&str, &str, &str); 5] = [
@@ -64,23 +97,20 @@ pub(crate) fn approve(fake: &Fake, answer: &mut Answer, request: &Request) {
     });
     match request.kind {
         Kind::Code => {
+            let (account, match_kind) = account(fake, "GitHub", &request.target);
             answer.account = Some(Account {
-                issuer: "GitHub".into(),
                 name: "alex".into(),
-                site: Some("github.com".into()),
-                sites: None,
+                ..account
             });
+            answer.match_kind = match_kind;
             answer.code = Some(Secret::new(CODE));
             answer.seconds_left = Some(17);
             crate::signin::approve(fake, answer, request);
         }
         Kind::Login => {
-            answer.account = Some(Account {
-                issuer: "VG".into(),
-                name: USERNAME.into(),
-                site: Some("vg.no".into()),
-                sites: None,
-            });
+            let (account, match_kind) = account(fake, "VG", &request.target);
+            answer.account = Some(account);
+            answer.match_kind = match_kind;
             answer.username = Some(USERNAME.into());
             answer.password = Some(Secret::new(PASSWORD));
             crate::signin::approve(fake, answer, request);

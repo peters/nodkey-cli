@@ -143,6 +143,36 @@ fn client_data_cases() -> Vec<(&'static str, PasskeyOp, &'static str, String, bo
             "type=webauthn.get".to_owned(),
             false,
         ),
+        // Added with the public suffix rule (docs/agent-protocol.md, "Websites"): a shared hosting
+        // ending or a country ending is never an rp_id; a name below one is.
+        (
+            "rp_id_shared_hosting_suffix",
+            PasskeyOp::Get,
+            "github.io",
+            cd(get, "https://alice.github.io"),
+            false,
+        ),
+        (
+            "rp_id_country_suffix",
+            PasskeyOp::Get,
+            "co.uk",
+            cd(get, "https://shop.example.co.uk"),
+            false,
+        ),
+        (
+            "rp_id_below_shared_hosting",
+            PasskeyOp::Get,
+            "alice.github.io",
+            cd(get, "https://alice.github.io"),
+            true,
+        ),
+        (
+            "rp_id_registrable_below_country_suffix",
+            PasskeyOp::Get,
+            "example.co.uk",
+            cd(get, "https://shop.example.co.uk"),
+            true,
+        ),
     ]
 }
 

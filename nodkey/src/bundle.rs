@@ -5,7 +5,7 @@
 
 use nodkey_proto::{
     Account, Answer, BundleItem, BundleItemAnswer, BundleRequest, ClientInfo, Decision, Kind,
-    Lease, MatchKind, SessionInfo,
+    Lease, MatchKind, SessionInfo, site,
 };
 use serde::Serialize;
 
@@ -201,6 +201,9 @@ struct ItemOutcome<'a> {
     account: Option<&'a Account>,
     #[serde(rename = "match", skip_serializing_if = "Option::is_none")]
     match_kind: Option<MatchKind>,
+    /// A login or code item: the only sites where it may be filled (or below them).
+    #[serde(skip_serializing_if = "Option::is_none")]
+    fill_only_on: Option<Vec<String>>,
     #[serde(skip_serializing_if = "Option::is_none")]
     code: Option<&'a str>,
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -237,6 +240,13 @@ pub fn outcome<'a>(
         .flatten()
         .map(|i: &BundleItemAnswer| {
             let wanted = asked.and_then(|b| b.items.iter().find(|w| w.id == i.id));
+            let fill_only_on = wanted
+                .filter(|w| {
+                    i.decision == Decision::Approved && matches!(w.kind, Kind::Code | Kind::Login)
+                })
+                .zip(i.account.as_ref())
+                .map(|(w, account)| site::fill_only_on(&w.target, account, i.match_kind))
+                .filter(|sites| !sites.is_empty());
             ItemOutcome {
                 id: &i.id,
                 kind: wanted.map(|w| w.kind),
@@ -244,6 +254,7 @@ pub fn outcome<'a>(
                 decision: i.decision,
                 account: i.account.as_ref(),
                 match_kind: i.match_kind,
+                fill_only_on,
                 code: i.code.as_ref().map(|c| c.expose()),
                 seconds_left: i.seconds_left,
                 username: i.username.as_deref(),
@@ -280,7 +291,12 @@ pub fn outcome<'a>(
                 m.push_str(" Items with decision denied were left out; do not ask for them again unless the user says so.");
             }
             if chosen {
-                m.push_str(" Items with match chosen: nothing matched that site and the user picked the account by hand.");
+                m.push_str(" Items with match chosen: the account is not saved for that site, and the user picked it \
+                    by hand for it.");
+            }
+            if items.iter().any(|i| i.fill_only_on.is_some()) {
+                m.push_str(" Fill each login or code only on a page whose host is in its fill_only_on or below; check \
+                    the address bar first, and if the page is elsewhere, stop and tell the user.");
             }
             if items.iter().any(|i| i.method.is_some() || i.via.is_some()) {
                 m.push_str(" An item's method says how the user signs in to its site; fill an item's via (the provider \

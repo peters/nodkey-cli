@@ -23,6 +23,8 @@
 //! - `GET /_fake/secrets`, `PUT /_fake/secrets` with `[{title, service, variable, value,
 //!   projects}]`: the phone's API keys (test values only; two global test keys to begin with;
 //!   `projects` absent or empty for a global key).
+//! - `PUT /_fake/account` with `{"site", "sites", "match"}`: the account every code and login
+//!   answer names from now on (default, or after `null`: the request's own site, `match: direct`).
 
 use std::sync::Arc;
 
@@ -52,6 +54,15 @@ pub(crate) fn routes() -> Router<Shared> {
         .route("/_fake/sms", axum::routing::put(deliver_sms))
         .route("/_fake/quota", axum::routing::put(set_quota))
         .route("/_fake/secrets", get(secrets).put(set_secrets))
+        .route("/_fake/account", axum::routing::put(set_account))
+}
+
+async fn set_account(
+    State(fake): State<Shared>,
+    Json(account): Json<Option<crate::phone::FakeAccount>>,
+) -> StatusCode {
+    *fake.account.lock().unwrap() = account;
+    StatusCode::NO_CONTENT
 }
 
 async fn secrets(State(fake): State<Shared>) -> Response {

@@ -268,7 +268,8 @@ struct RawClientData {
 /// - `crossOrigin` is absent or `false`;
 /// - `origin` is `https://<host>[:port]` where `host` is `rp_id` or ends with `"." + rp_id`, or
 ///   `http://localhost[:port]` with `rp_id` `localhost`;
-/// - `rp_id` is a domain name with a dot, or `localhost`.
+/// - `rp_id` is a domain name with a dot, or `localhost`, and not a public suffix (an ending
+///   such as `co.uk`, or a shared hosting domain such as `github.io`; see [`crate::site`]).
 ///
 /// Any failure is answered with `error: "bad_client_data"`.
 pub fn check_client_data(
@@ -288,7 +289,7 @@ pub fn check_client_data(
         return Err("cross-origin requests are not allowed");
     }
     if !valid_rp_id(rp_id) {
-        return Err("rp_id is not a domain name");
+        return Err("rp_id is not a domain name, or is a public suffix");
     }
     let (https, host) = split_origin(&raw.origin).ok_or("origin is not a web origin")?;
     let localhost = host.eq_ignore_ascii_case("localhost");
@@ -363,13 +364,16 @@ fn valid_host(host: &str) -> bool {
         })
 }
 
-/// A domain with a dot (not an IPv4 address), or `localhost`.
+/// A domain with a dot (not an IPv4 address) that is not a public suffix, or `localhost`.
 fn valid_rp_id(rp_id: &str) -> bool {
     if rp_id.eq_ignore_ascii_case("localhost") {
         return true;
     }
     let last = rp_id.rsplit('.').next().unwrap_or("");
-    valid_host(rp_id) && rp_id.contains('.') && !last.bytes().all(|b| b.is_ascii_digit())
+    valid_host(rp_id)
+        && rp_id.contains('.')
+        && !last.bytes().all(|b| b.is_ascii_digit())
+        && !crate::site::is_public_suffix(rp_id)
 }
 
 fn host_matches(host: &str, rp_id: &str) -> bool {

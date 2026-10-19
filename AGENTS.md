@@ -11,7 +11,9 @@ mcp`). The iOS app and the relay live in the private repository `peters/nodkey`;
   `peters/nodkey-browser`), `passkey.rs` (passkey requests and the client data check), `prf.rs`
   (the WebAuthn PRF extension: inputs, outputs and the derivation), `webauthn.rs`
   (the authenticator data, keys and signatures the phone makes), `signin.rs` (sign-in methods, the
-  provider login, the second step order, `suggest` and `sms_code`), `quota.rs` (the agent limit:
+  provider login, the second step order, `suggest` and `sms_code`), `site.rs` (websites: hosts read like a browser, the Public Suffix List snapshot
+  in `data/`, registrable domains, the same website, `fill_only_on`; `scripts/update-psl.sh`
+  updates the list), `quota.rs` (the agent limit:
   `quota_warning`, `paused` and its numbers), `apikey.rs` (API keys: `secret` targets, the key in
   answers and `save_secret`; `apikey/project.rs` keys by project and the lookup), `dh.rs` (HPKE open when X25519 runs in WebCrypto) and the generator of
   `vectors/v1.json`. It builds for `wasm32-unknown-unknown`; keep it free of OS-only dependencies.

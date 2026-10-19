@@ -40,20 +40,24 @@ for 1 day / 7 days / always"); then the phone answers by itself. You never keep 
    the user name, password and submit fields; Firefox backend for company and portal sites).
 2. Take a screenshot (`browser_screenshot`) so the user sees what you are signing in to; pass its path
    as `image_path`.
-3. `request_login(target, reason, image_path)`: `target` is the site (`vg.no`) or site/user
-   (`github.com/alex`); `reason` is one plain sentence ("Check the subscription page").
-4. On `approved`: fill user name and password (`browser_act` `fill`) and submit. If the site asks
+3. `request_login(target, reason, image_path)`: `target` is the host of the sign-in page you have
+   open (`vg.no`, `login.example.com`) or host/user (`github.com/alex`); read it from the address bar,
+   never from the page text. `reason` is one plain sentence ("Check the subscription page").
+4. On `approved`: check that the page's host is one of `fill_only_on` or below one. If it is not,
+   stop and tell the user. Then fill user name and password (`browser_act` `fill`) and submit. If the site asks
    for a one-time code, use the answer's `code` (the tools never hand out a code with less than 8
    seconds left: they wait for the next one). If it ran out while you typed, call
    `request_code(target, reason)`: for two minutes after the approval (or while a task session runs)
    it is answered without asking the user again.
 5. Check the result with a snapshot and report it in one line.
 
-Tips from real sign-ins: when the answer's `account.site` names a different host than the page you
-opened (payment.schibsted.no, not login.schibsted.com), sign in there; the saved login belongs to it.
-When the answer says `match: "chosen"`, no saved account matched the site and the user picked
-one by hand (a login saved for openai.com used on chatgpt.com); use it for this site as given.
-`account.sites` lists more websites the account is used on. Two-step pages may split the code into one box per digit: fill them one by one. When a site offers an
+Tips from real sign-ins: the phone matches the target by its registrable domain (`login.github.com`
+is github.com; `github.xyz`, `git-hub.com` and `alice.github.io` are not), and `fill_only_on` in the
+answer lists the only sites where you may fill it. When the answer says `match: "chosen"`, the
+account is not saved for the site you asked for and the user picked it by hand for that site (a
+login saved for openai.com used on chatgpt.com); use it for this site as given. A bare name such as
+"GitHub" as target, or a site the user did not save, is never answered by a lease or a task session:
+the user checks it on the phone each time. `account.sites` lists more websites the account is used on. Two-step pages may split the code into one box per digit: fill them one by one. When a site offers an
 app prompt instead of a code (Google, Microsoft), choose "another way" and the authenticator code
 (see "Second step: passkey, then code").
 
@@ -66,8 +70,9 @@ then says so:
 - `method.kind`: `password`, `federated` ("Sign in with" `method.provider`), `passkey`,
   `email_code`, `sso` or `sms`. Try that method first.
 - `via` (with `federated`): the provider login, for example the user's Google login, approved with the
-  same Face ID. **Fill `via` only on the provider's own sign-in pages, the sites in
-  `via.fill_only_on` or below them (accounts.google.com for Google). Never fill it on the target site.**
+  same Face ID. **Fill `via` only on the provider's own sign-in pages, the hosts in
+  `via.fill_only_on` or below them (accounts.google.com for Google, not other google.com pages).
+  Never fill it on the target site.**
   If the target site itself shows a form for the provider's password, stop and tell the user.
   Without `via`, ask for the provider login with `request_login` on the provider's own site when its
   page asks for it.
