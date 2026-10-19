@@ -2,6 +2,9 @@
 # Install nodkey from the latest GitHub release.
 #   curl -fsSL https://raw.githubusercontent.com/peters/nodkey-cli/main/install.sh | sh
 # NODKEY_INSTALL_DIR picks the folder (default ~/.local/bin). NODKEY_VERSION picks a tag.
+# The archive must match SHA256SUMS. With a logged-in GitHub CLI, its build provenance must also
+# show that the release workflow of this repository built it (gh attestation verify). On macOS
+# the binary must have a valid Developer ID signature.
 set -eu
 
 repo="peters/nodkey-cli"
@@ -28,12 +31,16 @@ if command -v gh >/dev/null 2>&1 && gh auth token >/dev/null 2>&1; then
 fi
 
 if [ "$version" = latest ]; then
-  # The newest release, pre-releases included; GitHub's "latest" link skips those.
+  # The newest stable release; while there is none, the newest pre-release. Drafts never.
   if [ "$use_gh" = yes ]; then
-    version="$(gh api "repos/$repo/releases?per_page=1" --jq '.[0].tag_name' 2>/dev/null || true)"
+    version="$(gh api "repos/$repo/releases?per_page=30" \
+      --jq '[.[] | select(.draft | not)] | (map(select(.prerelease | not)) + .)[0].tag_name // empty' \
+      2>/dev/null || true)"
   else
-    version="$(curl -fsSL "https://api.github.com/repos/$repo/releases?per_page=1" |
-      sed -n 's/.*"tag_name": *"\([^"]*\)".*/\1/p' | head -n 1)"
+    tag() { sed -n 's/.*"tag_name": *"\([^"]*\)".*/\1/p' | head -n 1; }
+    version="$(curl -fsSL "https://api.github.com/repos/$repo/releases/latest" 2>/dev/null | tag)"
+    [ -n "$version" ] ||
+      version="$(curl -fsSL "https://api.github.com/repos/$repo/releases?per_page=1" | tag)"
   fi
   [ -n "$version" ] || { echo "nodkey: no release found for $repo" >&2; exit 1; }
 fi
@@ -60,7 +67,28 @@ if [ -z "$expected" ] || [ "$expected" != "$actual" ]; then
   echo "nodkey: checksum mismatch for $asset" >&2
   exit 1
 fi
+# SHA256SUMS comes from the same release, so it finds damage, not a replaced release. Build
+# provenance does: the release workflow of this repository signs it at build time. The macOS
+# archives are signed and notarized after the build, so they are checked by their signature below.
+if [ "$os" = apple-darwin ]; then
+  :
+elif [ "$use_gh" = yes ] && gh attestation --help >/dev/null 2>&1; then
+  if ! gh attestation verify "$work/$asset" --repo "$repo" >/dev/null; then
+    echo "nodkey: $asset has no valid build provenance from $repo; nothing was installed" >&2
+    exit 1
+  fi
+  echo "nodkey: checked the checksum and the build provenance (gh attestation verify)"
+else
+  echo "nodkey: checked the checksum; with a logged-in GitHub CLI (gh) the build provenance is checked too"
+fi
 tar -xzf "$work/$asset" -C "$work"
+if [ "$os" = apple-darwin ]; then
+  if ! codesign --verify --strict -R="anchor apple generic" "$work/nodkey" 2>/dev/null; then
+    echo "nodkey: the macOS binary has no valid Developer ID signature; nothing was installed" >&2
+    exit 1
+  fi
+  echo "nodkey: checked the checksum and the Developer ID signature"
+fi
 mkdir -p "$dir"
 mv "$work/nodkey" "$dir/nodkey"
 chmod +x "$dir/nodkey"

@@ -106,6 +106,13 @@ cargo install --locked --git https://github.com/peters/nodkey-cli nodkey
 The binaries are static (Linux x64 and arm64, macOS arm64 and x64, Windows x64). macOS binaries are
 signed and notarized. TLS uses rustls, so no OpenSSL is needed.
 
+The install scripts take the newest stable release (`NODKEY_VERSION=vX.Y.Z` picks another one) and
+check the archive against `SHA256SUMS`. When the GitHub CLI (`gh`) is installed and logged in, they
+also check the build provenance: `gh attestation verify` shows that the release workflow of this
+repository built the archive. On macOS they check the Developer ID signature of the binary instead,
+because it is signed after the build. To check an archive yourself:
+`gh attestation verify nodkey-x86_64-unknown-linux-musl.tar.gz --repo peters/nodkey-cli`.
+
 ## Set up your agents
 
 ```sh

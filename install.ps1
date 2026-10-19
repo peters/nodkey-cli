@@ -1,6 +1,8 @@
 # Install nodkey from the latest GitHub release.
 #   irm https://raw.githubusercontent.com/peters/nodkey-cli/main/install.ps1 | iex
 # $env:NODKEY_INSTALL_DIR picks the folder. $env:NODKEY_VERSION picks a tag.
+# The archive must match SHA256SUMS. With a logged-in GitHub CLI, its build provenance must also
+# show that the release workflow of this repository built it (gh attestation verify).
 $ErrorActionPreference = 'Stop'
 $repo = 'peters/nodkey-cli'
 $dir = if ($env:NODKEY_INSTALL_DIR) { $env:NODKEY_INSTALL_DIR } else { Join-Path $env:LOCALAPPDATA 'Programs\nodkey' }
@@ -14,13 +16,28 @@ if (Get-Command gh -ErrorAction SilentlyContinue) {
     $useGh = ($LASTEXITCODE -eq 0)
 }
 if ($version -eq 'latest') {
-    # The newest release, pre-releases included; GitHub's "latest" link skips those.
+    # The newest stable release; while there is none, the newest pre-release. Drafts never.
     if ($useGh) {
-        $version = gh api "repos/$repo/releases?per_page=1" --jq '.[0].tag_name'
+        $version = gh api "repos/$repo/releases?per_page=30" `
+            --jq '[.[] | select(.draft | not)] | (map(select(.prerelease | not)) + .)[0].tag_name // empty'
     } else {
-        $version = (Invoke-RestMethod "https://api.github.com/repos/$repo/releases?per_page=1")[0].tag_name
+        # A variable, so that the array of releases goes down the pipeline one by one.
+        $all = Invoke-RestMethod "https://api.github.com/repos/$repo/releases?per_page=30"
+        $releases = @($all | Where-Object { -not $_.draft })
+        $pick = @($releases | Where-Object { -not $_.prerelease }) + @($releases) | Select-Object -First 1
+        $version = if ($pick) { $pick.tag_name } else { $null }
     }
     if (-not $version) { throw "no release found for $repo" }
+}
+# gh attestation needs a GitHub CLI from 2024 or later.
+$canVerify = $false
+if ($useGh) {
+    try {
+        gh attestation --help *> $null
+        $canVerify = ($LASTEXITCODE -eq 0)
+    } catch {
+        $canVerify = $false
+    }
 }
 
 $work = Join-Path ([IO.Path]::GetTempPath()) ("nodkey-" + [Guid]::NewGuid())
@@ -39,6 +56,15 @@ try {
     $expected = ($line -split ' ')[0]
     $actual = (Get-FileHash (Join-Path $work $asset) -Algorithm SHA256).Hash.ToLower()
     if (-not $expected -or $expected -ne $actual) { throw "checksum mismatch for $asset" }
+    # SHA256SUMS comes from the same release, so it finds damage, not a replaced release. Build
+    # provenance does: the release workflow of this repository signs it at build time.
+    if ($canVerify) {
+        gh attestation verify (Join-Path $work $asset) --repo $repo | Out-Null
+        if ($LASTEXITCODE -ne 0) { throw "$asset has no valid build provenance from $repo; nothing was installed" }
+        Write-Host "nodkey: checked the checksum and the build provenance (gh attestation verify)"
+    } else {
+        Write-Host "nodkey: checked the checksum; with a logged-in GitHub CLI (gh) the build provenance is checked too"
+    }
     New-Item -ItemType Directory -Force -Path $dir | Out-Null
     Expand-Archive (Join-Path $work $asset) -DestinationPath $dir -Force
 } finally {

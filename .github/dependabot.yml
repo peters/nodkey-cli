@@ -1,0 +1,14 @@
+# The workflows pin every action by commit; Dependabot proposes new commits when an action has a
+# new release (one pull request a week for all of them). A new release waits 7 days first.
+# Crates: the audit job in ci.yml checks Cargo.lock against the RustSec advisories every week.
+version: 2
+updates:
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+    cooldown:
+      default-days: 7
+    groups:
+      actions:
+        patterns: ['*']

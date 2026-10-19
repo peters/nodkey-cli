@@ -6,8 +6,10 @@ on:
   push:
     tags: ['v*']
   workflow_dispatch:
+# Read only by default. The build jobs run the build scripts of every dependency, so they hold no
+# token that can write; only attest and release get more, and they run no code from the build.
 permissions:
-  contents: write
+  contents: read
 jobs:
   build:
     name: Build (${{ matrix.target }})
@@ -22,7 +24,9 @@ jobs:
           - { os: macos-latest, target: x86_64-apple-darwin }
           - { os: windows-latest, target: x86_64-pc-windows-msvc }
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
       - name: Install Rust when the image has none
         shell: bash
         run: |
@@ -52,16 +56,37 @@ jobs:
       - name: Smoke test
         shell: bash
         run: target/${{ matrix.target }}/release/nodkey --version
-      - uses: actions/upload-artifact@v7
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: nodkey-${{ matrix.target }}
           path: nodkey-${{ matrix.target }}.*
-  release:
+  # Build provenance for every archive, so the installers (with the GitHub CLI) and
+  # `gh attestation verify` can check that an archive is one this workflow built. The macOS archives
+  # are signed and notarized after this (scripts/sign-macos.sh), so the signed files have no
+  # attestation of their own; the script checks the attestation before it signs.
+  attest:
     needs: build
     if: startsWith(github.ref, 'refs/tags/v')
     runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      attestations: write
     steps:
-      - uses: actions/download-artifact@v8
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          path: dist
+          merge-multiple: true
+      - uses: actions/attest@1e69f48acb82d1966a394da916b4c1698aa569d6 # v4.2.2
+        with:
+          subject-path: 'dist/nodkey-*'
+  release:
+    needs: [build, attest]
+    if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
           path: dist
           merge-multiple: true

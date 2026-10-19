@@ -7,12 +7,15 @@ on:
   # Weekly, so that a new advisory for a locked dependency shows without a push.
   schedule:
     - cron: '17 5 * * 1'
+# Read only: no job writes to the repository.
+permissions:
+  contents: read
 jobs:
   horizon-pins:
     name: Horizon image pins
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
       - name: Verify Horizon pins
@@ -21,7 +24,7 @@ jobs:
     name: Dependency audit
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
       # A fixed version from crates.io, built from its own lock file.
@@ -38,7 +41,9 @@ jobs:
       matrix:
         os: [ubuntu-latest, macos-latest, windows-latest]
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
       - name: Format
         shell: bash
         run: cargo fmt --check

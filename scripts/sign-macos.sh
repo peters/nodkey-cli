@@ -4,7 +4,8 @@
 #   scripts/sign-macos.sh MAC_HOST DIR
 #
 # DIR holds the release archives (gh release download TAG --dir DIR). Every
-# nodkey-*-apple-darwin.tar.gz in it is copied to MAC_HOST, its binary signed with the team's
+# nodkey-*-apple-darwin.tar.gz in it must match its build provenance (gh attestation verify), then
+# it is copied to MAC_HOST, its binary signed with the team's
 # "Developer ID Application" identity (hardened runtime, secure timestamp) and notarized, then
 # packed again in place. SHA256SUMS in DIR is rewritten. Upload afterwards with
 #   gh release upload TAG DIR/* --clobber
@@ -19,6 +20,13 @@ dir="${2:?usage: sign-macos.sh MAC_HOST DIR}"
 shopt -s nullglob
 archives=("$dir"/nodkey-*-apple-darwin.tar.gz)
 [ ${#archives[@]} -gt 0 ] || { echo "no nodkey-*-apple-darwin.tar.gz in $dir" >&2; exit 1; }
+
+# Sign only what the release workflow built: each archive must match its build provenance. The
+# signed archive is a new file without an attestation; the installer checks its signature instead.
+for archive in "${archives[@]}"; do
+  gh attestation verify "$archive" --repo peters/nodkey-cli >/dev/null ||
+    { echo "$archive has no valid build provenance from peters/nodkey-cli; not signed" >&2; exit 1; }
+done
 
 remote="$(ssh "$host" 'mkdir -p "$HOME/.cache" && mktemp -d "$HOME/.cache/nodkey-sign.XXXXXX"')"
 trap 'ssh "$host" "rm -rf \"$remote\""' EXIT

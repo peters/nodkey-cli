@@ -58,14 +58,17 @@ The repository is public. Do not publish a release or announce an install link w
 owner's explicit yes.
 
 1. Raise `version` in `Cargo.toml`, run the checks, commit, tag `vX.Y.Z` and push the tag.
-   `release.yml` builds every target and makes a **draft** release with `SHA256SUMS`.
+   `release.yml` builds every target, attests the build provenance of each archive
+   (`actions/attest`) and makes a **draft** release with `SHA256SUMS`. Only the attest and release
+   jobs get write permissions; the build jobs read only.
 2. Sign and notarize the macOS binaries on the Mac that holds the team's Developer ID certificate:
    `gh release download vX.Y.Z --repo peters/nodkey-cli --dir <dir>`, then
-   `scripts/sign-macos.sh <mac-host> <dir>` and
+   `scripts/sign-macos.sh <mac-host> <dir>` (it signs only archives that pass
+   `gh attestation verify`) and
    `gh release upload vX.Y.Z <dir>/* --clobber --repo peters/nodkey-cli`.
 3. Publish the draft only after the owner says yes.
 
 CI runs Linux, macOS and Windows on every push and pull request, and `cargo audit` (RustSec
 advisories for `Cargo.lock`) on every run and once a week. After a change to `Cargo.lock`, run
-`cargo audit` too. Run `Release` by hand
-(workflow_dispatch) to build the archives as workflow artifacts without a release.
+`cargo audit` too. Workflows pin every action by commit (Dependabot proposes updates). Run
+`Release` by hand (workflow_dispatch) to build the archives as workflow artifacts without a release.
