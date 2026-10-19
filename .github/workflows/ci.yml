@@ -4,6 +4,9 @@ on:
     branches: [main]
   pull_request:
   workflow_dispatch:
+  # Weekly, so that a new advisory for a locked dependency shows without a push.
+  schedule:
+    - cron: '17 5 * * 1'
 jobs:
   horizon-pins:
     name: Horizon image pins
@@ -14,6 +17,19 @@ jobs:
           persist-credentials: false
       - name: Verify Horizon pins
         run: python3 .horizon/verify-pins.py
+  audit:
+    name: Dependency audit
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      # A fixed version from crates.io, built from its own lock file.
+      - name: Install cargo-audit
+        run: cargo install cargo-audit --version 0.22.2 --locked
+      # Fails on every RustSec advisory for a crate in Cargo.lock.
+      - name: Audit Cargo.lock
+        run: cargo audit
   test:
     name: Test (${{ matrix.os }})
     runs-on: ${{ matrix.os }}

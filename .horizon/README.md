@@ -46,6 +46,11 @@ PowerShell and platform SDKs. Artifact upload/download and GitHub publishing
 require the hosted environment or its credentials. The worker does not publish,
 sign, notarize or prove macOS, Windows or ARM64 release targets.
 
+The `audit` job in `ci.yml` installs cargo-audit 0.22.2 with `cargo install --locked`
+and reads the RustSec advisory database from GitHub, so it needs the network. The
+image does not include cargo-audit and the proof does not run this job. To run it on
+the worker: `cargo install cargo-audit --version 0.22.2 --locked && cargo audit`.
+
 ## Running the same checks
 
 The OS matrix of the `test` job is static: Linux, macOS and Windows. On Linux,

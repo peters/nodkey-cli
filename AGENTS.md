@@ -64,5 +64,7 @@ owner's explicit yes.
    `gh release upload vX.Y.Z <dir>/* --clobber --repo peters/nodkey-cli`.
 3. Publish the draft only after the owner says yes.
 
-CI runs Linux, macOS and Windows on every push and pull request. Run `Release` by hand
+CI runs Linux, macOS and Windows on every push and pull request, and `cargo audit` (RustSec
+advisories for `Cargo.lock`) on every run and once a week. After a change to `Cargo.lock`, run
+`cargo audit` too. Run `Release` by hand
 (workflow_dispatch) to build the archives as workflow artifacts without a release.
