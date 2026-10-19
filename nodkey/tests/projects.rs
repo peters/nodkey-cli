@@ -163,12 +163,18 @@ fn run_asks_for_the_keys_of_the_nodkey_file() {
     assert_eq!(seen.kind, Kind::Bundle);
     assert_eq!(seen.project.as_deref(), Some("sparrow"));
     assert!(seen.reason.starts_with("Run "), "{}", seen.reason);
-    // Which file named the keys: on stderr, and in the reason the phone shows.
+    // Which file named the keys: on stderr, and in the reason the phone shows (the path as the
+    // system writes it: `repo\.nodkey` on Windows).
+    let file = format!("repo{}.nodkey", std::path::MAIN_SEPARATOR);
     assert!(
-        err.contains("nodkey: using ") && err.contains("repo/.nodkey: OPENAI_API_KEY"),
+        err.contains("nodkey: using ") && err.contains(&format!("{file}: OPENAI_API_KEY")),
         "{err}"
     );
-    assert!(seen.reason.ends_with("repo/.nodkey)"), "{}", seen.reason);
+    assert!(
+        seen.reason.ends_with(&format!("{file})")),
+        "{}",
+        seen.reason
+    );
     assert!(seen.reason.contains(" (keys named in "), "{}", seen.reason);
     let targets: Vec<String> = seen
         .bundle
