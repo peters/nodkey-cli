@@ -86,16 +86,26 @@ pub struct Relay {
 }
 
 impl Relay {
-    /// A client for the relay at `base` (`https://host[/prefix]`).
+    /// A client for the relay at `base` (`https://host[/prefix]`). Plain `http` is only for a
+    /// relay on this computer (`localhost`, `127.0.0.1`, `[::1]`), such as the fake relay in tests.
+    /// The client follows no redirects.
     pub fn new(base: &str) -> Result<Self, RelayError> {
         let trimmed = base.trim().trim_end_matches('/');
         let base = Url::parse(trimmed)
             .map_err(|e| RelayError::Protocol(format!("relay URL {trimmed:?}: {e}")))?;
-        if !matches!(base.scheme(), "https" | "http") {
-            return Err(RelayError::Protocol("relay URL must be https".into()));
+        let local = matches!(base.host_str(), Some("localhost" | "127.0.0.1" | "[::1]"));
+        match base.scheme() {
+            "https" => {}
+            "http" if local => {}
+            _ => {
+                return Err(RelayError::Protocol(format!(
+                    "relay URL {trimmed:?} must be https (http only for localhost, 127.0.0.1 or [::1])"
+                )));
+            }
         }
         let http = reqwest::Client::builder()
             .connect_timeout(Duration::from_secs(10))
+            .redirect(reqwest::redirect::Policy::none())
             .user_agent(concat!("nodkey/", env!("CARGO_PKG_VERSION")))
             .build()
             .map_err(|e| RelayError::Transport(e.to_string()))?;
@@ -359,6 +369,58 @@ mod tests {
         );
         assert!(Relay::new("ftp://r.example").is_err());
         assert!(Relay::new("not a url").is_err());
+    }
+
+    #[test]
+    fn plain_http_only_on_this_computer() {
+        for ok in [
+            "http://localhost:8787",
+            "http://127.0.0.1:9",
+            "http://[::1]:8787/pre",
+            "http://LOCALHOST",
+        ] {
+            assert!(Relay::new(ok).is_ok(), "{ok}");
+        }
+        for bad in [
+            "http://r.example",
+            "http://192.168.1.10:8787",
+            "http://127.0.0.2",
+            "http://localhost.r.example",
+            "http://[::2]",
+        ] {
+            let e = Relay::new(bad).err().expect(bad).to_string();
+            assert!(e.contains("must be https"), "{bad}: {e}");
+        }
+    }
+
+    #[tokio::test]
+    async fn redirects_are_not_followed() {
+        use tokio::io::{AsyncReadExt, AsyncWriteExt};
+        let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
+        let addr = listener.local_addr().unwrap();
+        let server = tokio::spawn(async move {
+            let (mut s, _) = listener.accept().await.unwrap();
+            let mut buf = [0u8; 4096];
+            let _ = s.read(&mut buf).await.unwrap();
+            s.write_all(
+                b"HTTP/1.1 307 Temporary Redirect\r\nLocation: http://127.0.0.1:9/elsewhere\r\n\
+                  Content-Length: 0\r\nConnection: close\r\n\r\n",
+            )
+            .await
+            .unwrap();
+        });
+        let relay = Relay::new(&format!("http://{addr}")).unwrap();
+        let keys = KeyPair::generate();
+        let signer = Signer {
+            id: "AAAAAAAAAAAAAAAAAAAAAA",
+            keys: &keys,
+        };
+        let (status, _) = relay
+            .call(&signer, Method::GET, "/v1/x", None, Duration::from_secs(5))
+            .await
+            .unwrap();
+        assert_eq!(status, StatusCode::TEMPORARY_REDIRECT);
+        server.await.unwrap();
     }
 
     #[test]

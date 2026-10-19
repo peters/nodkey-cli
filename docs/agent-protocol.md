@@ -67,7 +67,8 @@ that swapped keys would show a different number.
 
 ## Relay API
 
-Base URL: `https://relay.nodkey.app`.
+Base URL: `https://relay.nodkey.app`. An agent accepts plain `http` only for a relay on the same
+computer (`localhost`, `127.0.0.1`, `[::1]`), and does not follow redirects.
 
 | Call | Signed by | Body → response |
 | --- | --- | --- |

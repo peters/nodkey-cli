@@ -223,6 +223,9 @@ nodkey agents
 | Agent folder: `NODKEY_AGENT_DIR` | `~/.config/nodkey-agent` |
 | `NODKEY_REQUEST_TIMEOUT` / `NODKEY_PAIR_TIMEOUT` (seconds) | 120 / 300 |
 
+The relay address must use `https`. Plain `http` works only for a relay on this computer
+(`localhost`, `127.0.0.1` or `[::1]`, for tests). `nodkey` does not follow redirects from the relay.
+
 The agent folder (only you can open it) holds one folder per agent under `agents/` with its keys
 (`identity.json`), paired phones (`phones.json`) and, while one runs, the task session
 (`session.json`: its id and end, never a secret).
