@@ -7,7 +7,9 @@ MCP server `nodkey mcp`) and the relay. Test vectors: `vectors/v1.json` (made by
 ## Principles
 
 - The relay forwards ciphertext and public keys. It never sees a code, a password, an account name or a
-  reason. It keeps a request for at most 120 s (an `sms_code` request at most 360 s) and stores no
+  reason. It keeps a request for 120 s (an `sms_code` request up to 360 s). With each request it keeps
+  the agent's IP address and country as Cloudflare saw them, so the phone can show where the request
+  came from, and deletes them with the request. It never stores the phone's IP address and logs no
   IP address.
 - An agent never receives a TOTP key, only one code at a time, and a password only for the request it
   asked for. The agent tools store no secrets from the phone.

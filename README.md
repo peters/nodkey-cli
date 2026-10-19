@@ -73,7 +73,9 @@ sequenceDiagram
 ```
 
 The relay forwards sealed messages and sends the notification. It cannot read a code, a password,
-an account name or the reason.
+an account name or the reason. It sees the IP address your computer connects from: it keeps that
+address and its country with the request, so your iPhone can show where the request came from, and
+deletes them with the request (after 2 minutes, up to 6 for an SMS code).
 
 ## What you need
 
