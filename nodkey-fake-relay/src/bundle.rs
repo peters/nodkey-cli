@@ -30,6 +30,19 @@ pub fn answer(fake: &Fake, request: &Request, rid: &str) -> Answer {
                 site: Some(site),
                 sites: None,
             });
+            if item.kind == Kind::Secret {
+                a.account = None;
+                a.match_kind = None;
+                match crate::secrets::find(fake, &item.target) {
+                    Some(key) => a.secret = Some(key),
+                    None => {
+                        let mut no = BundleItemAnswer::decision(&item.id, Decision::Denied);
+                        no.error = Some(nodkey_proto::apikey::errors::NO_SECRET.into());
+                        return no;
+                    }
+                }
+                return a;
+            }
             if item.kind == Kind::Login {
                 a.username = Some(USERNAME.into());
                 a.password = Some(Secret::new(PASSWORD));

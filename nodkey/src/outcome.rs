@@ -40,6 +40,9 @@ pub struct Outcome<'a> {
     /// `list_accounts`: the cards this agent may use (no numbers), when cards are on for it.
     #[serde(skip_serializing_if = "Option::is_none")]
     cards: Option<&'a [CardEntry]>,
+    /// `list_accounts`: the names of the keys this agent may ask for (never a value).
+    #[serde(skip_serializing_if = "Option::is_none")]
+    secrets: Option<&'a [nodkey_proto::SecretEntry]>,
     #[serde(skip_serializing_if = "Option::is_none")]
     moved: Option<u32>,
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -85,6 +88,11 @@ const INSIGHTS: &str = "The user approved. These are counts and anonymous groups
 pub(crate) const OLD_PROTOCOL: &str = "The phone could not read this request: Nodkey on the iPhone and this nodkey \
     speak different protocol versions. Update both (the app from the App Store, nodkey with its installer) \
     and try again.";
+
+/// Added to a list result with key names.
+const KEYS: &str = " secrets lists the API keys this agent may ask for, by name only. To use one, run \
+    `nodkey run --secret VARIABLE[=SERVICE] -- <command>`: the key goes into the command's environment and never \
+    into this conversation.";
 
 /// Added to the message when the user picked the account by hand.
 const CHOSEN: &str = " No saved account matched the site you asked for, so the user picked this one by hand \
@@ -185,6 +193,13 @@ impl<'a> Outcome<'a> {
         let via = a.via.as_ref().filter(|_| approved);
         let second_step = a.second_step.as_ref().filter(|_| approved);
         message.push_str(&crate::signin::notes(method, via, second_step));
+        let secrets = a
+            .secrets
+            .as_deref()
+            .filter(|s| kind == Kind::List && !s.is_empty());
+        if secrets.is_some() {
+            message.push_str(KEYS);
+        }
         message.push_str(&limit_note(a));
         Outcome {
             decision: a.decision,
@@ -201,6 +216,7 @@ impl<'a> Outcome<'a> {
             second_step,
             accounts: a.accounts.as_deref().map(Accounts::Names),
             cards: a.cards.as_deref().filter(|_| kind == Kind::List),
+            secrets,
             moved: None,
             lease: a.lease.as_ref(),
             attachment_warning,
@@ -243,6 +259,7 @@ impl<'a> Outcome<'a> {
             second_step: None,
             accounts: None,
             cards: None,
+            secrets: None,
             moved: None,
             lease: None,
             attachment_warning,
@@ -312,6 +329,7 @@ impl<'a> Outcome<'a> {
             second_step: None,
             accounts,
             cards: None,
+            secrets: None,
             moved: (a.decision == Decision::Approved).then_some(moved),
             lease: None,
             attachment_warning: None,

@@ -1,6 +1,6 @@
 //! The agent's side of task sessions (docs/agent-protocol.md, "Task sessions"). The running session
 //! of a profile lives in `session.json` next to its identity, so the MCP server and the command line
-//! share it: later `code`, `login` and passkey requests to the same phone carry its id, and the file
+//! share it: later `code`, `login`, passkey and key requests to the same phone carry its id, and the file
 //! goes when the session ends.
 
 use nodkey_proto::{Answer, ClientInfo, Decision, Kind, Request};
@@ -22,7 +22,7 @@ pub struct Running {
     /// When it ends (Unix seconds).
     pub until: u64,
     pub phone_id: String,
-    /// What the user approved: `login:site`, `code:site`, `passkey:site`.
+    /// What the user approved: `login:site`, `code:site`, `passkey:site`, `secret:target`.
     pub items: Vec<String>,
 }
 
@@ -38,10 +38,14 @@ pub fn clear(store: &Store) {
     let _ = std::fs::remove_file(store.dir().join(FILE));
 }
 
-/// Puts the running session's id on a `code`, `login` or `passkey` request to the same phone.
+/// Puts the running session's id on a `code`, `login`, `passkey` or `secret` request to the same
+/// phone.
 pub fn attach(store: &Store, phone_id: &str, request: &mut Request) {
     if request.session_id.is_some()
-        || !matches!(request.kind, Kind::Code | Kind::Login | Kind::Passkey)
+        || !matches!(
+            request.kind,
+            Kind::Code | Kind::Login | Kind::Passkey | Kind::Secret
+        )
     {
         return;
     }
@@ -191,6 +195,7 @@ fn kind_word(kind: Kind) -> &'static str {
     match kind {
         Kind::Login => "login",
         Kind::Passkey => "passkey",
+        Kind::Secret => "secret",
         _ => "code",
     }
 }

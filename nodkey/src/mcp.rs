@@ -44,7 +44,9 @@ nothing is deleted for good. request_payment spends the user's money: use it onl
 for, with the exact amount, and never split a purchase to get under their limit. A login result may say how the \
 user signs in (method) and carry the provider login (via): fill via only on the provider's own pages. When a result \
 carries quota_warning (the phone showed a notice about many new logins) or paused, tell the user why, do not retry in \
-a loop, and ask for fewer items. If no phone is paired, use the pair tool first.";
+a loop, and ask for fewer items. API keys: never paste one into a chat or a file; run the command that needs it with \
+`nodkey run --secret NAME -- <command>`, and save a key you made at once with save_secret. If no phone is paired, use \
+the pair tool first.";
 
 /// Shared server state.
 pub struct Server {
@@ -390,6 +392,9 @@ impl Server {
                 )
                 .await
             }
+            "request_secret" | "save_secret" => {
+                crate::secret::call(a, name, args, reported(args)?, &progress).await
+            }
             "suggest_sign_in_method" | "request_sms_code" => {
                 crate::signin::call(a, name, args, reported(args)?, &progress).await
             }
@@ -518,6 +523,8 @@ mod tests {
                 "request_login",
                 "request_credentials",
                 "request_sms_code",
+                "request_secret",
+                "save_secret",
                 "suggest_sign_in_method",
                 "end_session",
                 "request_payment",

@@ -143,6 +143,8 @@ nodkey login vg.no --reason "Check my subscription"
 nodkey pay shop.example.com 499 NOK --reveal --reason "Buy the cable I asked for"
 nodkey suggest example.com --kind federated --provider google --reason "Signed in with Google"
 nodkey sms-code account.example.com --reason "The site sent a code by SMS" --field code
+nodkey run --secret OPENAI_API_KEY --reason "Run the API tests" -- npm test
+printf %s "$NEW_KEY" | nodkey secret save NEW_KEY --service example.com --reason "Save the key I made"
 nodkey accounts
 nodkey cleanup --ip-only --reason "Remove logins for old router addresses"
 nodkey cleanup --query '*.old-company.example' --last-used-before 2022-01-01 --reason "Old job"
@@ -162,9 +164,14 @@ nodkey agents
 - `suggest` only proposes. The method waits in your suggestion list in Nodkey until you accept it
   with one tap. `sms-code` waits for an SMS that your Shortcuts automation passes to Nodkey, and you
   approve it with Face ID.
+- `run` gets API keys from Nodkey and gives them only to the command it starts, as environment
+  variables. Nothing prints the key, so your agent can use it without seeing it, and no `.env` file
+  is needed. `secret save` keeps a new key in Nodkey; it reads the key from stdin, never from the
+  command line. Your iPhone asks with Face ID for every key. Keys need Nodkey 1.4 or later.
 - Exit codes: 0 approved (or queued), 1 error, 2 denied (or rejected), 3 no answer in time, 4 the
   agent is paused, 64 bad arguments. `pay` also has
-  5 above your limit, 6 full card numbers off, 7 cards off.
+  5 above your limit, 6 full card numbers off, 7 cards off. `run` exits with the code of the
+  command it ran.
 - `nodkey webauthn` is for browser hosts such as Horizon: it reads one passkey request (sign in or
   create) as JSON on stdin and writes the result as JSON on stdout. Your iPhone shows the site and
   signs with a passkey that never leaves it. It can also get a secret key from a passkey (the
@@ -184,8 +191,10 @@ nodkey agents
 | `request_sms_code` | a code the site sent by SMS, passed to Nodkey by your own Shortcuts automation |
 | `suggest_sign_in_method` | tell Nodkey how you sign in to a site; it waits in your suggestion list for one tap, no secret |
 | `end_session` | end the task session when the task is done |
+| `request_secret` | an API key by its variable name or service; the result tells the agent to use `nodkey run` instead, so the key stays out of the chat |
+| `save_secret` | keep a key the agent just made (for example in a provider's dashboard) in Nodkey |
 | `request_payment` | spends money: your card for one purchase at a shop, for an exact amount |
-| `list_accounts` | the accounts this agent may ask for, without secrets |
+| `list_accounts` | the accounts this agent may ask for, and the names of its keys, without secrets |
 | `cleanup_insights` | anonymous numbers to suggest clean-up rules from |
 | `cleanup_logins` | propose moving matching saved logins to Recently deleted |
 | `pair`, `list_phones`, `unpair` | pair this agent, see its phones, leave a phone |
@@ -213,6 +222,8 @@ The agent folder (only you can open it) holds one folder per agent under `agents
 - Anyone who can read an agent's `identity.json` can ask your phone as that agent. You still have to
   approve, but keep the folder private. To cut an agent off, remove it under Agents in Nodkey.
 - A tool result goes to the model. The skill tells agents to use a secret only for the task at hand.
+- Every API key needs Face ID; there is no "always allow" for keys. `nodkey run` puts a key only
+  into the environment of the command it starts.
 - Cards are off for every agent until you turn them on. Each payment needs Face ID; there is no
   "always allow" for cards, and your iPhone refuses by itself above the limit you set.
 

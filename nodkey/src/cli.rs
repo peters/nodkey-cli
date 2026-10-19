@@ -13,81 +13,7 @@ use crate::{
     store::Home,
 };
 
-pub const USAGE: &str = "\
-nodkey: ask Nodkey on your iPhone for one-time codes and logins
-
-Usage:
-  nodkey pair [--name NAME]                pair this agent with your iPhone (once)
-  nodkey code TARGET --reason TEXT         one one-time code
-  nodkey login TARGET --reason TEXT        user name and password (and a code if it has one)
-  nodkey credentials ITEM... --reason TEXT up to 10 logins and codes in one request (JSON);
-                                           ITEM is login:TARGET, code:TARGET or passkey:SITE
-                                           (passkey items need --session)
-  nodkey end-session [--reason TEXT]       end this agent's task session (from --session)
-  nodkey sms-code TARGET --reason TEXT [--wait SECS] [--image FILE]
-                                           a code the site sent by SMS, passed to Nodkey by your
-                                           Shortcuts automation (wait 30-300 s, default 120)
-  nodkey suggest SITE --kind KIND [--provider NAME] [--mailbox ADDR] [--outcome failed]
-                   --reason TEXT           propose a sign-in method for your suggestion list
-                                           (KIND: password, federated, passkey, email_code, sso,
-                                           sms; no Face ID, nothing secret)
-  nodkey pay MERCHANT AMOUNT CURRENCY --reason TEXT --reveal
-                                           the full payment card for ONE purchase (spends money;
-                                           only when the user turned full card numbers on for
-                                           this agent); e.g. nodkey pay shop.example.com 499 NOK
-  nodkey accounts [--reason TEXT]          the accounts this agent may ask for (no secrets)
-  nodkey insights [--reason TEXT]          anonymous clean-up numbers (JSON)
-  nodkey cleanup FILTER... --reason TEXT   propose moving old saved logins to Recently deleted
-  nodkey phones                            the phones this agent is paired with
-  nodkey unpair PHONE                      leave a phone (phone name or id)
-  nodkey agents                            the agents paired on this computer
-  nodkey webauthn [--phone PHONE]          sign in with a passkey or make one, also with PRF: one
-                                           JSON request on stdin, one JSON result on stdout (for
-                                           browser hosts and scripts; nodkey webauthn --help)
-  nodkey card-fill [--phone PHONE]         a card for a browser host to fill a checkout form: one
-                                           JSON request on stdin, one JSON result on stdout
-  nodkey mcp                               run the MCP server on stdio
-  nodkey setup [--remove] [--dry-run]      add (or remove) the MCP server and skill in your agents
-  nodkey skill                             print the agent skill
-
-TARGET is a site or issuer, optionally with /account: github.com/alex, vg.no, GitHub.
-
-Options for code and login:
-  --reason TEXT    why, in one sentence; shown on your lock screen (required)
-  --image FILE     a PNG, JPEG or GIF (at most 1 MiB) shown in the notification
-  --field NAME     print only this field (code, username, password, seconds_left, ...)
-  --phone PHONE    which phone, when this agent is paired with more than one
-  --model NAME     --effort LEVEL   shown in the history on the phone
-
-Options for credentials: --reason, --image, --phone, --model, --effort as above, and
-  --session MIN     a task session: for 15, 30 or 60 minutes, codes, logins and passkey
-                    sign-ins for the approved items go through without asking again
-  --follow-up SECS  without a session: how long a fresh code for an approved item follows
-                    without asking (120-600)
-
-Options for pay: --reason, --image, --field (number, cvc, exp_month, ...), --phone, --model,
-  --effort as above, and --reveal (required: the card number is printed). Without a browser
-  host nothing can fill the card for you; the user decides on the iPhone every time.
-
-Clean-up filter (every one you give must hold; at least one):
-  --ip-only  --never-used  --query PATTERN  --username NAME  --domain DOMAIN  --group ID
-  --last-used-before DATE  --added-before DATE  --password-changed-before DATE
-  PATTERN and NAME take * and ?; DATE is YYYY-MM-DD or Unix seconds.
-
-Global options:
-  --agent NAME     which agent identity to use (default: terminal; also $NODKEY_AGENT)
-  --relay URL      the relay (default: $NODKEY_RELAY, else relay in config.json, else
-                   https://relay.nodkey.app)
-  --json           print JSON for accounts, cleanup, phones, agents, unpair and pair
-  -h, --help       -V, --version
-
-Exit codes: 0 approved, queued or done, 1 error, 2 denied or rejected, 3 expired (no answer),
-4 paused (the user or the agent limit paused this agent; resume it under Agents), 64 bad arguments;
-pay and card-fill: 5 over the user's limit, 6 full card numbers off, 7 cards off or no card,
-8 the page total is higher than the amount.
-Environment: NODKEY_AGENT_DIR (default ~/.config/nodkey-agent), NODKEY_REQUEST_TIMEOUT (120 s),
-NODKEY_PAIR_TIMEOUT (300 s), NODKEY_DEBUG.
-";
+pub use crate::usage::USAGE;
 
 pub(crate) const DENIED: u8 = 2;
 pub(crate) const EXPIRED: u8 = 3;
@@ -95,7 +21,11 @@ pub(crate) const EXPIRED: u8 = 3;
 pub(crate) const PAUSED: u8 = 4;
 const BAD_ARGS: u8 = 64;
 
-const VALUE_FLAGS: [&str; 23] = [
+const VALUE_FLAGS: [&str; 27] = [
+    "service",
+    "title",
+    "notes",
+    "expires",
     "agent",
     "kind",
     "provider",
@@ -214,6 +144,13 @@ pub fn main(raw: Vec<String>) -> ExitCode {
         }
         _ => {}
     }
+    let before_command = rest.split(|a| a == "--").next().unwrap_or_default();
+    let help = before_command.iter().any(|a| a == "-h" || a == "--help");
+    match command.as_str() {
+        "run" if !help => return crate::run::main(rest),
+        "secret" if !help => return crate::run::secret_main(rest),
+        _ => {}
+    }
     if rest.iter().any(|a| a == "-h" || a == "--help") {
         if command == "webauthn" {
             print!("{}", crate::webauthn::HELP);
@@ -270,12 +207,12 @@ pub fn main(raw: Vec<String>) -> ExitCode {
     }
 }
 
-fn usage_error(e: &str) -> ExitCode {
+pub(crate) fn usage_error(e: &str) -> ExitCode {
     eprintln!("nodkey: {e}\nRun `nodkey --help` for the commands.");
     ExitCode::from(BAD_ARGS)
 }
 
-fn fail(e: &str) -> ExitCode {
+pub(crate) fn fail(e: &str) -> ExitCode {
     eprintln!("nodkey: {e}");
     ExitCode::FAILURE
 }
@@ -364,6 +301,15 @@ fn check(command: &str, a: &Args) -> Result<(), String> {
             .and(a.positionals(command, 0, "no arguments")),
         _ => Ok(()),
     }
+}
+
+/// The terminal's agent for these arguments (or `--agent`, or `$NODKEY_AGENT`), for commands that
+/// parse their own arguments. Push notes stay quiet unless `NODKEY_DEBUG` is set.
+pub(crate) fn agent_for(a: &Args) -> Result<Agent, String> {
+    if std::env::var_os("NODKEY_DEBUG").is_none() {
+        relay::LOG_PUSH.store(false, std::sync::atomic::Ordering::Relaxed);
+    }
+    agent(a, profile::TERMINAL)
 }
 
 /// The agent for these arguments: `--agent`, else `$NODKEY_AGENT`, else `default_profile`.

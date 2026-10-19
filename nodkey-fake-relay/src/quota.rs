@@ -54,7 +54,7 @@ impl FakeQuota {
 
 /// The kinds the limit counts and warns for.
 fn counted(kind: Kind) -> bool {
-    matches!(kind, Kind::Code | Kind::Login | Kind::Bundle)
+    matches!(kind, Kind::Code | Kind::Login | Kind::Secret | Kind::Bundle)
 }
 
 /// The refusal of a paused agent: every kind but `session_end`.

@@ -249,7 +249,7 @@ impl Agent {
     }
 
     /// The client info for a request, with the model and effort a call reports.
-    fn client_for(&self, reported: Reported<'_>) -> ClientInfo {
+    pub(crate) fn client_for(&self, reported: Reported<'_>) -> ClientInfo {
         ClientInfo {
             model: reported.model.map(str::to_owned),
             effort: reported.effort.map(str::to_owned),

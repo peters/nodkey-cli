@@ -20,6 +20,8 @@
 //!   Shortcuts automation, for the waiting `sms_code` request; `{"expire": true}` ends the wait.
 //! - `PUT /_fake/quota` with `{"state": "off" | "warning" | "paused" | "paused_by_user", "new_today",
 //!   "limit", "burst"}`: the agent limit (see [`crate::quota`]).
+//! - `GET /_fake/secrets`, `PUT /_fake/secrets` with `[{title, service, variable, value}]`: the
+//!   phone's API keys (test values only; two test keys to begin with).
 
 use std::sync::Arc;
 
@@ -48,6 +50,19 @@ pub(crate) fn routes() -> Router<Shared> {
         .route("/_fake/suggestions", get(suggestions))
         .route("/_fake/sms", axum::routing::put(deliver_sms))
         .route("/_fake/quota", axum::routing::put(set_quota))
+        .route("/_fake/secrets", get(secrets).put(set_secrets))
+}
+
+async fn secrets(State(fake): State<Shared>) -> Response {
+    Json(fake.secrets.lock().unwrap().clone()).into_response()
+}
+
+async fn set_secrets(
+    State(fake): State<Shared>,
+    Json(keys): Json<Vec<crate::secrets::FakeKey>>,
+) -> StatusCode {
+    *fake.secrets.lock().unwrap() = keys;
+    StatusCode::NO_CONTENT
 }
 
 async fn set_quota(

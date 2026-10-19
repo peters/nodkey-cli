@@ -66,6 +66,8 @@ fn covers(item: &(Kind, String), request: &Request) -> bool {
     let wanted = site(&request.target);
     match (request.kind, item.0) {
         (Kind::Code, Kind::Code | Kind::Login) | (Kind::Login, Kind::Login) => item.1 == wanted,
+        // A key is covered by a key item with the same target.
+        (Kind::Secret, Kind::Secret) => item.1 == request.target.trim().to_ascii_lowercase(),
         // A get with PRF inputs is never covered: Face ID every time.
         (Kind::Passkey, Kind::Passkey) => {
             request
@@ -133,6 +135,15 @@ pub fn after(fake: &Fake, agent_id: &str, request: &Request, answer: &mut Answer
         let mut approved = Vec::new();
         for (asked, item) in request.bundle.iter().flat_map(|b| &b.items).zip(items) {
             if item.decision != Decision::Approved {
+                continue;
+            }
+            if asked.kind == Kind::Secret {
+                // A key in a plan: no value and no lease; later key requests go through.
+                approved.push((asked.kind, asked.target.trim().to_ascii_lowercase()));
+                item.lease = None;
+                if let Some(key) = item.secret.as_mut() {
+                    key.value = None;
+                }
                 continue;
             }
             approved.push((asked.kind, site(&asked.target)));

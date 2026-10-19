@@ -1,6 +1,6 @@
 ---
 name: nodkey
-description: Use the user's logins, one-time codes and saved passwords from Nodkey on their iPhone, each request approved by them with Face ID; sign in to websites, fetch a two-step code, see which accounts exist, tidy up old saved logins, and pay a purchase the user asked for with their card. Use when a task needs a login or a two-step code, when asked to sign in to a site (for example in a Horizon browser panel), when the user asks which accounts they have, or when they ask to clean up, review or remove stale or old saved passwords, or when they ask you to buy something. Uses the nodkey MCP server (request_login, request_code, request_credentials, request_sms_code, suggest_sign_in_method, end_session, request_payment, cleanup_insights, list_accounts, cleanup_logins, pair, list_phones, unpair) or the nodkey command.
+description: Use the user's logins, one-time codes and saved passwords from Nodkey on their iPhone, each request approved by them with Face ID; sign in to websites, fetch a two-step code, see which accounts exist, tidy up old saved logins, use API keys without seeing them, and pay a purchase the user asked for with their card. Use when a task needs a login, a two-step code or an API key (for example OPENAI_API_KEY), when you made a new API key, when asked to sign in to a site (for example in a Horizon browser panel), when the user asks which accounts they have, or when they ask to clean up, review or remove stale or old saved passwords, or when they ask you to buy something. Uses the nodkey MCP server (request_login, request_code, request_credentials, request_sms_code, request_secret, save_secret, suggest_sign_in_method, end_session, request_payment, cleanup_insights, list_accounts, cleanup_logins, pair, list_phones, unpair) or the nodkey command.
 ---
 
 # Nodkey
@@ -24,6 +24,9 @@ for 1 day / 7 days / always"); then the phone answers by itself. You never keep 
 - **Plan first, ask once.** Before the first request, list every site the task signs in to and what
   each needs (login, code, passkey). More than one thing: one `request_credentials` with a session
   (see "Plan the task, ask once"). One thing only: `request_login` or `request_code`.
+- **Never paste an API key into a chat or a file** (also not into `.env`, a config file, a commit or
+  a log). Run the command that needs it with `nodkey run --secret NAME -- <command>`. When you made
+  a new key, save it at once with `save_secret`. See "API keys and secrets".
 - Tell the user in one line when a request is waiting on their iPhone. It waits up to two minutes.
 - If several accounts match, the phone asks them which one; never guess user names.
 - Pass `model` (the model you run on, e.g. `claude-opus-5-5`) and `effort` (your reasoning effort,
@@ -160,6 +163,37 @@ their iPhone and needs Face ID; there is no "always allow" for cards.
   purchase into smaller ones** to get under a limit, and never pay more than the approved amount.
 - One approval pays one purchase. For the next one, ask again.
 
+## API keys and secrets
+
+Nodkey keeps API keys and tokens with a service (`openai.com`) and an environment variable name
+(`OPENAI_API_KEY`). The user approves every key with Face ID; there is no "always allow" for keys.
+
+1. **Use a key without seeing it** (preferred): run the command with the key in its environment:
+
+   ```sh
+   nodkey run --secret OPENAI_API_KEY --reason "Run the tests that call the OpenAI API" -- npm test
+   nodkey run --secret OPENAI_API_KEY=openai.com --secret EXAMPLE_TOKEN --reason "Deploy the preview" -- ./deploy.sh
+   ```
+
+   `NAME` is the variable the command reads; `=SERVICE` helps the phone find the key. Several keys
+   are one request. The command's output and exit code are its own; nodkey never prints a key. When
+   the phone refuses, the command does not run (exit 2 denied, 3 expired, 4 paused).
+2. **Only when no command can take it from the environment:** `request_secret(variable, service,
+   reason)` returns the value. Use it once, for that task only; never write it anywhere.
+3. **You made a new key** (for example in a provider's dashboard): save it at once with
+   `save_secret(variable, service, value, reason)`, then use it with `nodkey run`. On the command
+   line: `printf %s "$KEY" | nodkey secret save NAME --service HOST --reason TEXT` (the value comes
+   from stdin, never from the arguments). A key with the same service and variable name gets the
+   new value.
+4. `no_secret`: the user says Nodkey has no such key. Ask them to add it under Passwords, Keys in
+   Nodkey; do not ask them to paste it into the chat.
+5. In a plan, add a key as `{"kind": "secret", "target": "openai.com/OPENAI_API_KEY"}`. With a
+   session, the plan item carries no value, and later `nodkey run --secret` calls for that key go
+   through without asking.
+6. `list_accounts` shows the key names (`secrets`); never a value.
+
+Keys count toward the limit on new items, like logins.
+
 ## A two-step code only
 
 `request_code(target, reason)` when a CLI, portal or API asks for a one-time code. Use it at once;
@@ -225,11 +259,13 @@ nodkey cleanup --query '*.old-company.example' --last-used-before 2022-01-01 --r
 nodkey pay shop.example.com 499 NOK --reveal --reason "Buy the cable you asked for"   # full card (JSON)
 nodkey suggest example.com --kind federated --provider google --reason "Signed in with Google"
 nodkey sms-code account.example.com --reason "The site sent a code by SMS" --field code
+nodkey run --secret OPENAI_API_KEY --reason "Run the API tests" -- npm test   # the key only in the command's environment
+printf %s "$NEW_KEY" | nodkey secret save NEW_KEY --service example.com --reason "Save the key I made"
 nodkey phones; nodkey unpair PHONE
 ```
 
 Exit codes: 0 approved or queued, 2 denied or rejected, 3 expired, 4 paused, 1 error, 64 bad arguments; for `pay` also 5 over the
-user's limit, 6 full card numbers off, 7 cards off or no card. Waiting notes go to stderr.
+user's limit, 6 full card numbers off, 7 cards off or no card. `nodkey run` exits with the command's own code once it ran. Waiting notes go to stderr.
 Never put a password on a command line, in a file or in a pipe you log; read it from the JSON and fill
 it straight into the field that needs it. `--image FILE`, `--model` and `--effort` work as in the tools.
 

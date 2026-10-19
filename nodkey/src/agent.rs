@@ -543,6 +543,7 @@ pub fn new_request(kind: Kind, target: &str, reason: &str, client: ClientInfo) -
         session_id: None,
         suggest: None,
         wait_seconds: None,
+        save_secret: None,
     }
 }
 

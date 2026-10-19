@@ -25,7 +25,7 @@ impl Wanted {
     /// `login:chatgpt.com` or `code:github.com/alex` (the command line's form).
     pub fn parse(text: &str) -> Result<Self, String> {
         let (kind, target) = text.split_once(':').ok_or_else(|| {
-            format!("{text:?}: give each item as login:TARGET, code:TARGET or passkey:SITE")
+            format!("{text:?}: give each item as login:TARGET, code:TARGET, secret:TARGET or passkey:SITE")
         })?;
         Ok(Wanted {
             kind: kind_named(kind)?,
@@ -34,14 +34,15 @@ impl Wanted {
     }
 }
 
-/// `code`, `login` or `passkey`.
+/// `code`, `login`, `secret` or `passkey`.
 pub fn kind_named(name: &str) -> Result<Kind, String> {
     match name.trim() {
         "code" => Ok(Kind::Code),
         "login" => Ok(Kind::Login),
         "passkey" => Ok(Kind::Passkey),
+        "secret" => Ok(Kind::Secret),
         other => Err(format!(
-            "{other:?} is not an item kind; a bundle holds code, login and (with a session) passkey items"
+            "{other:?} is not an item kind; a bundle holds code, login, secret and (with a session) passkey items"
         )),
     }
 }
@@ -214,6 +215,9 @@ struct ItemOutcome<'a> {
     via: Option<crate::signin::ViaOut<'a>>,
     #[serde(skip_serializing_if = "Option::is_none")]
     second_step: Option<&'a nodkey_proto::SecondStepOrder>,
+    /// A `secret` item: the key (without its value in a task plan).
+    #[serde(skip_serializing_if = "Option::is_none")]
+    secret: Option<&'a nodkey_proto::SecretAnswer>,
     #[serde(skip_serializing_if = "Option::is_none")]
     lease: Option<&'a Lease>,
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -247,6 +251,10 @@ pub fn outcome<'a>(
                 method: i.method.as_ref(),
                 via: crate::signin::via_out(i.method.as_ref(), i.via.as_ref()),
                 second_step: i.second_step.as_ref(),
+                secret: i
+                    .secret
+                    .as_ref()
+                    .filter(|_| i.decision == Decision::Approved),
                 lease: i.lease.as_ref(),
                 error: i.error.as_deref(),
             }
@@ -278,11 +286,17 @@ pub fn outcome<'a>(
                 m.push_str(" An item's method says how the user signs in to its site; fill an item's via (the provider \
                     login) only on its fill_only_on sites, never on the item's own site.");
             }
+            if items.iter().any(|i| i.secret.is_some()) {
+                m.push_str(" A secret item carries its key in secret.value (in a task session it has no value: \
+                    later nodkey run --secret calls for it go through without asking). Never put a key in a file, a \
+                    commit or a chat message; prefer nodkey run --secret, so a key never enters this conversation.");
+            }
             if let Some(info) = &a.session {
                 let minutes = info.until.saturating_sub(nodkey_proto::unix_now()).div_ceil(60);
                 m.push_str(&format!(
                     " A task session runs for about {minutes} more minutes: request_code, request_login and passkey \
-                     sign-ins for the approved items go through without asking the user again. Call end_session \
+                     sign-ins and keys (nodkey run --secret) for the approved items go through without asking the \
+                     user again. Call end_session \
                      when the task is done."
                 ));
             } else if asked.is_some_and(|b| b.session.is_some()) && a.quota.is_some() {
@@ -294,7 +308,8 @@ pub fn outcome<'a>(
         }
         Decision::Denied if a.error.as_deref() == Some("bad_bundle") => {
             "The phone could not read this bundle. Its Nodkey app may be older than task sessions (passkey items, \
-             more than 6 items): ask the user to update Nodkey, or ask for at most 6 code and login items."
+             more than 6 items) or than keys (secret items): ask the user to update Nodkey, or ask for at most 6 \
+             code and login items."
                 .to_owned()
         }
         Decision::Denied if is_paused(a) => paused(a),
@@ -351,7 +366,7 @@ mod tests {
         assert!(
             Wanted::parse("list:x")
                 .unwrap_err()
-                .contains("code, login and")
+                .contains("code, login, secret and")
         );
         assert_eq!(
             Wanted::parse("passkey:github.com").unwrap().kind,
@@ -379,7 +394,7 @@ mod tests {
             (serde_json::json!({}), "items is required"),
             (
                 serde_json::json!({"items": [{"kind": "list", "target": "x"}]}),
-                "code, login and",
+                "code, login, secret and",
             ),
             (serde_json::json!({"items": [{"kind": "code"}]}), "target"),
             (

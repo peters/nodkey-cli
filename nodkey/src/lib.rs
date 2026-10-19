@@ -14,11 +14,14 @@ pub mod mcp;
 pub mod outcome;
 pub mod profile;
 pub mod relay;
+pub mod run;
+pub mod secret;
 pub mod session;
 pub mod setup;
 pub mod signin;
 pub mod store;
 pub mod tools;
+pub mod usage;
 pub mod webauthn;
 
 /// The agent skill, installed by `nodkey setup`.

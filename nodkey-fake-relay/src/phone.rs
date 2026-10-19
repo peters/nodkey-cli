@@ -85,7 +85,9 @@ pub(crate) fn approve(fake: &Fake, answer: &mut Answer, request: &Request) {
             answer.password = Some(Secret::new(PASSWORD));
             crate::signin::approve(fake, answer, request);
         }
+        Kind::Secret | Kind::SaveSecret => crate::secrets::approve(fake, answer, request),
         Kind::List => {
+            answer.secrets = Some(crate::secrets::entries(fake));
             answer.cards = fake.cards.lock().unwrap().enabled.then(|| {
                 vec![nodkey_proto::CardEntry {
                     title: "Test Visa".into(),

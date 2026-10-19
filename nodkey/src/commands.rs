@@ -365,6 +365,14 @@ fn print_accounts(v: &Value) {
             has.join("+")
         );
     }
+    for k in v["secrets"].as_array().into_iter().flatten() {
+        println!(
+            "Key  {}  {}  {}",
+            k["title"].as_str().unwrap_or_default(),
+            k["service"].as_str().unwrap_or("-"),
+            k["variable"].as_str().unwrap_or("-")
+        );
+    }
     for c in v["cards"].as_array().into_iter().flatten() {
         println!(
             "Card  {}  {} \u{b7}\u{b7}\u{b7}\u{b7}{}",

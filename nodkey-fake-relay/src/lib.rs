@@ -15,6 +15,7 @@ mod pairing;
 pub mod passkeys;
 mod phone;
 pub mod quota;
+pub mod secrets;
 pub mod sessions;
 pub mod signin;
 
@@ -72,6 +73,8 @@ pub struct Seen {
     pub saved_password: Option<String>,
     /// The card number of a card `save` request, opened likewise (test numbers only).
     pub saved_card: Option<String>,
+    /// The key of a `save_secret` request, opened likewise (test values only).
+    pub saved_secret: Option<String>,
 }
 
 struct Pairing {
@@ -110,6 +113,8 @@ pub struct Fake {
     pub signin: Mutex<signin::FakeSignin>,
     /// The agent limit a test set: off, the warning or a pause.
     pub quota: Mutex<quota::FakeQuota>,
+    /// The phone's API keys (two test keys to begin with).
+    pub secrets: Mutex<Vec<secrets::FakeKey>>,
     /// Where this relay listens; the phone calls it for the pairing lookup.
     addr: std::sync::OnceLock<SocketAddr>,
     inner: Mutex<Inner>,
@@ -383,6 +388,7 @@ async fn post_request(
         String::from_utf8(opened.to_vec()).expect("utf-8 password")
     });
     let saved_card = cards::saved_number(&fake, &request, &agent_id);
+    let saved_secret = secrets::saved_value(&fake, &request, &agent_id);
     let mut inner = fake.inner.lock().unwrap();
     inner.order.push(env.request_id.clone());
     inner.requests.insert(
@@ -394,6 +400,7 @@ async fn post_request(
             attachment: None,
             saved_password,
             saved_card,
+            saved_secret,
         },
     );
     StatusCode::ACCEPTED.into_response()
@@ -473,6 +480,9 @@ async fn wait_answer(
     {
         return seal_answer(&fake, &agent_id, &rid, &refused);
     }
+    if let Some(refused) = secrets::refuse(&rid, &request) {
+        return seal_answer(&fake, &agent_id, &rid, &refused);
+    }
     if let Some(refused) = cards::refuse(&fake, &rid, &request) {
         return seal_answer(&fake, &agent_id, &rid, &refused);
     }
@@ -534,6 +544,7 @@ pub fn start_on(bind: &str, claim_on_poll: u32) -> (Shared, SocketAddr) {
         sessions: Mutex::new(sessions::FakeSessions::default()),
         signin: Mutex::new(signin::FakeSignin::default()),
         quota: Mutex::new(quota::FakeQuota::default()),
+        secrets: Mutex::new(secrets::test_keys()),
         addr: std::sync::OnceLock::new(),
         inner: Mutex::new(Inner::default()),
     });
