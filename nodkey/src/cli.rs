@@ -164,6 +164,7 @@ pub fn main(raw: Vec<String>) -> ExitCode {
         Ok(a) => a,
         Err(e) if command == "webauthn" => return crate::webauthn::bad_input(&e),
         Err(e) if command == "card-fill" => return crate::cardfill::bad_input(&e),
+        Err(e) if command == "login-fill" => return crate::loginfill::bad_input(&e),
         Err(e) => return usage_error(&e),
     };
     if std::env::var_os("NODKEY_DEBUG").is_none() && command != "mcp" {
@@ -183,6 +184,7 @@ pub fn main(raw: Vec<String>) -> ExitCode {
         }
         "webauthn" => return crate::webauthn::main(&args, agent(&args, profile::TERMINAL)),
         "card-fill" => return crate::cardfill::main(&args, host_agent(&args)),
+        "login-fill" => return crate::loginfill::main(&args, agent(&args, profile::TERMINAL)),
         "pair" | "code" | "login" | "credentials" | "pay" | "accounts" | "insights" | "cleanup"
         | "phones" | "unpair" | "agents" | "end-session" => check(command, &args),
         "suggest" | "sms-code" => crate::signin::check_cli(command, &args),

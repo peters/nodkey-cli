@@ -28,21 +28,35 @@ impl Cli {
         Cli { relay, dir }
     }
 
+    fn command(&self, args: &[&str]) -> Command {
+        let mut c = Command::new(env!("CARGO_BIN_EXE_nodkey"));
+        c.args(args)
+            .env("NODKEY_AGENT_DIR", &self.dir)
+            .env("NODKEY_KEYSTORE", "file")
+            .env("NODKEY_RELAY", format!("http://{}", self.relay))
+            .env("NODKEY_REQUEST_TIMEOUT", "3")
+            .env_remove("NODKEY_AGENT")
+            .env_remove("CLAUDECODE")
+            .env_remove("CODEX_SANDBOX")
+            .env_remove("CODEX_SANDBOX_NETWORK_DISABLED")
+            .env("TMPDIR", env!("CARGO_TARGET_TMPDIR"));
+        c
+    }
+
     fn run(&self, args: &[&str]) -> Output {
-        common::output(
-            Command::new(env!("CARGO_BIN_EXE_nodkey"))
-                .args(args)
-                .env("NODKEY_AGENT_DIR", &self.dir)
-                .env("NODKEY_KEYSTORE", "file")
-                .env("NODKEY_RELAY", format!("http://{}", self.relay))
-                .env("NODKEY_REQUEST_TIMEOUT", "3")
-                .env_remove("NODKEY_AGENT")
-                .env_remove("CLAUDECODE")
-                .env_remove("CODEX_SANDBOX")
-                .env_remove("CODEX_SANDBOX_NETWORK_DISABLED")
-                .env("TMPDIR", env!("CARGO_TARGET_TMPDIR")),
-            args,
-        )
+        common::output(&mut self.command(args), args)
+    }
+
+    /// `nodkey login-fill` with `input` on stdin: the one JSON line and the exit code.
+    fn login_fill(&self, input: &Value) -> (Value, i32, String) {
+        let out = common::output_with_input(
+            &mut self.command(&["login-fill"]),
+            input.to_string().as_bytes(),
+        );
+        let text = String::from_utf8_lossy(&out.stdout).into_owned();
+        assert_eq!(text.lines().count(), 1, "one JSON line: {text}");
+        let v = serde_json::from_str(&text).unwrap();
+        (v, out.status.code().unwrap(), text)
     }
 
     fn json(&self, args: &[&str]) -> (Value, i32) {
@@ -133,4 +147,46 @@ fn a_session_covers_the_website_not_a_look_alike() {
         let (_, code) = cli.json(&["login", other, "--reason", "Look-alike"]);
         assert_eq!(code, 2, "{other} is asked as usual, and the user denies");
     }
+}
+
+#[test]
+fn a_browser_host_fills_a_login_on_its_own_website_only() {
+    let (fake, addr) = fake_relay::start(1);
+    let cli = Cli::new(addr);
+    assert!(cli.run(&["pair"]).status.success());
+    let ask = |origin: &str| {
+        json!({"version": 1, "origin": origin, "target": "vg.no", "reason": "Sign in to read the article",
+               "requester": {"app": "Horizon", "agent": "Claude Code"}})
+    };
+
+    let (v, code, _) = cli.login_fill(&ask("https://www.vg.no"));
+    assert_eq!(code, 0, "{v}");
+    assert_eq!(v["status"], "ok");
+    assert_eq!(v["username"], fake_relay::USERNAME);
+    assert_eq!(v["password"], fake_relay::PASSWORD);
+    assert_eq!(v["fill_only_on"], json!(["vg.no"]));
+    let summary = v["summary"].as_str().unwrap();
+    assert!(summary.contains("vg.no"), "{summary}");
+    assert!(!summary.contains(fake_relay::PASSWORD));
+    let seen = fake.seen().pop().unwrap();
+    assert_eq!(seen.request.kind, nodkey_proto::Kind::Login);
+    assert_eq!(
+        seen.request.client.unwrap().app.as_deref(),
+        Some("Horizon (Claude Code)")
+    );
+
+    // A page on another website gets nothing, also when the user approved.
+    let (v, code, text) = cli.login_fill(&ask("https://vg.no.evil.example"));
+    assert_eq!((code, v["status"].as_str()), (1, Some("wrong_site")), "{v}");
+    assert!(!text.contains(fake_relay::PASSWORD));
+
+    // Bad input is refused before anything is sent.
+    let before = fake.seen().len();
+    let (v, code, _) = cli.login_fill(&json!({"version": 1, "origin": "vg.no"}));
+    assert_eq!(code, 64, "{v}");
+    assert_eq!(fake.seen().len(), before);
+
+    fake.set_mode(Mode::Deny);
+    let (v, code, _) = cli.login_fill(&ask("https://www.vg.no"));
+    assert_eq!((code, v["status"].as_str()), (2, Some("denied")), "{v}");
 }

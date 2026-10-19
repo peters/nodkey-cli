@@ -212,7 +212,9 @@ nodkey agents
   create) as JSON on stdin and writes the result as JSON on stdout. Your iPhone shows the site and
   signs with a passkey that never leaves it. It can also get a secret key from a passkey (the
   WebAuthn PRF extension), for example to unlock a backup; your iPhone asks with Face ID every time
-  (`nodkey webauthn --help`). `nodkey card-fill --agent horizon` gives such a host your card to
+  (`nodkey webauthn --help`). `nodkey login-fill` gives such a host a login to fill a sign-in
+  form, only on the login's own website, and the model gets only a summary.
+  `nodkey card-fill --agent horizon` gives such a host your card to
   fill a checkout form, so the number goes to the host and not into the agent's conversation. The
   host has its own identity (`nodkey pair --agent horizon`): turn cards on for the host in Nodkey,
   not for the agent. See `docs/agent-protocol.md`.
@@ -273,7 +275,13 @@ they are.
   read that file can ask your phone as that agent. You still have to approve (a lease you gave
   answers for you), so keep the folder private. To cut an agent off, remove it under Agents in
   Nodkey.
-- A tool result goes to the model. The skill tells agents to use a secret only for the task at hand.
+- A tool result goes to the model. Codes, passwords, keys and full card numbers in tool results
+  (and in the output of `nodkey code`, `login` or `pay --reveal` that an agent runs) stay in the
+  agent app's saved conversation and are sent to the model provider. `nodkey` itself writes none of
+  them to disk. To keep them out: use `nodkey run` for API keys (the key goes only into the
+  environment of the command it starts), and let a browser host fill logins and cards
+  (`nodkey login-fill`, `nodkey card-fill`), so the model gets only a summary. The skill tells
+  agents to use a secret only for the task at hand.
 - Every API key needs Face ID; there is no "always allow" for keys. `nodkey run` puts a key only
   into the environment of the command it starts.
 - Cards are off for every agent until you turn them on. Each payment needs Face ID; there is no

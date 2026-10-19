@@ -1448,6 +1448,9 @@ answers".
   `request_login` result shows `via` with its own `fill_only_on` (`via_sites`), and its
   message says what to do with `method`, `via` and `second_step`. `image_path` is an optional PNG/JPEG/GIF file (for example
   a browser screenshot) sent as the attachment. Results go to the model; the server keeps no secret.
+  The agent app keeps tool results in its saved conversation and sends them to the model provider,
+  so a code, password, key or revealed card in a result stays there. `nodkey run` (keys) and the
+  host fill commands (`login-fill`, `card-fill`) keep the secret out of the conversation.
   A running task session (its id, end, phone and the approved items, never a secret) is kept in
   `agents/<profile>/session.json`, so the MCP server, the command line and `nodkey webauthn` of one
   profile share it; `end_session()` and `nodkey end-session` end it.
@@ -1465,8 +1468,9 @@ answers".
   start); when the phone does not give every key, the command does not run and the exit code is 2,
   3, 4 or 1 as above.
 - `nodkey webauthn --agent <profile> [--phone PHONE]` is the authenticator a browser host (Horizon)
-  calls; `nodkey card-fill --agent <host> [--phone PHONE]` gives such a host a card to fill, under
-  the host's own profile. See below.
+  calls; `nodkey login-fill --agent <profile> [--phone PHONE]` gives such a host a login to fill;
+  `nodkey card-fill --agent <host> [--phone PHONE]` gives it a card to fill, under the host's own
+  profile. See below.
 
 ## The authenticator command
 
@@ -1578,3 +1582,41 @@ fill`. Results:
 Before it fills, the host reads the page total again and fills nothing when it is now more than
 `approved_amount`. It keeps watching the total until the form is sent and clears the card fields if
 the total goes up. It never clicks the pay button itself and never stores the card.
+
+## The login fill command
+
+`nodkey login-fill --agent <profile>` is how a browser host (Horizon) fills a sign-in form for an
+agent, so the password goes to the host and not into the model's conversation. It reads one JSON
+object on stdin and writes one JSON object on stdout, also when it fails (waiting notes go to
+stderr). `--agent` names the agent the host acts for (its leases and history apply); without it
+the profile follows the usual rule (see "Agent side").
+
+```json
+{"version":1, "origin":"https://www.vg.no", "target":"vg.no", "reason":"Sign in to read the article you asked for",
+ "requester":{"app":"Horizon", "agent":"Claude Code"}}
+```
+
+`origin` is the sign-in page's origin as the host saw the frame, never from the page's script or
+the model (`https://` or `http://`). `target` (optional, the origin's host when absent) is what the
+command asks for, as in a `login` request; `reason` is optional ("Sign in to www.vg.no"). Unknown
+fields are refused. The command sends `kind: login`. Results:
+
+```json
+{"version":1, "status":"ok", "username":"alex@example.com", "password":"…", "code":"190274", "seconds_left":12,
+ "account":{"issuer":"VG", "name":"alex@example.com", "site":"vg.no"}, "fill_only_on":["vg.no"],
+ "summary":"filled: the login alex@example.com on vg.no. Ask again for the next sign-in."}
+{"version":1, "status":"denied|expired|wrong_site|error", "message":"…", "error":"…"}
+```
+
+| `status` | Exit | When |
+| --- | --- | --- |
+| `ok` | 0 | the user approved and `origin` is on the login's `fill_only_on`; fill the form, then give the model only `summary` |
+| `denied` | 2 | the user said no (exit 4 when the agent is paused) |
+| `expired` | 3 | no answer in time |
+| `wrong_site` | 1 | the login is saved for another website than `origin`; nothing is given |
+| `error` | 1 | not paired, relay trouble, an app that is too old, an answer without a website |
+| `error` | 64 | the input is not a valid request |
+
+`code` and `seconds_left` are there when the login has a code. The host fills only visible fields
+on a page of `origin` and never stores the login. The password stays out of the conversation only
+when the model cannot run `nodkey` or read the agent folder (no shell, or a sandbox).

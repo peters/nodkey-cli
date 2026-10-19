@@ -14,6 +14,9 @@ for 1 day / 7 days / always"); then the phone answers by itself. You never keep 
 - Never print, quote, log, store or write a password or code anywhere: not in chat, files, commit
   messages, memory or tool arguments other than the one field you fill. Do not screenshot a page that
   shows a password in clear text.
+- A secret in a tool result (or in the output of a `nodkey` command you run) stays in this
+  conversation, which your app saves and sends to the model provider. So prefer the ways that keep
+  it out: `nodkey run` for API keys, and a browser host's login or card fill when there is one.
 - On `denied` or `expired`, stop and tell the user in one line; do not retry on your own. On a refusal
   with "paused", you are paused under Agents in Nodkey (by the user, or by the limit when the answer
   has `quota`): tell them why, do not retry. They resume you under Agents.

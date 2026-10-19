@@ -40,6 +40,9 @@ Usage:
   nodkey webauthn [--phone PHONE]          sign in with a passkey or make one, also with PRF: one
                                            JSON request on stdin, one JSON result on stdout (for
                                            browser hosts and scripts; nodkey webauthn --help)
+  nodkey login-fill [--phone PHONE]        a login for a browser host to fill a sign-in form, so the
+                                           password stays out of the agent's conversation: one JSON
+                                           request on stdin, one JSON result on stdout
   nodkey card-fill --agent HOST [--phone PHONE]
                                            a card for a browser host to fill a checkout form, under
                                            the host's own profile (never an agent's): one JSON

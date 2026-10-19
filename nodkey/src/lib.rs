@@ -12,6 +12,7 @@ pub mod host;
 pub mod image;
 pub mod keyfile;
 pub mod keystore;
+pub mod loginfill;
 pub mod mcp;
 pub mod outcome;
 pub mod pairing;
