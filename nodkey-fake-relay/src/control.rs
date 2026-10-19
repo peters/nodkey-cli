@@ -29,6 +29,8 @@
 //! - `PUT /_fake/pairing` with `{"old_app", "bad_nonce", "unsigned_answers"}` (each `false` when
 //!   absent): pair like an app made before the commitment, answer the pairing check with a nonce
 //!   that does not match the commitment, or send answers without a signature.
+//! - `PUT /_fake/passcode` with `true` or `false`: whether the phone has a passcode (`true` to
+//!   begin with). Without one it refuses cards and keys with `no_passcode`.
 //!
 //! The phone answers a `pairing_check` with its nonce (the first one of a pairing only), and drops
 //! a request without the agent's valid signature: it never answers it.
@@ -63,6 +65,12 @@ pub(crate) fn routes() -> Router<Shared> {
         .route("/_fake/secrets", get(secrets).put(set_secrets))
         .route("/_fake/account", axum::routing::put(set_account))
         .route("/_fake/pairing", axum::routing::put(set_pairing))
+        .route("/_fake/passcode", axum::routing::put(set_passcode))
+}
+
+async fn set_passcode(State(fake): State<Shared>, Json(on): Json<bool>) -> StatusCode {
+    *fake.passcode.lock().unwrap() = on;
+    StatusCode::NO_CONTENT
 }
 
 async fn set_pairing(

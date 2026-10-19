@@ -2152,6 +2152,34 @@
       "recipient_kem_pk": "fE5zmodqNC-MJSk500yxJtz4i2vlbx3Hpg2qO712pTQ",
       "recipient_kem_sk": "WVg29q7eTJuYsXMJkPAqAx2veoBDBCceAKKxCEs90KU",
       "sender": "phone"
+    },
+    {
+      "aad": "bf7a2OaunHBhXuxLiYvMcA0g0Bt23Hxsm5z-wpZp2lpA",
+      "ct": "9hIfLQBnvUaDShFgcl3iRUSeJhNVUCXXx5I6o1Kp-gfYxwD1Pj7HwPktc0d99cCS8O-OBTrls1UL7h9EsV6WB1jgftWoYn2akjXRUEr_-T85pHMyZ6M6oJcnCZ2A6QEPhNCBlJtG8Q",
+      "enc": "zszbGIacc6t3fZ9w48Ma1ArnbQcLuklAQgDoz5ZsYUo",
+      "ikm_e": "6dJEtvXgRXy5k1uFknRcg4yOU0kpJyeR32W03PhISbQ",
+      "info": "nodkey/v1/answer",
+      "name": "answer_card_no_passcode",
+      "plaintext": "{\"v\":1,\"request_id\":\"bf7a2OaunHBhXuxLiYvMcA\",\"decision\":\"denied\",\"error\":\"no_passcode\"}",
+      "plaintext_b64u": "eyJ2IjoxLCJyZXF1ZXN0X2lkIjoiYmY3YTJPYXVuSEJoWHV4TGlZdk1jQSIsImRlY2lzaW9uIjoiZGVuaWVkIiwiZXJyb3IiOiJub19wYXNzY29kZSJ9",
+      "purpose": "answer",
+      "recipient_kem_pk": "fE5zmodqNC-MJSk500yxJtz4i2vlbx3Hpg2qO712pTQ",
+      "recipient_kem_sk": "WVg29q7eTJuYsXMJkPAqAx2veoBDBCceAKKxCEs90KU",
+      "sender": "phone"
+    },
+    {
+      "aad": "nW1OaXiaD-aiGHVnGskt5A0g0Bt23Hxsm5z-wpZp2lpA",
+      "ct": "9WyHCTMxUQJZ9-FDUXOuZRhGCOCYfl5dXhJCEjeLOzDaMSDgWQa_S3z1yDRtPxdf3HVw_7h4NM6IRKotJ_g_EUUnf4BJBcUblOFXABIHfjQyu2-rXftYQc24XU99ztx8X0sc0-nhCQ",
+      "enc": "SbDDVmOGfUJZQk4Exflbj-ZIYhmy14gGlJQVt-a3ahI",
+      "ikm_e": "POjN7RBdvxEZdnqvUXU8StLgeS6049QV4UpHDQ7bZTk",
+      "info": "nodkey/v1/answer",
+      "name": "answer_secret_no_passcode",
+      "plaintext": "{\"v\":1,\"request_id\":\"nW1OaXiaD-aiGHVnGskt5A\",\"decision\":\"denied\",\"error\":\"no_passcode\"}",
+      "plaintext_b64u": "eyJ2IjoxLCJyZXF1ZXN0X2lkIjoiblcxT2FYaWFELWFpR0hWbkdza3Q1QSIsImRlY2lzaW9uIjoiZGVuaWVkIiwiZXJyb3IiOiJub19wYXNzY29kZSJ9",
+      "purpose": "answer",
+      "recipient_kem_pk": "fE5zmodqNC-MJSk500yxJtz4i2vlbx3Hpg2qO712pTQ",
+      "recipient_kem_sk": "WVg29q7eTJuYsXMJkPAqAx2veoBDBCceAKKxCEs90KU",
+      "sender": "phone"
     }
   ],
   "key_projects": {
@@ -2779,7 +2807,8 @@
     "errors": [
       "no_secret",
       "bad_secret_request",
-      "not_allowed"
+      "not_allowed",
+      "no_passcode"
     ],
     "matches": [
       {

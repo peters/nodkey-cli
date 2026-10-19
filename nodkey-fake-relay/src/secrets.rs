@@ -60,9 +60,17 @@ fn denied(rid: &str, error: &str) -> Answer {
     a
 }
 
-/// A key request the phone refuses without asking: a target, a project or a save that breaks the
-/// rules.
-pub(crate) fn refuse(rid: &str, request: &Request) -> Option<Answer> {
+/// A key request the phone refuses without asking: no passcode on the phone (a key, or a bundle of
+/// keys only), or a target, a project or a save that breaks the rules.
+pub(crate) fn refuse(fake: &Fake, rid: &str, request: &Request) -> Option<Answer> {
+    let only_keys = request
+        .bundle
+        .as_ref()
+        .is_some_and(|b| b.items.iter().all(|i| i.kind == Kind::Secret));
+    let gives_keys = request.kind == Kind::Secret || (request.kind == Kind::Bundle && only_keys);
+    if gives_keys && !*fake.passcode.lock().unwrap() {
+        return Some(denied(rid, errors::NO_PASSCODE));
+    }
     let bad_project = request
         .project
         .as_deref()

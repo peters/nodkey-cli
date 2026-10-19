@@ -47,7 +47,12 @@ fn targets_and_matches() {
     assert_eq!(s["max_save_value"], apikey::MAX_SAVE_VALUE);
     assert_eq!(
         s["errors"],
-        serde_json::json!(["no_secret", "bad_secret_request", "not_allowed"])
+        serde_json::json!([
+            "no_secret",
+            "bad_secret_request",
+            "not_allowed",
+            "no_passcode"
+        ])
     );
 }
 

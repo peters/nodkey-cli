@@ -139,6 +139,7 @@ fn status_for(error: &str) -> &'static str {
         "cards_off" | "no_card" => "cards_off",
         "total_mismatch" => "total_mismatch",
         "setup_off" => "setup_off",
+        "no_passcode" => "no_passcode",
         "amount_missing" | "bad_card_request" => "error",
         _ => "denied",
     }
@@ -440,6 +441,9 @@ mod tests {
         assert!(v["message"].as_str().unwrap().contains("update the app"));
         let (v, code) = denied(Some("setup_off"));
         assert_eq!((code, v["status"].as_str()), (9, Some("setup_off")));
+        let (v, code) = denied(Some("no_passcode"));
+        assert_eq!((code, v["status"].as_str()), (10, Some("no_passcode")));
+        assert!(v["message"].as_str().unwrap().contains("no passcode"));
         let (v, _) = denied(None);
         assert!(
             v["message"]

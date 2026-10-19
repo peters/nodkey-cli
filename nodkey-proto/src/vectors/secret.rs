@@ -305,6 +305,24 @@ fn section() -> Value {
         "max_save_value": apikey::MAX_SAVE_VALUE,
         "max_title": apikey::MAX_TITLE,
         "max_notes": apikey::MAX_NOTES,
-        "errors": [apikey::errors::NO_SECRET, apikey::errors::BAD_SECRET_REQUEST, apikey::errors::NOT_ALLOWED],
+        "errors": [apikey::errors::NO_SECRET, apikey::errors::BAD_SECRET_REQUEST, apikey::errors::NOT_ALLOWED,
+                   apikey::errors::NO_PASSCODE],
     })
+}
+
+/// `answer_secret_no_passcode`: the phone has no passcode, so it refuses `request_secret` at once.
+/// After every other HPKE vector, so the bytes of the earlier ones stay the same.
+pub(super) fn add_no_passcode(ctx: &mut Ctx, agent: &Side, phone: &Side) {
+    let rid = label_id("nodkey/v1/vectors/request/secret");
+    let mut a = Answer::decision(&rid, Decision::Denied);
+    a.error = Some(apikey::errors::NO_PASSCODE.into());
+    ctx.seal(
+        "answer_secret_no_passcode",
+        Purpose::Answer,
+        "phone",
+        agent,
+        format!("{rid}{}", phone.id),
+        &to_json(&a),
+        true,
+    );
 }

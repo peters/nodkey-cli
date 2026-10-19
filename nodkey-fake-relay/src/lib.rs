@@ -110,6 +110,8 @@ pub struct Fake {
     pub passkeys: Mutex<Vec<passkeys::FakePasskey>>,
     /// What the user allowed for cards.
     pub cards: Mutex<cards::FakeCards>,
+    /// Whether the phone has a passcode; without one it gives no cards or keys (`no_passcode`).
+    pub passcode: Mutex<bool>,
     /// Running task sessions and the code clock.
     pub sessions: Mutex<sessions::FakeSessions>,
     /// Sign-in methods, queued suggestions and the SMS a test delivers.
@@ -416,7 +418,7 @@ async fn wait_answer(
     {
         return seal_answer(&fake, &agent_id, &rid, &refused);
     }
-    if let Some(refused) = secrets::refuse(&rid, &request) {
+    if let Some(refused) = secrets::refuse(&fake, &rid, &request) {
         return seal_answer(&fake, &agent_id, &rid, &refused);
     }
     if let Some(refused) = cards::refuse(&fake, &rid, &request) {
@@ -478,6 +480,7 @@ pub fn start_on(bind: &str, claim_on_poll: u32) -> (Shared, SocketAddr) {
         claim_on_poll,
         passkeys: Mutex::new(vec![passkeys::FakePasskey::test()]),
         cards: Mutex::new(cards::FakeCards::default()),
+        passcode: Mutex::new(true),
         sessions: Mutex::new(sessions::FakeSessions::default()),
         signin: Mutex::new(signin::FakeSignin::default()),
         quota: Mutex::new(quota::FakeQuota::default()),

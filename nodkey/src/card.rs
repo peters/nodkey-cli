@@ -155,6 +155,7 @@ pub fn refusal(error: &str) -> Option<&'static str> {
              in. Check the order with the user."
         }
         errors::BAD_CARD_REQUEST => "The phone refused the card request as malformed.",
+        errors::NO_PASSCODE => crate::outcome::NO_PASSCODE,
         errors::SETUP_OFF => {
             "Adding cards for later payments is off for this agent, so the phone refused without asking. It is \
              only for a browser that fills the card (the Nodkey browser extension, or a browser host such as \
@@ -210,6 +211,7 @@ pub fn exit_for_error(error: Option<&str>) -> Option<u8> {
         errors::CARDS_OFF | errors::NO_CARD => 7,
         errors::TOTAL_MISMATCH => 8,
         errors::SETUP_OFF => 9,
+        errors::NO_PASSCODE => 10,
         _ => return None,
     })
 }
@@ -334,6 +336,7 @@ mod tests {
             (errors::NO_CARD, "No card", Some(7)),
             (errors::TOTAL_MISMATCH, "higher", Some(8)),
             (errors::SETUP_OFF, "only for a browser", Some(9)),
+            (errors::NO_PASSCODE, "Face ID & Passcode", Some(10)),
             ("paused", "paused", None),
         ] {
             let mut d = Answer::decision("rid", Decision::Denied);

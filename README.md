@@ -206,8 +206,9 @@ nodkey agents
   in another project, `--secret NAME` adds a key, and `global/NAME` takes only the global key.
 - Exit codes: 0 approved (or queued), 1 error, 2 denied (or rejected), 3 no answer in time, 4 the
   agent is paused, 64 bad arguments. `pay` also has
-  5 above your limit, 6 full card numbers off, 7 cards off; `card-fill` also 8 for a page total
-  above the amount and 9 for cards for later payments that are off. `run` exits with the code of the
+  5 above your limit, 6 full card numbers off, 7 cards off, 10 no passcode on your iPhone;
+  `card-fill` also 8 for a page total above the amount and 9 for cards for later payments that
+  are off. `run` exits with the code of the
   command it ran.
 - `nodkey webauthn` is for browser hosts such as Horizon: it reads one passkey request (sign in or
   create) as JSON on stdin and writes the result as JSON on stdout. Your iPhone shows the site and
@@ -290,6 +291,8 @@ they are.
   into the environment of the command it starts.
 - Cards are off for every agent until you turn them on. Each payment needs Face ID; there is no
   "always allow" for cards, and your iPhone refuses by itself above the limit you set.
+- An iPhone without a passcode gives no cards or keys to agents or browsers, and no "always
+  allow". Set a passcode in Settings, Face ID & Passcode.
 - With card fill, the model does not see the card number only when it cannot run `nodkey` or read
   the agent folder (no shell, or a sandbox). An agent with a shell could run `nodkey card-fill`
   itself after you approve a payment. Turn cards on only for the browser host, and approve only

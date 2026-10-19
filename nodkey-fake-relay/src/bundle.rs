@@ -25,6 +25,11 @@ pub fn answer(fake: &Fake, request: &Request, rid: &str) -> Answer {
             a.account = Some(account);
             a.match_kind = match_kind;
             if item.kind == Kind::Secret {
+                if !*fake.passcode.lock().unwrap() {
+                    let mut no = BundleItemAnswer::decision(&item.id, Decision::Denied);
+                    no.error = Some(nodkey_proto::apikey::errors::NO_PASSCODE.into());
+                    return no;
+                }
                 a.account = None;
                 a.match_kind = None;
                 match crate::secrets::find(fake, &item.target, request.project.as_deref()) {

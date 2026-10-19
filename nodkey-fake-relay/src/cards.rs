@@ -61,6 +61,9 @@ pub(crate) fn refuse(fake: &Fake, rid: &str, request: &Request) -> Option<Answer
     if !settings.enabled {
         return Some(denied(rid, errors::CARDS_OFF));
     }
+    if !*fake.passcode.lock().unwrap() {
+        return Some(denied(rid, errors::NO_PASSCODE));
+    }
     let Some(card) = &request.card else {
         return Some(denied(rid, errors::AMOUNT_MISSING));
     };

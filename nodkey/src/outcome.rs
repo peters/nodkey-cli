@@ -88,6 +88,10 @@ const INSIGHTS: &str = "The user approved. These are counts and anonymous groups
     addresses or test hosts) and wait for them to choose. To act on a group, call cleanup_logins with \
     {\"group\": \"<id>\"}; the phone shows them the real site or user name before anything moves.";
 
+/// Why the phone gives no cards or keys: it has no passcode (`no_passcode`).
+pub(crate) const NO_PASSCODE: &str = "The phone has no passcode, so Nodkey hands out no cards or keys. The user can \
+    set one in Settings \u{2192} Face ID & Passcode on the iPhone; do not ask again until they did.";
+
 pub(crate) const OLD_PROTOCOL: &str = "The phone could not read this request: Nodkey on the iPhone and this nodkey \
     speak different protocol versions. Update both (the app from the App Store, nodkey with its installer) \
     and try again.";

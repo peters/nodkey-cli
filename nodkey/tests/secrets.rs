@@ -187,7 +187,20 @@ fn run_starts_nothing_when_the_phone_refuses() {
     assert_eq!(out.status.code(), Some(3));
     assert!(stdout(&out).is_empty());
 
+    // A phone without a passcode gives no keys: one key, or a bundle of keys.
     fake.set_mode(Mode::Approve);
+    *fake.passcode.lock().unwrap() = false;
+    for keys in [
+        &["OPENAI_API_KEY"][..],
+        &["OPENAI_API_KEY", "EXAMPLE_TOKEN"],
+    ] {
+        let out = cli.run(&run_args(keys, &child));
+        assert_eq!(out.status.code(), Some(2), "{keys:?}");
+        assert!(stdout(&out).is_empty());
+        assert!(stderr(&out).contains("no passcode"), "{}", stderr(&out));
+    }
+    *fake.passcode.lock().unwrap() = true;
+
     *fake.quota.lock().unwrap() = FakeQuota {
         state: QuotaState::PausedByUser,
         new_today: 0,

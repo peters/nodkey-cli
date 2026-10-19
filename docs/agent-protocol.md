@@ -828,6 +828,7 @@ Refusals without asking (`decision: denied`, `error`), in this order:
 | `error` | When |
 | --- | --- |
 | `cards_off` | cards are off for this agent |
+| `no_passcode` | the phone has no passcode, so Nodkey hands out no cards (`pay` or `setup`); checked after `paused` and `cards_off`, before the rest |
 | `amount_missing` | `pay` without `amount`, or not a valid amount |
 | `total_mismatch` | `page_total` is more than `amount` |
 | `bad_card_request` | the card data breaks another rule above |
@@ -876,8 +877,8 @@ it later. A browser asks for such a card with `purpose: setup`:
 - On the phone, adding cards for later payments is a separate setting per agent, off by default,
   like full card numbers. It is meant for a browser: the user turns it on for the Nodkey browser
   extension or a browser host, never for an agent's own profile. Without it the phone refuses at
-  once with `setup_off`. Cards must be on for the agent (`cards_off`), and the agent must be allowed
-  a card (`no_card`).
+  once with `setup_off`. Cards must be on for the agent (`cards_off`), the phone must have a
+  passcode (`no_passcode`), and the agent must be allowed a card (`no_card`).
 - The phone shows "Add your card at shop.example.com, via js.pay.example" (without `via`: "Add
   your card at shop.example.com"), the reason, the picture and the card, and asks for Face ID every
   time. One approval fills the card once. A setup request is never covered by a lease, and never
@@ -910,8 +911,8 @@ Vectors: `request_card_fill`, `request_card_reveal`, `request_card_missing_amoun
 `answer_card_amount_missing`, `answer_card_over_limit`, `answer_card_reveal_off`,
 `answer_cards_off`, `answer_card_total_mismatch`, `answer_card_no_card`, `save_card_number`,
 `save_card_cvc`, `request_save_card`, `answer_save_card`, `answer_list_with_cards`,
-`request_card_setup`, `request_card_fill_via`, `answer_card_setup`, `answer_card_setup_off`, and
-the `cards` section (its `requests` include `setup`, `fill_via` and the setup and `via` rules).
+`request_card_setup`, `request_card_fill_via`, `answer_card_setup`, `answer_card_setup_off`,
+`answer_card_no_passcode`, and the `cards` section (its `requests` include `setup`, `fill_via` and the setup and `via` rules).
 Test card numbers only.
 
 ## API keys and secrets
@@ -969,8 +970,10 @@ Rules on the phone:
   `error: "not_allowed"`.
 - The history on the phone records which agent got which key, and when. The key shows "Last used
   by <agent>".
-- Refusals at once: `bad_secret_request`, `not_allowed`, and `paused`, `unsupported_kind`,
-  `unsupported_version` as for every kind. An older app answers `unsupported_kind`.
+- Refusals at once: `no_passcode` (the phone has no passcode, so Nodkey hands out no keys; checked
+  right after `paused`, before the other checks), `bad_secret_request`, `not_allowed`, and
+  `paused`, `unsupported_kind`, `unsupported_version` as for every kind. An older app answers
+  `unsupported_kind`.
 
 ### Keys in bundles and task plans
 
@@ -983,6 +986,11 @@ without `lease`: the plan only lets later `secret` requests for that key go thro
 (see "Task sessions"), with `lease: {"kind":"session", …}`. So `nodkey run --secret` gets the key
 later and the model never sees it. An older app refuses a bundle with a `secret` item with
 `error: "bad_bundle"`.
+
+A phone without a passcode leaves out each `secret` item of a bundle or task plan, without asking:
+the item answer is `decision: denied` with `error: "no_passcode"`, and the other items go on as
+usual. When no other item is left, the phone refuses the whole bundle at once with
+`error: "no_passcode"`.
 
 ### Saving a key
 
@@ -1138,7 +1146,8 @@ Vectors: `request_secret`, `request_secret_by_variable`, `answer_secret`,
 `answer_secret_quota_warning`, `answer_secret_no_secret`, `save_secret_value`,
 `request_save_secret`, `answer_save_secret`, `request_bundle_secrets`, `answer_bundle_secrets`,
 `request_bundle_secret_session`, `answer_bundle_secret_session`, `request_secret_in_session`,
-`answer_secret_in_session`, `answer_list_with_secrets`, and the `secrets` section: how targets
+`answer_secret_in_session`, `answer_list_with_secrets`, `answer_secret_no_passcode`, and the
+`secrets` section: how targets
 read (`targets`), which keys match which targets (`matches`), the limits and the errors. Test
 values only.
 
@@ -1348,7 +1357,9 @@ itself and shows a quiet notification ("Claude got the password for vg.no"), but
 that is an exact match for the account (see "Websites"). Durations: once (no lease),
 1 day, 7 days, always (until revoked). The user sees and revokes leases under Agents; removing an agent
 removes its leases and calls `DELETE …/agents/{agent_id}`. While the agent limit warns for an agent, its leases
-do not answer (see "Agent limit").
+do not answer (see "Agent limit"). A phone without a passcode has nothing to approve a lease with:
+it gives no leases (only once), no task sessions and no follow-up windows, and it refuses cards and
+keys with `no_passcode`.
 
 ## Agent limit
 
@@ -1505,8 +1516,8 @@ answers".
   [--outcome failed] --reason TEXT`; `nodkey sms-code TARGET --reason TEXT [--wait SECS]`. Exit codes:
   0 approved (or queued), 1 error, 2 denied (or rejected), 3 expired, 4 paused (`error: paused`),
   64 bad arguments; for `pay` and `card-fill` also 5
-  `over_limit`, 6 `reveal_off`, 7 `cards_off` or `no_card`, 8 `total_mismatch`, and for `card-fill`
-  9 `setup_off`. `nodkey pay MERCHANT
+  `over_limit`, 6 `reveal_off`, 7 `cards_off` or `no_card`, 8 `total_mismatch`, 10 `no_passcode`,
+  and for `card-fill` 9 `setup_off`. `nodkey pay MERCHANT
   AMOUNT CURRENCY --reason TEXT --reveal` prints the full card, so it requires `--reveal`; without a
   host nothing can fill a card for it. A missing amount is refused before anything is sent.
   `nodkey run` passes on the exit code of the command it ran (126 or 127 when the command cannot
@@ -1618,7 +1629,7 @@ Unknown fields are refused. The command sends `kind: card`, `mode: fill`. Result
  "summary":"filled: Visa ····4242 on shop.example.com, at most 499.00 NOK. One purchase; ask again for the next one."}
 {"version":1, "status":"ok", "card":{…},
  "summary":"filled: Visa ····4242 on shop.example.com via js.pay.example, to add the card for later payments. No purchase was approved; ask again for the next card."}
-{"version":1, "status":"denied|expired|over_limit|cards_off|total_mismatch|setup_off|error", "message":"…", "error":"…"}
+{"version":1, "status":"denied|expired|over_limit|cards_off|total_mismatch|setup_off|no_passcode|error", "message":"…", "error":"…"}
 ```
 
 A `setup` result has no `approved_amount`. With `via`, the summary names the shop "via" the frame.
@@ -1632,6 +1643,7 @@ A `setup` result has no `approved_amount`. With `via`, the summary names the sho
 | `cards_off` | 7 | cards are off for this agent, or no card may be used (`error` says which) |
 | `total_mismatch` | 8 | the page total is more than the amount; checked before anything is sent |
 | `setup_off` | 9 | `setup`, and adding cards for later payments is off for this host |
+| `no_passcode` | 10 | the phone has no passcode, so Nodkey hands out no cards; the user can set one in Settings, Face ID & Passcode |
 | `error` | 1 | not paired, relay trouble, an app that is too old (for `setup` also `error: amount_missing`: the app does not know it) |
 | `error` | 64 | the input is not a valid request (`error: amount_missing` when a `pay` request has no amount) |
 

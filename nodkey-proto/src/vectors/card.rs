@@ -334,6 +334,22 @@ pub(super) fn add_setup(ctx: &mut Ctx, agent: &Side, phone: &Side) {
     );
 }
 
+/// `answer_card_no_passcode`: the phone has no passcode, so it refuses `request_card_fill` at
+/// once. After every other HPKE vector, so the bytes of the earlier ones stay the same.
+pub(super) fn add_no_passcode(ctx: &mut Ctx, agent: &Side, phone: &Side) {
+    let rid = label_id("nodkey/v1/vectors/request/card_fill");
+    let mut a = Answer::decision(&rid, Decision::Denied);
+    a.error = Some(card::errors::NO_PASSCODE.into());
+    seal(
+        ctx,
+        (agent, phone),
+        "answer_card_no_passcode",
+        Purpose::Answer,
+        &rid,
+        to_json(&a),
+    );
+}
+
 /// The `cards` section: inputs and what every side must decide for them.
 fn checks() -> Value {
     let amounts: Vec<Value> = [

@@ -26,6 +26,9 @@ pub mod errors {
     pub const BAD_SECRET_REQUEST: &str = "bad_secret_request";
     /// The agent's scope does not allow keys (`codes`); at once.
     pub const NOT_ALLOWED: &str = "not_allowed";
+    /// The phone has no passcode, so Nodkey hands out no keys: a `secret` request, or a `secret`
+    /// item of a bundle or task plan; at once, before the other checks.
+    pub const NO_PASSCODE: &str = "no_passcode";
 }
 
 /// Longest environment variable name, in characters.

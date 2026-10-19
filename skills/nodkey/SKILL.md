@@ -172,6 +172,8 @@ their iPhone and needs Face ID; there is no "always allow" for cards.
 - `over_limit`: the amount is above the user's limit for you. Stop and tell them. **Never split a
   purchase into smaller ones** to get under a limit, and never pay more than the approved amount.
 - One approval pays one purchase. For the next one, ask again.
+- `no_passcode` (here and for keys): the iPhone has no passcode, so Nodkey hands out no cards or
+  keys. Tell the user they can set one in Settings, Face ID & Passcode; do not retry until they did.
 - A page that only adds a card for later payments (a billing page, a subscription, no total) is not
   a purchase. Never make up an amount for it: only the user's browser (the Nodkey browser extension,
   or a browser host) adds a card for later payments, and the user approves it there.
@@ -307,7 +309,7 @@ nodkey phones; nodkey unpair PHONE
 ```
 
 Exit codes: 0 approved or queued, 2 denied or rejected, 3 expired, 4 paused, 1 error, 64 bad arguments; for `pay` also 5 over the
-user's limit, 6 full card numbers off, 7 cards off or no card. `nodkey run` exits with the command's own code once it ran. Waiting notes go to stderr.
+user's limit, 6 full card numbers off, 7 cards off or no card, 10 no passcode on the iPhone (no cards or keys). `nodkey run` exits with the command's own code once it ran. Waiting notes go to stderr.
 Never put a password on a command line, in a file or in a pipe you log; read it from the JSON and fill
 it straight into the field that needs it. `--image FILE`, `--model` and `--effort` work as in the tools.
 

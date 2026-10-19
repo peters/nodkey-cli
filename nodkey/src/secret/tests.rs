@@ -106,6 +106,7 @@ fn results() {
     for (error, want) in [
         (apikey::errors::NO_SECRET, "no such key"),
         (apikey::errors::NOT_ALLOWED, "codes only"),
+        (apikey::errors::NO_PASSCODE, "no passcode"),
         ("paused", "paused"),
         ("unsupported_kind", "protocol versions"),
     ] {

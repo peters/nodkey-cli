@@ -260,6 +260,7 @@ pub fn refusal(a: &Answer) -> String {
             user can change that under Agents in Nodkey."
                 .to_owned()
         }
+        Some(apikey::errors::NO_PASSCODE) => crate::outcome::NO_PASSCODE.to_owned(),
         Some(apikey::errors::BAD_SECRET_REQUEST) => {
             "The phone refused the request as malformed.".to_owned()
         }

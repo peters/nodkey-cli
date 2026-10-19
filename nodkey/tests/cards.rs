@@ -170,6 +170,16 @@ fn pay_from_the_terminal() {
     set_cards(&fake, false, true, None);
     assert_eq!(cli.run(&PAY).status.code(), Some(7));
     set_cards(&fake, true, true, None);
+    *fake.passcode.lock().unwrap() = false;
+    let no_passcode = cli.run(&PAY);
+    assert_eq!(
+        no_passcode.status.code(),
+        Some(10),
+        "{}",
+        stderr(&no_passcode)
+    );
+    assert!(!stdout(&no_passcode).contains(fake_relay::cards::CARD_NUMBER));
+    *fake.passcode.lock().unwrap() = true;
     fake.set_mode(Mode::Deny);
     let denied = cli.run(&PAY);
     assert_eq!(denied.status.code(), Some(2));
@@ -360,6 +370,24 @@ fn a_browser_host_adds_a_card_for_later_payments() {
         assert_eq!((code, v["status"].as_str()), (64, Some("error")), "{bad}");
     }
     assert_eq!(fake.seen().len(), before);
+
+    // A phone without a passcode gives no cards, for later payments or to pay.
+    *fake.passcode.lock().unwrap() = false;
+    for input in [setup(json!({})), fill(json!({}))] {
+        let (v, code) = cli.card_fill(&input);
+        assert_eq!(
+            (code, v["status"].as_str()),
+            (10, Some("no_passcode")),
+            "{v}"
+        );
+        assert!(
+            v["message"]
+                .as_str()
+                .unwrap()
+                .contains("Face ID & Passcode")
+        );
+    }
+    *fake.passcode.lock().unwrap() = true;
 
     // Off for this browser: the phone refuses without asking.
     fake.cards.lock().unwrap().setup = false;

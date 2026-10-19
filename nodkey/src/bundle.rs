@@ -302,6 +302,13 @@ pub fn outcome<'a>(
                 m.push_str(" An item's method says how the user signs in to its site; fill an item's via (the provider \
                     login) only on its fill_only_on sites, never on the item's own site.");
             }
+            if items
+                .iter()
+                .any(|i| i.error == Some(nodkey_proto::apikey::errors::NO_PASSCODE))
+            {
+                m.push_str(" Items with error no_passcode: ");
+                m.push_str(crate::outcome::NO_PASSCODE);
+            }
             if items.iter().any(|i| i.secret.is_some()) {
                 m.push_str(" A secret item carries its key in secret.value (in a task session it has no value: \
                     later nodkey run --secret calls for it go through without asking). Never put a key in a file, a \
@@ -329,6 +336,9 @@ pub fn outcome<'a>(
                 .to_owned()
         }
         Decision::Denied if is_paused(a) => paused(a),
+        Decision::Denied if a.error.as_deref() == Some(nodkey_proto::apikey::errors::NO_PASSCODE) => {
+            crate::outcome::NO_PASSCODE.to_owned()
+        }
         Decision::Denied
             if matches!(
                 a.error.as_deref(),
@@ -479,5 +489,30 @@ mod tests {
             serde_json::from_str(&text(&outcome(&paused, Some(&asked), "P", None))).unwrap();
         assert_eq!(v["approved"], 0);
         assert!(v["message"].as_str().unwrap().contains("paused"));
+
+        // A phone without a passcode leaves out key items, or refuses a bundle of keys only.
+        let no_passcode = || {
+            let mut i = BundleItemAnswer::decision("2", Decision::Denied);
+            i.error = Some(nodkey_proto::apikey::errors::NO_PASSCODE.into());
+            i
+        };
+        a.items = Some(vec![
+            BundleItemAnswer::decision("1", Decision::Approved),
+            no_passcode(),
+        ]);
+        let v: serde_json::Value =
+            serde_json::from_str(&text(&outcome(&a, Some(&asked), "P", None))).unwrap();
+        assert_eq!(v["items"][1]["error"], "no_passcode");
+        assert!(v["message"].as_str().unwrap().contains("no passcode"));
+        let mut refused = Answer::decision("rid", Decision::Denied);
+        refused.error = Some(nodkey_proto::apikey::errors::NO_PASSCODE.into());
+        let v: serde_json::Value =
+            serde_json::from_str(&text(&outcome(&refused, Some(&asked), "P", None))).unwrap();
+        assert!(
+            v["message"]
+                .as_str()
+                .unwrap()
+                .contains("Face ID & Passcode")
+        );
     }
 }

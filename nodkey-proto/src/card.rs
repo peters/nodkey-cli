@@ -34,6 +34,9 @@ pub mod errors {
     pub const BAD_CARD_REQUEST: &str = "bad_card_request";
     /// `purpose: setup`, but adding cards for later payments is off for this agent.
     pub const SETUP_OFF: &str = "setup_off";
+    /// The phone has no passcode, so Nodkey hands out no cards (`pay` or `setup`). Right after
+    /// `cards_off`, before the other checks.
+    pub const NO_PASSCODE: &str = "no_passcode";
 }
 
 /// What the card is for.
