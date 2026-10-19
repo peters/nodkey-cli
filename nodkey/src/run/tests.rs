@@ -105,9 +105,9 @@ fn options_and_command() {
 #[test]
 fn keys_from_the_file() {
     let file = KeyFile {
+        path: "/work/sparrow/.nodkey".into(),
         project: Some("sparrow".into()),
         secrets: strings(&["OPENAI_API_KEY", "ADMIN_TOKEN", "global/GITHUB_TOKEN"]),
-        ..KeyFile::default()
     };
     let p = plan(&strings(&["--", "npm", "test"]), Some(&file)).unwrap();
     assert_eq!(p.project.as_deref(), Some("sparrow"));
@@ -119,7 +119,25 @@ fn keys_from_the_file() {
             wanted("GITHUB_TOKEN", "global/GITHUB_TOKEN"),
         ]
     );
-    assert_eq!(p.reason(), "Run npm test");
+    assert_eq!(
+        p.source.as_deref(),
+        Some(std::path::Path::new("/work/sparrow/.nodkey"))
+    );
+    assert_eq!(
+        p.reason(),
+        "Run npm test (keys named in /work/sparrow/.nodkey)",
+        "the phone shows which file named the keys"
+    );
+    // A file whose keys and project are all replaced does not count.
+    let p = plan(
+        &strings(&["--secret", "A_TOKEN", "--project", "global", "--", "ls"]),
+        Some(&KeyFile {
+            secrets: vec![],
+            ..file.clone()
+        }),
+    )
+    .unwrap();
+    assert_eq!((p.source.clone(), p.reason()), (None, "Run ls".to_owned()));
 
     // --secret adds a key or replaces one with the same name; --project wins.
     let p = plan(
@@ -164,5 +182,14 @@ fn keys_from_the_file() {
         .chain(std::iter::repeat_n("word".to_owned(), 100))
         .collect();
     let reason = plan(&long, Some(&file)).unwrap().reason();
-    assert!(reason.ends_with(" ...") && reason.chars().count() == 204);
+    assert!(reason.contains(" ... (keys named in "), "{reason}");
+    let mut very_long = strings(&["--reason", &"r".repeat(600), "--"]);
+    very_long.push("ls".into());
+    let reason = plan(&very_long, Some(&file)).unwrap().reason();
+    assert!(
+        reason.chars().count() <= nodkey_proto::client::MAX_REASON,
+        "{}",
+        reason.len()
+    );
+    assert!(reason.ends_with("(keys named in /work/sparrow/.nodkey)"));
 }

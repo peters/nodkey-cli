@@ -101,19 +101,23 @@ pub fn main(rest: &[String]) -> ExitCode {
     }
 }
 
-/// The project of the nearest `.nodkey` file, said on stderr so the user knows.
+/// The project of the nearest `.nodkey` file the user owns, said on stderr so the user knows.
 fn from_file() -> Result<Option<String>, String> {
-    let Some(path) = std::env::current_dir().ok().and_then(|d| keyfile::find(&d)) else {
+    let Some(file) = std::env::current_dir()
+        .ok()
+        .map(|d| keyfile::nearest(&d))
+        .transpose()?
+        .flatten()
+    else {
         return Ok(None);
     };
-    let project = keyfile::read(&path)?.project;
-    if let Some(p) = &project {
+    if let Some(p) = &file.project {
         eprintln!(
             "nodkey: saving the key for the project {p} ({}); --project global saves a global key.",
-            path.display()
+            keyfile::shown(&file.path)
         );
     }
-    Ok(project)
+    Ok(file.project)
 }
 
 /// The key from stdin, without the line break at its end.

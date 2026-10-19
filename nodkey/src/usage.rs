@@ -66,7 +66,8 @@ Options for pay: --reason, --image, --field (number, cvc, exp_month, ...), --pho
   host nothing can fill the card for you; the user decides on the iPhone every time.
 
 Options for run: --reason (default: \"Run COMMAND\"), --phone, --model, --effort as above.
-  run asks for the keys the nearest .nodkey file lists (from this folder up), in its project:
+  run asks for the keys the nearest .nodkey file lists (from this folder up to the repository
+  root or your home folder; only a file you own that others cannot change), in its project:
       project = \"sparrow\"
       secrets = [\"OPENAI_API_KEY\", \"ANTHROPIC_API_KEY\", \"global/GITHUB_TOKEN\"]
   The file holds names only, so it is safe to commit. --secret adds a key (global/NAME: only

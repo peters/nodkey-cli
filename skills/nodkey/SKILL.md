@@ -198,8 +198,9 @@ for keys.
    nodkey run --project otter --secret OPENAI_API_KEY --reason "Try the Otter prompt" -- python try.py
    ```
 
-   It asks for every key of the nearest `.nodkey` file in one request (one Face ID; the user sees
-   "wants 3 keys from Sparrow"). `--secret NAME[=SERVICE]` adds a key (`=SERVICE` helps the phone
+   It asks for every key of the nearest `.nodkey` file (up to the repository root or the home
+   folder; one the user does not own is ignored) in one request (one Face ID; the user sees
+   "wants 3 keys from Sparrow", and the reason names the file). `--secret NAME[=SERVICE]` adds a key (`=SERVICE` helps the phone
    find it; `global/NAME` takes only the global key); `--project NAME` asks in another project
    (`global`: only global keys). On stderr nodkey says which key it got ("OPENAI_API_KEY from
    Sparrow, GITHUB_TOKEN (global)"). The command's output and exit code are its own; nodkey never

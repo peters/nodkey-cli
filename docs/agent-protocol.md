@@ -924,7 +924,11 @@ secrets = ["OPENAI_API_KEY", "ANTHROPIC_API_KEY", "global/GITHUB_TOKEN"]
 strings (`NAME`, `global/NAME` or `project/NAME`; never a value or a service, and every variable
 name once). Other keys and tables are refused. `nodkey run -- <command>` in that folder or below it
 reads the nearest file and asks for all its keys in one request (one bundle with `project`, or one
-`secret` request for a single key).
+`secret` request for a single key). The search goes up from the current folder to the repository
+root (a folder with `.git`) or the home folder, whichever comes first, and stops at the first
+`.nodkey` it finds. On Unix a file another user owns, or one everyone may write, is ignored (like
+git's `safe.directory`) and nodkey says so on stderr. nodkey names the file it used on stderr and
+adds it to the reason the phone shows ("Run npm test (keys named in ~/src/app/.nodkey)").
 
 Vectors: `request_secret_project`, `answer_secret_project`, `answer_secret_project_global`,
 `answer_secret_project_chosen`, `request_secret_global`, `answer_secret_global`,

@@ -1,6 +1,8 @@
 //! The `.nodkey` file of a repository: the project its keys belong to and the keys its commands
 //! need, by name only. It never holds a value, so it is safe to commit, also in a public
-//! repository. `nodkey run -- <command>` reads the nearest one from the current folder up.
+//! repository. `nodkey run -- <command>` reads the nearest one from the current folder up to the
+//! repository root or the home folder; a file another user owns, or that everyone may change, is
+//! ignored (like git's `safe.directory`), and the one used is named on stderr and to the phone.
 //!
 //! ```toml
 //! project = "sparrow"
@@ -27,9 +29,101 @@ pub struct KeyFile {
     pub secrets: Vec<String>,
 }
 
-/// The nearest `.nodkey` file in `dir` or a folder above it.
-pub fn find(dir: &Path) -> Option<PathBuf> {
-    dir.ancestors().map(|d| d.join(FILE)).find(|p| p.is_file())
+/// Why a `.nodkey` file was passed over.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum Untrusted {
+    /// Another user owns it.
+    OtherOwner,
+    /// Everyone may change it.
+    WritableByAll,
+}
+
+/// What the search found: the file to use, or the nearest one that was passed over.
+#[derive(Debug, Clone, Default, PartialEq, Eq)]
+pub struct Found {
+    pub path: Option<PathBuf>,
+    pub ignored: Option<(PathBuf, Untrusted)>,
+}
+
+/// The nearest `.nodkey` file in `dir` or a folder above it, up to the repository root (a folder
+/// with `.git`) or the home folder, whichever comes first. The search stops at the first file
+/// it finds; one that is not the user's own is passed over.
+pub fn find(dir: &Path) -> Found {
+    find_below(dir, crate::store::home_dir().as_deref())
+}
+
+pub(crate) fn find_below(dir: &Path, home: Option<&Path>) -> Found {
+    for d in dir.ancestors() {
+        let path = d.join(FILE);
+        if path.is_file() {
+            return match untrusted(&path) {
+                None => Found {
+                    path: Some(path),
+                    ignored: None,
+                },
+                Some(why) => Found {
+                    path: None,
+                    ignored: Some((path, why)),
+                },
+            };
+        }
+        if d.join(".git").exists() || home.is_some_and(|h| d == h) {
+            break;
+        }
+    }
+    Found::default()
+}
+
+/// Whether a file is not the user's own: another owner, or writable by everyone.
+#[cfg(unix)]
+fn untrusted(path: &Path) -> Option<Untrusted> {
+    use std::os::unix::fs::MetadataExt;
+    let meta = std::fs::metadata(path).ok()?;
+    // SAFETY: geteuid has no preconditions and cannot fail.
+    let me = unsafe { libc::geteuid() };
+    trust(meta.uid(), meta.mode(), me)
+}
+
+#[cfg(not(unix))]
+fn untrusted(_: &Path) -> Option<Untrusted> {
+    None
+}
+
+/// The rule of [`untrusted`] on the owner, the mode bits and the user's own id.
+#[cfg_attr(not(unix), allow(dead_code))]
+pub(crate) fn trust(owner: u32, mode: u32, me: u32) -> Option<Untrusted> {
+    if owner != me {
+        Some(Untrusted::OtherOwner)
+    } else if mode & 0o002 != 0 {
+        Some(Untrusted::WritableByAll)
+    } else {
+        None
+    }
+}
+
+/// The nearest `.nodkey` file from `dir` up, read and checked. A file that was passed over is
+/// said on stderr, so nobody wonders why its keys are not asked for.
+pub fn nearest(dir: &Path) -> Result<Option<KeyFile>, String> {
+    let found = find(dir);
+    if let Some((path, why)) = &found.ignored {
+        eprintln!(
+            "nodkey: ignoring {}: {}. Keys named there are not asked for.",
+            shown(path),
+            match why {
+                Untrusted::OtherOwner => "another user owns it",
+                Untrusted::WritableByAll => "everyone may change it",
+            }
+        );
+    }
+    found.path.map(|p| read(&p)).transpose()
+}
+
+/// A path as the user reads it: the home folder as `~`.
+pub fn shown(path: &Path) -> String {
+    match crate::store::home_dir().and_then(|h| path.strip_prefix(h).ok().map(Path::to_owned)) {
+        Some(rest) => format!("~/{}", rest.display()),
+        None => path.display().to_string(),
+    }
 }
 
 /// Reads and checks the `.nodkey` file at `path`.
@@ -320,10 +414,55 @@ mod tests {
         let deep = root.join("repo/src/bin");
         std::fs::create_dir_all(&deep).unwrap();
         std::fs::write(root.join("repo").join(FILE), "project = \"sparrow\"\n").unwrap();
-        assert_eq!(find(&deep), Some(root.join("repo").join(FILE)));
+        let used = |dir: &Path| find_below(dir, None).path;
+        assert_eq!(used(&deep), Some(root.join("repo").join(FILE)));
         std::fs::write(root.join("repo/src").join(FILE), "secrets = []\n").unwrap();
-        assert_eq!(find(&deep), Some(root.join("repo/src").join(FILE)));
-        assert_eq!(read(&find(&deep).unwrap()).unwrap().project, None);
+        assert_eq!(used(&deep), Some(root.join("repo/src").join(FILE)));
+        assert_eq!(read(&used(&deep).unwrap()).unwrap().project, None);
+
+        // Not above the repository root, nor above the home folder.
+        std::fs::remove_file(root.join("repo/src").join(FILE)).unwrap();
+        std::fs::create_dir_all(root.join("repo/src/.git")).unwrap();
+        assert_eq!(find_below(&deep, None), Found::default());
+        std::fs::remove_dir_all(root.join("repo/src/.git")).unwrap();
+        assert_eq!(
+            find_below(&deep, Some(&root.join("repo/src"))),
+            Found::default()
+        );
+        assert_eq!(used(&deep), Some(root.join("repo").join(FILE)));
+        std::fs::remove_dir_all(&root).unwrap();
+    }
+
+    #[test]
+    fn only_the_users_own_files() {
+        assert_eq!(trust(501, 0o100644, 501), None);
+        assert_eq!(
+            trust(501, 0o100664, 501),
+            None,
+            "group-writable is the usual umask 002"
+        );
+        assert_eq!(trust(0, 0o100644, 501), Some(Untrusted::OtherOwner));
+        assert_eq!(trust(502, 0o100600, 501), Some(Untrusted::OtherOwner));
+        assert_eq!(trust(501, 0o100666, 501), Some(Untrusted::WritableByAll));
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn a_file_everyone_may_change_is_passed_over() {
+        use std::os::unix::fs::PermissionsExt;
+        let root = crate::test_dir("keyfile-mode");
+        std::fs::create_dir_all(root.join("repo")).unwrap();
+        let file = root.join("repo").join(FILE);
+        std::fs::write(&file, "secrets = [\"A_TOKEN\"]\n").unwrap();
+        std::fs::set_permissions(&file, std::fs::Permissions::from_mode(0o666)).unwrap();
+        let found = find_below(&root.join("repo"), None);
+        assert_eq!(found.path, None);
+        assert_eq!(
+            found.ignored,
+            Some((file.clone(), Untrusted::WritableByAll))
+        );
+        std::fs::set_permissions(&file, std::fs::Permissions::from_mode(0o644)).unwrap();
+        assert_eq!(find_below(&root.join("repo"), None).path, Some(file));
         std::fs::remove_dir_all(&root).unwrap();
     }
 }

@@ -4,7 +4,7 @@
 //! keys the nearest `.nodkey` file lists, in its project (`keyfile.rs`); `--secret` adds keys and
 //! `--project` names another project (`global`: only the global keys).
 
-use std::process::ExitCode;
+use std::{path::PathBuf, process::ExitCode};
 
 use nodkey_proto::{
     Answer, BundleItem, BundleRequest, Decision, Kind, SecretAnswer, SecretTarget,
@@ -76,20 +76,28 @@ pub struct Plan {
     pub project: Option<String>,
     pub args: Args,
     pub command: Vec<String>,
+    /// The `.nodkey` file that named keys or the project, if one did.
+    pub source: Option<PathBuf>,
 }
 
 impl Plan {
-    /// `--reason`, or the command itself ("Run npm test").
+    /// `--reason`, or the command itself ("Run npm test"); with the `.nodkey` file that named
+    /// keys, so the phone shows where they came from.
     pub fn reason(&self) -> String {
-        if let Some(r) = self.args.value("reason") {
-            return r.to_owned();
-        }
-        let line = format!("Run {}", self.command.join(" "));
-        let max = 200;
-        match line.char_indices().nth(max) {
+        let cut = |line: String, max: usize| match line.char_indices().nth(max) {
             Some((at, _)) => format!("{} ...", &line[..at]),
             None => line,
-        }
+        };
+        let base = match self.args.value("reason") {
+            Some(r) => r.to_owned(),
+            None => cut(format!("Run {}", self.command.join(" ")), 200),
+        };
+        let Some(source) = &self.source else {
+            return base;
+        };
+        let note = format!(" (keys named in {})", keyfile::shown(source));
+        let room = nodkey_proto::client::MAX_REASON.saturating_sub(note.chars().count() + 4);
+        cut(base, room) + &note
     }
 }
 
@@ -154,11 +162,19 @@ pub fn plan(rest: &[String], file: Option<&KeyFile>) -> Result<Plan, String> {
         Some(p) => crate::secret::project(Some(p))?,
         None => file.and_then(|f| f.project.clone()),
     };
+    // The file counts when one of its keys is asked for or its project is used.
+    let source = file
+        .filter(|f| {
+            wanted.iter().any(|w| f.secrets.contains(&w.target))
+                || (args.value("project").is_none() && f.project.is_some())
+        })
+        .map(|f| f.path.clone());
     Ok(Plan {
         wanted,
         project,
         args,
         command,
+        source,
     })
 }
 
@@ -332,10 +348,10 @@ pub(crate) fn runtime() -> Result<tokio::runtime::Runtime, String> {
         .map_err(|e| e.to_string())
 }
 
-/// The nearest `.nodkey` file from the current folder up, if there is one.
+/// The nearest `.nodkey` file from the current folder up, if there is one the user owns.
 fn nearest_file() -> Result<Option<KeyFile>, String> {
     let dir = std::env::current_dir().map_err(|e| format!("no current folder: {e}"))?;
-    keyfile::find(&dir).map(|p| keyfile::read(&p)).transpose()
+    keyfile::nearest(&dir)
 }
 
 /// `nodkey run`.
@@ -357,6 +373,17 @@ pub fn main(rest: &[String]) -> ExitCode {
         effort: plan.args.value("effort"),
     };
     let names: Vec<&str> = plan.wanted.iter().map(|w| w.name.as_str()).collect();
+    if let Some(source) = &plan.source {
+        eprintln!(
+            "nodkey: using {}: {}{}.",
+            keyfile::shown(source),
+            names.join(", "),
+            plan.project
+                .as_deref()
+                .map(|p| format!(" (project {p})"))
+                .unwrap_or_default()
+        );
+    }
     let progress = waiting(format!(
         "Waiting for your answer in Nodkey on your iPhone for {}{} (up to {} s) ...",
         names.join(", "),

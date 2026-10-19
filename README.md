@@ -191,6 +191,8 @@ nodkey agents
   ```
 
   `nodkey run -- <command>` in that folder, or below it, asks for all of them at once (one Face ID).
+  It looks no higher than the repository root or your home folder, ignores a `.nodkey` that
+  someone else owns, and tells you (and your iPhone) which file it used.
   Your iPhone gives the project's key, or else the global key with that name. `--project NAME` asks
   in another project, `--secret NAME` adds a key, and `global/NAME` takes only the global key.
 - Exit codes: 0 approved (or queued), 1 error, 2 denied (or rejected), 3 no answer in time, 4 the

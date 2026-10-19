@@ -158,6 +158,13 @@ fn run_asks_for_the_keys_of_the_nodkey_file() {
     assert_eq!(seen.kind, Kind::Bundle);
     assert_eq!(seen.project.as_deref(), Some("sparrow"));
     assert!(seen.reason.starts_with("Run "), "{}", seen.reason);
+    // Which file named the keys: on stderr, and in the reason the phone shows.
+    assert!(
+        err.contains("nodkey: using ") && err.contains("repo/.nodkey: OPENAI_API_KEY"),
+        "{err}"
+    );
+    assert!(seen.reason.ends_with("repo/.nodkey)"), "{}", seen.reason);
+    assert!(seen.reason.contains(" (keys named in "), "{}", seen.reason);
     let targets: Vec<String> = seen
         .bundle
         .unwrap()
@@ -214,6 +221,29 @@ fn run_asks_for_the_keys_of_the_nodkey_file() {
     let out = cli.run(&with(&["run"], &one), &below);
     assert_eq!(out.status.code(), Some(64));
     assert!(stderr(&out).contains("never a value"), "{}", stderr(&out));
+    assert_eq!(fake.seen().len(), before);
+}
+
+/// A `.nodkey` that everyone may change is not the user's own: passed over, said on stderr, and
+/// nothing is asked for.
+#[cfg(unix)]
+#[test]
+fn a_nodkey_file_everyone_may_change_is_ignored() {
+    use std::os::unix::fs::PermissionsExt;
+    let (fake, addr) = fake_relay::start(1);
+    let cli = Cli::new(addr);
+    let below = cli.repo(FILE);
+    assert!(cli.run(&["pair"], &cli.dir).status.success());
+    let file = cli.dir.join("repo/.nodkey");
+    std::fs::set_permissions(&file, std::fs::Permissions::from_mode(0o666)).unwrap();
+    let before = fake.seen().len();
+    let out = cli.run(&with(&["run"], &printer(&["OPENAI_API_KEY"])), &below);
+    assert_eq!(out.status.code(), Some(64), "{}", stderr(&out));
+    let err = stderr(&out);
+    assert!(
+        err.contains("ignoring ") && err.contains("everyone may change it"),
+        "{err}"
+    );
     assert_eq!(fake.seen().len(), before);
 }
 
