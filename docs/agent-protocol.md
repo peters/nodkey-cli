@@ -1402,7 +1402,13 @@ answers".
   confirmation, `pairing.json` holds it (the code and the phone, at most 10 minutes). Profiles: `claude-code`, `codex`, `cursor`,
   `claude-desktop`, `terminal` (the command line), or any name given with `--agent`. The phone shows
   each by its name ("Claude Code @ my-laptop", "Terminal @ my-laptop"), so the user can pause or remove
-  one without the others and the history shows who asked. `config.json` in the top folder may set
+  one without the others and the history shows who asked. The command line uses `--agent`, else
+  `NODKEY_AGENT`, else the agent whose shell runs it (Claude Code sets `CLAUDECODE=1` there; Codex
+  sets `CODEX_SANDBOX` or `CODEX_SANDBOX_NETWORK_DISABLED` in its sandbox), else `terminal`. So
+  `nodkey run` started by Claude Code asks as Claude Code. Profiles name the asker; they do not
+  separate programs on one computer. Every program that runs as the user can read the agent folder
+  and ask under any profile, so pausing one agent on the phone does not stop a program from asking
+  under another profile. Pausing all agents under Agents on the phone stops all of them. `config.json` in the top folder may set
   `relay`. An identity in the top folder (made before profiles) moves into the profile its name
   belongs to on first use, with its keys, so it stays paired.
 - The agent's private keys go to the keychain of the system when there is one, so a copy of the

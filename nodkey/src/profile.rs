@@ -23,6 +23,23 @@ pub const KNOWN: [(&str, &str); 5] = [
 /// The profile of the command line.
 pub const TERMINAL: &str = "terminal";
 
+/// The agent whose shell runs this command, from what that agent sets in the shells it starts:
+/// Claude Code sets `CLAUDECODE=1`, Codex sets `CODEX_SANDBOX` or `CODEX_SANDBOX_NETWORK_DISABLED`
+/// for a command in its sandbox. `None` for any other program (`NODKEY_AGENT` names it).
+///
+/// This only names the asker, so the phone shows the right agent. It is no separation: a program
+/// that runs as the user can ask under any profile.
+pub fn calling_agent(var: impl Fn(&str) -> Option<String>) -> Option<&'static str> {
+    let set = |name: &str| var(name).is_some_and(|v| !v.trim().is_empty());
+    if var("CLAUDECODE").is_some_and(|v| v.trim() == "1") {
+        Some("claude-code")
+    } else if set("CODEX_SANDBOX") || set("CODEX_SANDBOX_NETWORK_DISABLED") {
+        Some("codex")
+    } else {
+        None
+    }
+}
+
 /// The profile of an MCP server whose client did not say who it is.
 pub const UNKNOWN_MCP: &str = "mcp";
 
@@ -99,6 +116,33 @@ pub fn slugify(s: &str) -> String {
 
 #[cfg(test)]
 mod tests {
+    #[test]
+    fn the_calling_agent_from_its_environment() {
+        let env = |pairs: &'static [(&'static str, &'static str)]| {
+            move |name: &str| {
+                pairs
+                    .iter()
+                    .find(|(k, _)| *k == name)
+                    .map(|(_, v)| (*v).to_owned())
+            }
+        };
+        assert_eq!(
+            calling_agent(env(&[("CLAUDECODE", "1")])),
+            Some("claude-code")
+        );
+        assert_eq!(
+            calling_agent(env(&[("CODEX_SANDBOX", "seatbelt")])),
+            Some("codex")
+        );
+        assert_eq!(
+            calling_agent(env(&[("CODEX_SANDBOX_NETWORK_DISABLED", "1")])),
+            Some("codex")
+        );
+        assert_eq!(calling_agent(env(&[("CLAUDECODE", "0")])), None);
+        assert_eq!(calling_agent(env(&[("CODEX_SANDBOX", " ")])), None);
+        assert_eq!(calling_agent(env(&[])), None);
+    }
+
     use super::*;
 
     #[test]

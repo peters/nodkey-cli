@@ -240,13 +240,17 @@ nodkey agents
 | Setting | Default |
 | --- | --- |
 | Relay: `--relay URL`, else `NODKEY_RELAY`, else `relay` in `config.json` in the agent folder | `https://relay.nodkey.app` |
-| Agent identity: `--agent NAME`, else `NODKEY_AGENT` | `terminal` for the command line; for `nodkey mcp`, the MCP client |
+| Agent identity: `--agent NAME`, else `NODKEY_AGENT` | the command line: the agent whose shell runs it (Claude Code, Codex), else `terminal`; `nodkey mcp`: the MCP client |
 | Agent folder: `NODKEY_AGENT_DIR` | `~/.config/nodkey-agent` |
 | Where the agent's private keys go: `NODKEY_KEYSTORE`, else `keystore` in `config.json` (`auto` or `file`) | `auto`: the keychain of the system when there is one |
 | `NODKEY_REQUEST_TIMEOUT` / `NODKEY_PAIR_TIMEOUT` (seconds) | 120 / 300 |
 
 The relay address must use `https`. Plain `http` works only for a relay on this computer
 (`localhost`, `127.0.0.1` or `[::1]`, for tests). `nodkey` does not follow redirects from the relay.
+
+Agent identities name who asks, so the phone shows "Claude Code" for a `nodkey run` that Claude
+Code started. They do not separate programs: any program that runs as you can use any identity.
+To stop every agent at once, pause all agents under Agents in Nodkey.
 
 The agent folder (only you can open it) holds one folder per agent under `agents/` with its
 identity (`identity.json`), paired phones (`phones.json`) and, while one runs, the task session

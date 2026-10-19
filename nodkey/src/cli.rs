@@ -313,12 +313,14 @@ pub(crate) fn agent_for(a: &Args) -> Result<Agent, String> {
     agent(a, profile::TERMINAL)
 }
 
-/// The agent for these arguments: `--agent`, else `$NODKEY_AGENT`, else `default_profile`.
+/// The agent for these arguments: `--agent`, else `$NODKEY_AGENT`, else the agent whose shell
+/// runs this command ([`profile::calling_agent`]), else `default_profile`.
 fn agent(a: &Args, default_profile: &str) -> Result<Agent, String> {
     let env_agent = std::env::var("NODKEY_AGENT").ok();
     let slug = a
         .value("agent")
         .or(env_agent.as_deref().filter(|s| !s.trim().is_empty()))
+        .or_else(|| profile::calling_agent(|name| std::env::var(name).ok()))
         .unwrap_or(default_profile);
     let profile = Profile::named(slug)?;
     let home = Home::from_env().map_err(|e| e.to_string());

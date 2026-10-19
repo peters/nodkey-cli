@@ -86,7 +86,8 @@ Clean-up filter (every one you give must hold; at least one):
   PATTERN and NAME take * and ?; DATE is YYYY-MM-DD or Unix seconds.
 
 Global options:
-  --agent NAME     which agent identity to use (default: terminal; also $NODKEY_AGENT)
+  --agent NAME     which agent identity to use (also $NODKEY_AGENT; default: the agent whose
+                   shell runs nodkey, Claude Code or Codex, else terminal)
   --relay URL      the relay (default: $NODKEY_RELAY, else relay in config.json, else
                    https://relay.nodkey.app)
   --json           print JSON for accounts, cleanup, phones, agents, unpair and pair

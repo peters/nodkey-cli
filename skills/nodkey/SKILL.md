@@ -275,8 +275,10 @@ Never confirm for the user. `list_phones` shows the paired phones; `unpair` leav
 
 ## Without MCP: the nodkey command
 
-When the MCP tools are not available but the `nodkey` command is, use it the same way. It pairs as
-"Terminal @ <computer>" unless you pass `--agent NAME`; the user pairs it once with `nodkey pair`
+When the MCP tools are not available but the `nodkey` command is, use it the same way. It asks as
+the agent whose shell runs it (Claude Code or Codex, so the same identity as your MCP tools), else as
+"Terminal @ <computer>"; `--agent NAME` or `NODKEY_AGENT` names another. Use your own identity: do
+not pass another agent's name. The user pairs it once with `nodkey pair`
 (it shows the code, waits, shows the check number and asks the user to type `y` when their iPhone
 shows the same number; run it in the user's own terminal).
 

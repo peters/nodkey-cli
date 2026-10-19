@@ -29,6 +29,9 @@ impl Cli {
             .env("NODKEY_RELAY", format!("http://{}", self.relay))
             .env("NODKEY_REQUEST_TIMEOUT", "3")
             .env_remove("NODKEY_AGENT")
+            .env_remove("CLAUDECODE")
+            .env_remove("CODEX_SANDBOX")
+            .env_remove("CODEX_SANDBOX_NETWORK_DISABLED")
             .env("TMPDIR", env!("CARGO_TARGET_TMPDIR"));
         c
     }
@@ -173,4 +176,34 @@ fn an_older_pairing_requires_signatures_after_the_first_signed_answer() {
     let out = cli.run(&ask);
     assert_eq!(out.status.code(), Some(1), "{}", text(&out));
     assert!(text(&out).contains("not signed"), "{}", text(&out));
+}
+
+#[test]
+fn the_command_line_names_the_agent_whose_shell_runs_it() {
+    let (fake, addr) = fake_relay::start(1);
+    let cli = Cli::new(addr);
+    let mut pair = cli.command(&["pair"]);
+    pair.env("CLAUDECODE", "1");
+    let out = common::output(&mut pair, &["pair"]);
+    assert!(out.status.success(), "{}", text(&out));
+    assert!(text(&out).contains("Claude Code @ "), "{}", text(&out));
+    assert!(cli.dir.join("agents/claude-code/phones.json").exists());
+    assert!(!cli.dir.join("agents/terminal").exists());
+    // A request from that shell asks as Claude Code; --agent still picks another profile.
+    let mut ask = cli.command(&["code", "github.com", "--reason", "Merge PR #4"]);
+    ask.env("CLAUDECODE", "1");
+    assert!(common::output(&mut ask, &[]).status.success());
+    assert!(fake.seen()[0].request.agent.starts_with("Claude Code @ "));
+    let mut other = cli.command(&[
+        "code",
+        "github.com",
+        "--reason",
+        "Merge",
+        "--agent",
+        "codex",
+    ]);
+    other.env("CLAUDECODE", "1");
+    let out = common::output(&mut other, &[]);
+    assert_eq!(out.status.code(), Some(1), "{}", text(&out));
+    assert!(text(&out).contains("not paired"), "{}", text(&out));
 }

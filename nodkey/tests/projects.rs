@@ -54,6 +54,9 @@ impl Cli {
             .env("NODKEY_RELAY", format!("http://{}", self.relay))
             .env("NODKEY_REQUEST_TIMEOUT", "3")
             .env_remove("NODKEY_AGENT")
+            .env_remove("CLAUDECODE")
+            .env_remove("CODEX_SANDBOX")
+            .env_remove("CODEX_SANDBOX_NETWORK_DISABLED")
             .env("TMPDIR", env!("CARGO_TARGET_TMPDIR"));
         for name in ["OPENAI_API_KEY", "ADMIN_TOKEN", "GITHUB_TOKEN"] {
             c.env_remove(name);

@@ -29,6 +29,9 @@ impl Client {
         let mut cmd = Command::new(env!("CARGO_BIN_EXE_nodkey"));
         cmd.arg("mcp")
             .env_remove("NODKEY_AGENT")
+            .env_remove("CLAUDECODE")
+            .env_remove("CODEX_SANDBOX")
+            .env_remove("CODEX_SANDBOX_NETWORK_DISABLED")
             .env("NODKEY_AGENT_DIR", &dir)
             .env("NODKEY_KEYSTORE", "file")
             .env("NODKEY_RELAY", format!("http://{relay}"))
