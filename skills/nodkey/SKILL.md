@@ -160,7 +160,8 @@ their iPhone and needs Face ID; there is no "always allow" for cards.
 
 - In a browser host that fills cards (Horizon, or the Nodkey browser extension), let it fill the
   checkout form: the card number never enters the conversation, and the host checks the total on
-  the page. You get only `filled: Visa ····4242 ..., at most 499.00 NOK`.
+  the page. You get only `filled: Visa ····4242 ..., at most 499.00 NOK`. Never run
+  `nodkey card-fill` yourself: it is the host's command and runs only under the host's profile.
 - Otherwise `request_payment(merchant, amount, currency, reason, image_path)`: `amount` is the exact
   total the checkout page shows (with a screenshot of it as `image_path`). The answer has the full
   `card`; fill it straight into the payment form and never repeat it. It works only when the user

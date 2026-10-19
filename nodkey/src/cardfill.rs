@@ -1,8 +1,10 @@
 //! `nodkey card-fill`: the command a browser host (Horizon) calls to fill a checkout form with a
 //! card from the phone. It reads one JSON request on stdin and writes one JSON result on stdout,
 //! also when it fails (waiting notes go to stderr). The card goes to the host, which fills the
-//! form and gives the model only `summary`; the model never sees the number. See
-//! docs/agent-protocol.md, "The card fill command".
+//! form and gives the model only `summary`. It runs only under the host's own profile (`--agent
+//! horizon`, see `cli::host_agent`), so the user turns card fill on for the host and not for the
+//! model. That keeps the number from the model only when the model cannot run `nodkey` or read the
+//! agent folder (no shell, or a sandbox). See docs/agent-protocol.md, "The card fill command".
 
 use std::{io::Read, process::ExitCode};
 

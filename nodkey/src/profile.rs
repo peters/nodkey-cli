@@ -20,8 +20,17 @@ pub const KNOWN: [(&str, &str); 5] = [
     ("terminal", "Terminal"),
 ];
 
+/// Browser hosts `nodkey` knows by name; a host has its own profile for `card-fill`.
+pub const HOSTS: [(&str, &str); 1] = [("horizon", "Horizon")];
+
 /// The profile of the command line.
 pub const TERMINAL: &str = "terminal";
+
+/// Whether `slug` is the profile of an agent (or the terminal), not of a browser host: `card-fill`
+/// refuses those, so card fill can be on for the host and off for the model's own profile.
+pub fn is_agent(slug: &str) -> bool {
+    slug == UNKNOWN_MCP || KNOWN.iter().any(|(s, _)| *s == slug)
+}
 
 /// The agent whose shell runs this command, from what that agent sets in the shells it starts:
 /// Claude Code sets `CLAUDECODE=1`, Codex sets `CODEX_SANDBOX` or `CODEX_SANDBOX_NETWORK_DISABLED`
@@ -54,6 +63,7 @@ impl Profile {
         }
         let display = KNOWN
             .iter()
+            .chain(HOSTS.iter())
             .find(|(s, _)| *s == slug)
             .map(|(_, d)| (*d).to_owned())
             .unwrap_or_else(|| slug.clone());

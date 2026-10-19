@@ -182,7 +182,7 @@ pub fn main(raw: Vec<String>) -> ExitCode {
             return ExitCode::SUCCESS;
         }
         "webauthn" => return crate::webauthn::main(&args, agent(&args, profile::TERMINAL)),
-        "card-fill" => return crate::cardfill::main(&args, agent(&args, profile::TERMINAL)),
+        "card-fill" => return crate::cardfill::main(&args, host_agent(&args)),
         "pair" | "code" | "login" | "credentials" | "pay" | "accounts" | "insights" | "cleanup"
         | "phones" | "unpair" | "agents" | "end-session" => check(command, &args),
         "suggest" | "sms-code" => crate::signin::check_cli(command, &args),
@@ -311,6 +311,20 @@ pub(crate) fn agent_for(a: &Args) -> Result<Agent, String> {
         relay::LOG_PUSH.store(false, std::sync::atomic::Ordering::Relaxed);
     }
     agent(a, profile::TERMINAL)
+}
+
+/// The browser host's own profile for `card-fill`, named with `--agent` and never an agent's: an
+/// agent that can run commands must not get the card under its own profile.
+fn host_agent(a: &Args) -> Result<Agent, String> {
+    let why = "card-fill runs only under the browser host's own profile, for example --agent horizon. \
+               Pair the host once with `nodkey pair --agent horizon` and turn cards on for it in Nodkey; \
+               an agent's own profile cannot fill cards, because an agent that can run commands could read \
+               the card";
+    match a.value("agent").map(|s| s.trim().to_ascii_lowercase()) {
+        None => Err(format!("{why}.")),
+        Some(slug) if profile::is_agent(&slug) => Err(format!("{why} ({slug} is an agent).")),
+        Some(_) => agent(a, profile::TERMINAL),
+    }
 }
 
 /// The agent for these arguments: `--agent`, else `$NODKEY_AGENT`, else the agent whose shell

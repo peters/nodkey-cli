@@ -212,8 +212,10 @@ nodkey agents
   create) as JSON on stdin and writes the result as JSON on stdout. Your iPhone shows the site and
   signs with a passkey that never leaves it. It can also get a secret key from a passkey (the
   WebAuthn PRF extension), for example to unlock a backup; your iPhone asks with Face ID every time
-  (`nodkey webauthn --help`). `nodkey card-fill` gives such a host your card to fill
-  a checkout form, so the agent never sees the number. See `docs/agent-protocol.md`.
+  (`nodkey webauthn --help`). `nodkey card-fill --agent horizon` gives such a host your card to
+  fill a checkout form, so the number goes to the host and not into the agent's conversation. The
+  host has its own identity (`nodkey pair --agent horizon`): turn cards on for the host in Nodkey,
+  not for the agent. See `docs/agent-protocol.md`.
 
 `nodkey --help` lists every option.
 
@@ -276,6 +278,10 @@ they are.
   into the environment of the command it starts.
 - Cards are off for every agent until you turn them on. Each payment needs Face ID; there is no
   "always allow" for cards, and your iPhone refuses by itself above the limit you set.
+- With card fill, the model does not see the card number only when it cannot run `nodkey` or read
+  the agent folder (no shell, or a sandbox). An agent with a shell could run `nodkey card-fill`
+  itself after you approve a payment. Turn cards on only for the browser host, and approve only
+  purchases you asked for.
 
 The protocol is in [docs/agent-protocol.md](docs/agent-protocol.md). To report a security problem,
 see [SECURITY.md](SECURITY.md).

@@ -52,10 +52,16 @@ impl Cli {
         assert!(out.status.success(), "{}", stderr(&out));
     }
 
-    /// `nodkey card-fill --agent claude-code` with `input` on stdin: the JSON line and exit code.
+    /// `nodkey card-fill --agent horizon` with `input` on stdin: the JSON line and exit code.
     fn card_fill(&self, input: &Value) -> (Value, i32) {
+        self.card_fill_as(&["--agent", "horizon"], input)
+    }
+
+    /// `nodkey card-fill` with these profile arguments.
+    fn card_fill_as(&self, profile: &[&str], input: &Value) -> (Value, i32) {
+        let args: Vec<&str> = ["card-fill"].iter().chain(profile).copied().collect();
         let mut child = self
-            .command(&["card-fill", "--agent", "claude-code"])
+            .command(&args)
             .stdin(Stdio::piped())
             .stdout(Stdio::piped())
             .stderr(Stdio::piped())
@@ -213,6 +219,24 @@ fn a_browser_host_fills_a_card() {
     let (fake, addr) = fake_relay::start(1);
     let cli = Cli::new(addr);
     cli.pair("claude-code");
+    // Never under an agent's own profile, nor without naming the host.
+    for profile in [
+        &["--agent", "claude-code"][..],
+        &["--agent", "terminal"],
+        &[],
+    ] {
+        let (v, code) = cli.card_fill_as(profile, &fill(json!({})));
+        assert_eq!(code, 64, "{profile:?}: {v}");
+        assert!(
+            v["message"]
+                .as_str()
+                .unwrap()
+                .contains("host's own profile"),
+            "{v}"
+        );
+    }
+    assert!(fake.seen().is_empty());
+    cli.pair("horizon");
 
     let (v, code) = cli.card_fill(&fill(json!({})));
     assert_eq!(code, 0, "{v}");

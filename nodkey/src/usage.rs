@@ -40,8 +40,10 @@ Usage:
   nodkey webauthn [--phone PHONE]          sign in with a passkey or make one, also with PRF: one
                                            JSON request on stdin, one JSON result on stdout (for
                                            browser hosts and scripts; nodkey webauthn --help)
-  nodkey card-fill [--phone PHONE]         a card for a browser host to fill a checkout form: one
-                                           JSON request on stdin, one JSON result on stdout
+  nodkey card-fill --agent HOST [--phone PHONE]
+                                           a card for a browser host to fill a checkout form, under
+                                           the host's own profile (never an agent's): one JSON
+                                           request on stdin, one JSON result on stdout
   nodkey mcp                               run the MCP server on stdio
   nodkey setup [--remove] [--dry-run]      add (or remove) the MCP server and skill in your agents
   nodkey skill                             print the agent skill

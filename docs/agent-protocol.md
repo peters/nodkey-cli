@@ -1465,8 +1465,8 @@ answers".
   start); when the phone does not give every key, the command does not run and the exit code is 2,
   3, 4 or 1 as above.
 - `nodkey webauthn --agent <profile> [--phone PHONE]` is the authenticator a browser host (Horizon)
-  calls; `nodkey card-fill --agent <profile> [--phone PHONE]` gives such a host a card to fill. See
-  below.
+  calls; `nodkey card-fill --agent <host> [--phone PHONE]` gives such a host a card to fill, under
+  the host's own profile. See below.
 
 ## The authenticator command
 
@@ -1529,9 +1529,19 @@ and `example.co.uk` are fine).
 
 ## The card fill command
 
-`nodkey card-fill --agent <profile>` is how a browser host (Horizon) fills a checkout form for an
+`nodkey card-fill --agent <host>` is how a browser host (Horizon) fills a checkout form for an
 agent without the card reaching the model. It reads one JSON object on stdin and writes one JSON
-object on stdout, also when it fails (waiting notes go to stderr):
+object on stdout, also when it fails (waiting notes go to stderr).
+
+The host runs it under its own profile (`--agent horizon`), paired once with
+`nodkey pair --agent horizon`, and the user turns cards on for that profile in Nodkey, never for the
+model's own profile. `card-fill` refuses to run without `--agent` or under an agent's profile
+(`claude-code`, `codex`, `cursor`, `claude-desktop`, `terminal`, `mcp`) with exit code 64. The
+`requester` field still names the agent the host acts for. The card stays away from the model only
+when the model cannot run `nodkey` and cannot read the agent folder (no shell, or a sandbox
+without them): a model with a shell could run `card-fill` under the host's profile, and the phone
+cannot tell the two apart. Each payment still needs the person's hold and Face ID, and the amount
+is checked.
 
 ```json
 {"version":1, "merchant":"shop.example.com", "origin":"https://www.shop.example.com",
