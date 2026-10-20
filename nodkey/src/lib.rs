@@ -10,6 +10,7 @@ pub mod commands;
 pub mod filter;
 pub mod host;
 pub mod image;
+pub mod import;
 pub mod keyfile;
 pub mod keystore;
 pub mod loginfill;
@@ -30,6 +31,9 @@ pub mod webauthn;
 
 /// The agent skill, installed by `nodkey setup`.
 pub const SKILL: &str = include_str!("../../skills/nodkey/SKILL.md");
+
+/// The skill for moving in (a first import, or a clean-up round), installed next to it.
+pub const MOVE_IN_SKILL: &str = include_str!("../../skills/nodkey-move-in/SKILL.md");
 
 /// A fresh directory for one test under `target/test-tmp` (never the system temp dir).
 #[cfg(test)]

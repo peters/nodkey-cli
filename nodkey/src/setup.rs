@@ -17,6 +17,12 @@ use crate::{cli::Args, store::home_dir};
 /// The MCP server's name in every agent.
 const SERVER: &str = "nodkey";
 
+/// The skills setup installs: (folder and `name:` of the skill, its text).
+const SKILLS: [(&str, &str); 2] = [
+    ("nodkey", crate::SKILL),
+    ("nodkey-move-in", crate::MOVE_IN_SKILL),
+];
+
 /// Folders under the home folder whose `skills/` the agents read: (folder, who).
 const SKILL_HOMES: [(&str, &str); 3] = [
     (".claude", "Claude Code"),
@@ -324,47 +330,64 @@ fn write_new(path: &Path, bytes: &[u8], _like: Option<&std::fs::Metadata>) -> st
     f.sync_all()
 }
 
-/// Writes (or removes) `skills/nodkey/SKILL.md` for every agent folder that exists.
+/// Writes (or removes) `skills/<name>/SKILL.md` of each of [`SKILLS`] for every agent folder that
+/// exists.
 fn skills(env: &Env, remove: bool) -> Vec<String> {
     let mut out = Vec::new();
     for (folder, who) in SKILL_HOMES {
         if !env.home.join(folder).is_dir() {
             continue;
         }
-        let dir = env.home.join(folder).join("skills").join(SERVER);
-        let file = dir.join("SKILL.md");
-        if remove {
-            if !file.exists() {
-                continue;
-            }
-            // Line by line, so a skill written with Windows line endings is recognised too.
-            let ours = std::fs::read_to_string(&file)
-                .is_ok_and(|s| s.lines().any(|l| l.trim_end() == "name: nodkey"));
-            if !ours {
-                out.push(format!(
-                    "Skill for {who}: {} is not Nodkey's; left it",
-                    file.display()
-                ));
-            } else if env.dry_run {
-                out.push(format!("Skill for {who}: would remove {}", dir.display()));
-            } else {
-                out.push(match std::fs::remove_dir_all(&dir) {
-                    Ok(()) => format!("Skill for {who}: removed {}", dir.display()),
-                    Err(e) => format!("Skill for {who}: {}: {e}", dir.display()),
-                });
-            }
-        } else if env.dry_run {
-            out.push(format!("Skill for {who}: would write {}", file.display()));
-        } else {
-            let result =
-                std::fs::create_dir_all(&dir).and_then(|()| std::fs::write(&file, crate::SKILL));
-            out.push(match result {
-                Ok(()) => format!("Skill for {who}: wrote {}", file.display()),
-                Err(e) => format!("Skill for {who}: {}: {e}", file.display()),
-            });
+        for (name, content) in SKILLS {
+            let dir = env.home.join(folder).join("skills").join(name);
+            out.extend(skill(env, remove, &dir, name, content, who));
         }
     }
     out
+}
+
+/// Writes or removes one skill in `dir`; `None` when there is nothing to remove.
+fn skill(
+    env: &Env,
+    remove: bool,
+    dir: &Path,
+    name: &str,
+    content: &str,
+    who: &str,
+) -> Option<String> {
+    let file = dir.join("SKILL.md");
+    let label = if name == SERVER {
+        format!("Skill for {who}")
+    } else {
+        format!("Skill {name} for {who}")
+    };
+    if remove {
+        if !file.exists() {
+            return None;
+        }
+        // Line by line, so a skill written with Windows line endings is recognised too.
+        let marker = format!("name: {name}");
+        let ours =
+            std::fs::read_to_string(&file).is_ok_and(|s| s.lines().any(|l| l.trim_end() == marker));
+        return Some(if !ours {
+            format!("{label}: {} is not Nodkey's; left it", file.display())
+        } else if env.dry_run {
+            format!("{label}: would remove {}", dir.display())
+        } else {
+            match std::fs::remove_dir_all(dir) {
+                Ok(()) => format!("{label}: removed {}", dir.display()),
+                Err(e) => format!("{label}: {}: {e}", dir.display()),
+            }
+        });
+    }
+    if env.dry_run {
+        return Some(format!("{label}: would write {}", file.display()));
+    }
+    let result = std::fs::create_dir_all(dir).and_then(|()| std::fs::write(&file, content));
+    Some(match result {
+        Ok(()) => format!("{label}: wrote {}", file.display()),
+        Err(e) => format!("{label}: {}: {e}", file.display()),
+    })
 }
 
 /// A pairing made by the old nodkey-mcp sits in the top of the agent directory. Moves it to the

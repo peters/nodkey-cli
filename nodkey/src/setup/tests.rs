@@ -87,6 +87,11 @@ fn install_and_remove() {
     for folder in [".claude", ".codex"] {
         let skill = std::fs::read_to_string(fx.root.join(folder).join("skills/nodkey/SKILL.md"));
         assert_eq!(skill.unwrap(), crate::SKILL);
+        let move_in = fx.root.join(folder).join("skills/nodkey-move-in/SKILL.md");
+        assert_eq!(
+            std::fs::read_to_string(move_in).unwrap(),
+            crate::MOVE_IN_SKILL
+        );
     }
     // ~/.agents does not exist here, so no skill is written there.
     assert!(!fx.root.join(".agents").exists());
@@ -122,6 +127,7 @@ fn install_and_remove() {
     assert!(desktop["mcpServers"].get("nodkey").is_none());
     assert_eq!(desktop["mcpServers"]["other"]["command"], "x");
     assert!(!fx.root.join(".claude/skills/nodkey").exists());
+    assert!(!fx.root.join(".claude/skills/nodkey-move-in").exists());
 
     // A skill with Windows line endings is still recognised as Nodkey's.
     let dir = fx.root.join(".codex/skills/nodkey");

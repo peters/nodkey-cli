@@ -395,6 +395,7 @@ impl Server {
             "suggest_sign_in_method" | "request_sms_code" => {
                 crate::signin::call(a, name, args, reported(args)?, &progress).await
             }
+            "import_file" => crate::import::call(a, args, reported(args)?, &progress).await,
             "end_session" => {
                 a.end_session(opt_str(args, "reason")?, reported(args)?, &progress)
                     .await
@@ -528,6 +529,7 @@ mod tests {
                 "cleanup_insights",
                 "list_accounts",
                 "cleanup_logins",
+                "import_file",
                 "pair",
                 "list_phones",
                 "unpair"

@@ -121,7 +121,7 @@ nodkey setup --remove   # take it all away again (your pairings stay)
 ```
 
 `setup` uses `claude mcp` and `codex mcp` for Claude Code and Codex, edits `~/.cursor/mcp.json`
-and Claude Desktop's `claude_desktop_config.json`, and writes the skill to `~/.claude/skills`,
+and Claude Desktop's `claude_desktop_config.json`, and writes the skills (`nodkey` and `nodkey-move-in`) to `~/.claude/skills`,
 `~/.codex/skills` and `~/.agents/skills` (only for the folders that exist). Agents that are not
 installed are skipped. A changed config file keeps its permissions (a new one only you can read),
 and a config file that is a symlink stays one. Restart the agents afterwards, then ask each one to
@@ -153,6 +153,44 @@ sees the computer's. So the relay that passes the keys cannot pick keys that giv
 on both screens. After pairing, every request and every answer is signed by the side that sent it,
 inside the encryption. This needs Nodkey 1.3 or later on your iPhone; an older app gets a message
 to update it.
+
+## First-time import with an agent
+
+Bring the passwords and codes from your browsers and password managers into Nodkey, and let your
+agent do the legwork. This needs Nodkey 1.4 or later on your iPhone.
+
+1. On your iPhone, open Nodkey, then **Settings → Import → From your computer, with an agent**.
+   Pick your agent and confirm with Face ID. The window stays open for 30 minutes and takes up to
+   20 files.
+2. Ask your agent to help. It finds the browsers and password managers on this computer, shows you
+   how to export from each one, sends each file to Nodkey and deletes it right after.
+3. On your iPhone, look through everything under **To review** and add it with one Face ID.
+
+Paste this into Claude Code (or another agent with the nodkey skills):
+
+> Help me move all my passwords and codes into Nodkey. Use the nodkey-move-in skill: find my
+> browsers and password managers, guide me through each export, send each file to Nodkey and
+> delete it afterwards. Never show or read the passwords yourself.
+
+How your passwords stay safe on the way:
+
+- Only each app's own export is used. The agent never opens a browser's password database.
+- The agent never reads an export file. Only `nodkey import` (the `import_file` tool) touches it:
+  it encrypts the file for your iPhone, sends it, then overwrites it and deletes it. It shows
+  counts, never a password.
+- The window only takes files in. The agent gets counts back, never a password or a code, and
+  nothing is added until you have looked at it on your iPhone.
+- Without an open window your iPhone turns every file away, so no agent can add logins unasked.
+- One file is at most 1 MiB, and one window takes at most 20 files.
+
+You can also do it by hand:
+
+```sh
+nodkey import ~/Downloads/"Chrome Passwords.csv" --dry-run   # what the file holds; nothing is sent
+nodkey import ~/Downloads/"Chrome Passwords.csv" --source "Chrome, profile Default"
+```
+
+`--keep` leaves the file where it is.
 
 ## Use it from the terminal
 
@@ -241,6 +279,7 @@ nodkey agents
 | `list_accounts` | the accounts this agent may ask for, and the names of its keys, without secrets |
 | `cleanup_insights` | anonymous numbers to suggest clean-up rules from |
 | `cleanup_logins` | propose moving matching saved logins to Recently deleted |
+| `import_file` | send a password or code export to the import window you opened on your iPhone; deletes the file afterwards and returns counts only |
 | `pair`, `list_phones`, `unpair` | pair this agent, see its phones, leave a phone |
 
 ## Settings

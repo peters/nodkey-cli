@@ -46,6 +46,15 @@ pub mod errors {
     /// The phone's importers cannot read the file: an unknown format, an encrypted export, or not
     /// one login or code in it.
     pub const IMPORT_UNREADABLE: &str = "import_unreadable";
+    /// Every refusal of this module, in the order the phone checks.
+    pub const IN_ORDER: [&str; 6] = [
+        NO_PASSCODE,
+        IMPORT_CLOSED,
+        WINDOW_FULL,
+        TOO_LARGE,
+        BAD_IMPORT,
+        IMPORT_UNREADABLE,
+    ];
 }
 
 /// What the agent thinks an export file is. A hint only: the phone reads the file with its own

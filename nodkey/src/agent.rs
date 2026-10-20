@@ -294,8 +294,22 @@ impl Agent {
     /// fails the same everywhere.
     pub async fn exchange(
         &self,
+        request: Request,
+        image_path: Option<&str>,
+        phone_selector: Option<&str>,
+        progress: Progress<'_>,
+    ) -> Result<Exchanged, String> {
+        self.exchange_upload(request, image_path, None, phone_selector, progress)
+            .await
+    }
+
+    /// [`Agent::exchange`], with the export file of an `import` request (`file`) uploaded after
+    /// it instead of a picture, sealed with `nodkey/v1/import`.
+    pub async fn exchange_upload(
+        &self,
         mut request: Request,
         image_path: Option<&str>,
+        file: Option<&[u8]>,
         phone_selector: Option<&str>,
         progress: Progress<'_>,
     ) -> Result<Exchanged, String> {
@@ -327,17 +341,21 @@ impl Agent {
             &phone.phone_id,
             &phone_keys.kem,
             &id.keys.signing_key(),
-            image.is_some(),
+            image.is_some() || file.is_some(),
         )
         .map_err(err)?;
-        // Seal the picture before posting, so the upload follows the request at once (the relay
-        // holds the push for it at most 5 s).
-        let attachment_body = match &image {
-            Some((_, bytes, _)) => Some(
+        // Seal the picture or the file before posting, so the upload follows the request at once
+        // (the relay holds the push for it at most 5 s).
+        let attachment_body = match (&image, file) {
+            (_, Some(file)) => Some(
+                nodkey_proto::import::seal_file(&request_id, &id.agent_id, &phone_keys.kem, file)
+                    .map_err(err)?,
+            ),
+            (Some((_, bytes, _)), None) => Some(
                 client::seal_attachment(&request_id, &id.agent_id, &phone_keys.kem, bytes)
                     .map_err(err)?,
             ),
-            None => None,
+            (None, None) => None,
         };
         let signer = Signer {
             id: &id.agent_id,
@@ -364,6 +382,12 @@ impl Agent {
                 }
                 _ => e.to_string(),
             };
+            if file.is_some() {
+                return Err(format!(
+                    "The file could not be uploaded ({why}); nothing was staged, and the export is still \
+                     on this computer."
+                ));
+            }
             attachment_warning = Some(format!(
                 "The picture could not be uploaded ({why}); the request was sent without it."
             ));

@@ -2,7 +2,7 @@
 
 use serde_json::{Value, json};
 
-pub const TOOL_NAMES: [&str; 15] = [
+pub const TOOL_NAMES: [&str; 16] = [
     "pair",
     "list_phones",
     "unpair",
@@ -18,6 +18,7 @@ pub const TOOL_NAMES: [&str; 15] = [
     "list_accounts",
     "cleanup_insights",
     "cleanup_logins",
+    "import_file",
 ];
 
 const APPROVAL: &str = "The user approves or denies every request on their iPhone, so this call can wait up to \
@@ -393,6 +394,38 @@ pub fn tools() -> Value {
                     "effort": effort
                 },
                 "required": ["filter", "reason"],
+                "additionalProperties": false
+            },
+            "annotations": { "readOnlyHint": false, "destructiveHint": true, "idempotentHint": false, "openWorldHint": true }
+        },
+        {
+            "name": "import_file",
+            "title": "Send a password or code export to the user's iPhone for review",
+            "description": "Send one export file (passwords from Chrome, Firefox, Safari, Bitwarden, 1Password and other \
+                password managers, or codes from a code app) to the import window the user opened in Nodkey on their \
+                iPhone (Settings \u{2192} Import \u{2192} \"From your computer, with an agent\"). NEVER read, open, print, \
+                copy, list or summarise the export yourself, not even to check it: pass only its path; this tool reads \
+                it. The file is encrypted to the phone, staged there for the user's review (they add everything with one \
+                Face ID at the end), and then deleted from this computer unless keep is true. You never get a password or \
+                code back. Returns JSON with decision staged and import (found, new, merged, duplicates, conflicts, \
+                skipped: counts against the files sent in this window, never against the vault), or an error: \
+                import_closed (ask the user to open the window, then send again), window_full (20 files), too_large \
+                (more than 1 MiB), import_unreadable (export again as plain CSV or plain text, without a password), \
+                no_passcode or paused. deleted says whether the export is gone; still_at says where it is when it is not. \
+                dry_run: true sends nothing and returns the format and counts per type. Follow the nodkey-move-in skill.",
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "path": { "type": "string", "description": "Absolute path of the export file, e.g. the CSV the browser saved in Downloads (a leading ~/ means the home folder)." },
+                    "source": { "type": "string", "description": "Optional short label the user sees in the list, at most 80 characters, e.g. \"Chrome, profile Default\" or \"Bitwarden\". Default: the app nodkey recognises from the file." },
+                    "reason": { "type": "string", "description": "Optional sentence for the user's history, e.g. \"Move the passwords saved in Firefox into Nodkey\"." },
+                    "keep": { "type": "boolean", "description": "Optional: true leaves the export on this computer after the phone staged it. Default false: it is overwritten and deleted." },
+                    "dry_run": { "type": "boolean", "description": "Optional: true only reads the file and returns its format and counts (logins, codes, skipped rows); nothing is sent." },
+                    "phone": phone,
+                    "model": model,
+                    "effort": effort
+                },
+                "required": ["path"],
                 "additionalProperties": false
             },
             "annotations": { "readOnlyHint": false, "destructiveHint": true, "idempotentHint": false, "openWorldHint": true }

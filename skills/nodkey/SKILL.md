@@ -1,6 +1,6 @@
 ---
 name: nodkey
-description: Use the user's logins, one-time codes and saved passwords from Nodkey on their iPhone, each request approved by them with Face ID; sign in to websites, fetch a two-step code, see which accounts exist, tidy up old saved logins, use API keys without seeing them, and pay a purchase the user asked for with their card. Use when a task needs a login, a two-step code or an API key (for example OPENAI_API_KEY), when you made a new API key, when asked to sign in to a site (for example in a Horizon browser panel), when the user asks which accounts they have, or when they ask to clean up, review or remove stale or old saved passwords, or when they ask you to buy something. Uses the nodkey MCP server (request_login, request_code, request_credentials, request_sms_code, request_secret, save_secret, suggest_sign_in_method, end_session, request_payment, cleanup_insights, list_accounts, cleanup_logins, pair, list_phones, unpair) or the nodkey command.
+description: Use the user's logins, one-time codes and saved passwords from Nodkey on their iPhone, each request approved by them with Face ID; sign in to websites, fetch a two-step code, see which accounts exist, tidy up old saved logins, use API keys without seeing them, and pay a purchase the user asked for with their card. Use when a task needs a login, a two-step code or an API key (for example OPENAI_API_KEY), when you made a new API key, when asked to sign in to a site (for example in a Horizon browser panel), when the user asks which accounts they have, or when they ask to clean up, review or remove stale or old saved passwords, or when they ask you to buy something. Uses the nodkey MCP server (request_login, request_code, request_credentials, request_sms_code, request_secret, save_secret, suggest_sign_in_method, end_session, request_payment, cleanup_insights, list_accounts, cleanup_logins, import_file, pair, list_phones, unpair) or the nodkey command.
 ---
 
 # Nodkey
@@ -273,6 +273,13 @@ the list and confirm with Face ID.
 Never propose a clean-up on your own initiative, and never call `cleanup_logins` for a rule the user
 did not choose.
 
+## Move passwords into Nodkey
+
+When the user wants to bring their passwords and codes from browsers or password managers into
+Nodkey, follow the **nodkey-move-in** skill (`nodkey skill move-in` prints it). In short: the user
+opens the import window on the iPhone, exports from each app, and you send each export with
+`import_file(path, source)`, which deletes it afterwards. Never read, print or copy an export file.
+
 ## Pairing
 
 Each agent pairs once, with its own name ("Claude Code @ my-laptop", "Codex @ my-laptop"), so the
@@ -306,11 +313,12 @@ nodkey suggest example.com --kind federated --provider google --reason "Signed i
 nodkey sms-code account.example.com --reason "The site sent a code by SMS" --field code
 nodkey run --secret OPENAI_API_KEY --reason "Run the API tests" -- npm test   # the key only in the command's environment
 printf %s "$NEW_KEY" | nodkey secret save NEW_KEY --service example.com --reason "Save the key I made"
+nodkey import ~/Downloads/"Chrome Passwords.csv" --source "Chrome, profile Default"   # see nodkey-move-in
 nodkey phones; nodkey unpair PHONE
 ```
 
 Exit codes: 0 approved or queued, 2 denied or rejected, 3 expired, 4 paused, 1 error, 64 bad arguments; for `pay` also 5 over the
-user's limit, 6 full card numbers off, 7 cards off or no card, 10 no passcode on the iPhone (no cards or keys). `nodkey run` exits with the command's own code once it ran. Waiting notes go to stderr.
+user's limit, 6 full card numbers off, 7 cards off or no card, 10 no passcode on the iPhone (no cards or keys); for `import` 0 staged, 11 no import window, 12 window full, 13 not readable, 14 too large. `nodkey run` exits with the command's own code once it ran. Waiting notes go to stderr.
 Never put a password on a command line, in a file or in a pipe you log; read it from the JSON and fill
 it straight into the field that needs it. `--image FILE`, `--model` and `--effort` work as in the tools.
 
@@ -318,6 +326,6 @@ it straight into the field that needs it. `--image FILE`, `--model` and `--effor
 
 Install `nodkey` (one binary; see its README), then run `nodkey setup`. It adds the MCP server
 `nodkey mcp --agent <name>` to Claude Code, Codex, Cursor and Claude Desktop when they are installed,
-and writes this skill to `~/.claude/skills`, `~/.codex/skills` and `~/.agents/skills`.
+and writes this skill and nodkey-move-in to `~/.claude/skills`, `~/.codex/skills` and `~/.agents/skills`.
 `nodkey setup --remove` takes both away again. Any other MCP client: run `nodkey mcp --agent NAME` as
 a stdio server and give the agent this file as instructions.

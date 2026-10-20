@@ -34,6 +34,12 @@ Usage:
                                            and the names of its keys
   nodkey insights [--reason TEXT]          anonymous clean-up numbers (JSON)
   nodkey cleanup FILTER... --reason TEXT   propose moving old saved logins to Recently deleted
+  nodkey import FILE [--source LABEL] [--reason TEXT] [--keep] [--dry-run]
+                                           send a password or code export (Chrome, Firefox,
+                                           Bitwarden, ...) to the import window you opened in
+                                           Nodkey; prints counts only, and deletes the file after
+                                           the phone has it (--keep leaves it; --dry-run sends
+                                           nothing and shows what the file holds)
   nodkey phones                            the phones this agent is paired with
   nodkey unpair PHONE                      leave a phone (phone name or id)
   nodkey agents                            the agents on this computer and where their keys are
@@ -50,7 +56,7 @@ Usage:
                                            one JSON result on stdout
   nodkey mcp                               run the MCP server on stdio
   nodkey setup [--remove] [--dry-run]      add (or remove) the MCP server and skill in your agents
-  nodkey skill                             print the agent skill
+  nodkey skill [move-in]                   print the agent skill (or the one for moving in)
 
 TARGET is a site or issuer, optionally with /account: github.com/alex, vg.no, GitHub.
 
@@ -96,7 +102,7 @@ Global options:
                    shell runs nodkey, Claude Code or Codex, else terminal)
   --relay URL      the relay (default: $NODKEY_RELAY, else relay in config.json, else
                    https://relay.nodkey.app)
-  --json           print JSON for accounts, cleanup, phones, agents, unpair and pair
+  --json           print JSON for accounts, cleanup, phones, agents, unpair, pair and import
   -h, --help       -V, --version
 
 Exit codes: 0 approved, queued or done, 1 error, 2 denied or rejected, 3 expired (no answer),
@@ -105,6 +111,8 @@ pay and card-fill: 5 over the user's limit, 6 full card numbers off, 7 cards off
 8 the page total is higher than the amount, 9 cards for later payments off (card-fill), 10 the
 phone has no passcode (no cards or keys). run: the command's exit code once it ran (126 or
 127 when it cannot start); 2, 3, 4 or 1 as above when the phone did not give the keys.
+import: 0 staged, 10 no passcode, 11 no import window open for this agent, 12 the window is
+full, 13 the file cannot be read (also an archive or an encrypted export), 14 more than 1 MiB.
 Environment: NODKEY_AGENT_DIR (default ~/.config/nodkey-agent), NODKEY_REQUEST_TIMEOUT (120 s),
 NODKEY_PAIR_TIMEOUT (300 s), NODKEY_KEYSTORE (auto: the private keys in the keychain of the
 system when there is one; file: in identity.json), NODKEY_DEBUG.

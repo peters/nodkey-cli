@@ -201,10 +201,7 @@ fn section(r: &crate::Request) -> Value {
             "file_wait": import::FILE_WAIT,
         },
         "formats": ImportFormat::ALL.iter().map(|f| f.as_str()).collect::<Vec<_>>(),
-        "errors": [
-            import::errors::NO_PASSCODE, import::errors::IMPORT_CLOSED, import::errors::WINDOW_FULL,
-            import::errors::TOO_LARGE, import::errors::BAD_IMPORT, import::errors::IMPORT_UNREADABLE,
-        ],
+        "errors": import::errors::IN_ORDER,
         "request": "request_import",
         "file": "import_file",
         "file_sha256": import::file_sha256(CHROME_CSV),

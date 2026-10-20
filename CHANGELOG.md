@@ -3,6 +3,21 @@
 What changed in each release of `nodkey`. The protocol is in
 [docs/agent-protocol.md](docs/agent-protocol.md).
 
+## Unreleased
+
+### What you can do
+
+- Move in from your computer: `nodkey import FILE` and the MCP tool `import_file` send a password
+  or code export (Chrome and other Chromium browsers, Firefox, Safari and Apple Passwords,
+  Bitwarden, 1Password, LastPass, Dashlane, Proton Pass, NordPass, KeePassXC, code lists, 2FAS) to
+  the import window you opened in Nodkey on your iPhone. The file is encrypted for your iPhone,
+  waits there until you have looked at it, and is deleted from the computer afterwards. Only counts
+  come back. `--dry-run` shows what a file holds without sending it. This needs Nodkey 1.4 or later.
+- A new skill, `nodkey-move-in`, guides an agent through a first move or a clean-up round. It finds
+  your browsers and password managers, shows you each export step by step, and never reads the
+  files itself. `nodkey setup` installs it next to the `nodkey` skill; `nodkey skill move-in`
+  prints it.
+
 ## 0.3.0 (2026-10-20)
 
 The first public release. It needs [Nodkey](https://apps.apple.com/app/id6820952672) 1.3 or later

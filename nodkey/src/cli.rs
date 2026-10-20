@@ -21,7 +21,8 @@ pub(crate) const EXPIRED: u8 = 3;
 pub(crate) const PAUSED: u8 = 4;
 const BAD_ARGS: u8 = 64;
 
-const VALUE_FLAGS: [&str; 28] = [
+const VALUE_FLAGS: [&str; 29] = [
+    "source",
     "service",
     "project",
     "title",
@@ -51,7 +52,8 @@ const VALUE_FLAGS: [&str; 28] = [
     "added-before",
     "password-changed-before",
 ];
-const BOOL_FLAGS: [&str; 6] = [
+const BOOL_FLAGS: [&str; 7] = [
+    "keep",
     "json",
     "ip-only",
     "never-used",
@@ -179,8 +181,17 @@ pub fn main(raw: Vec<String>) -> ExitCode {
             };
         }
         "skill" => {
-            print!("{}", crate::SKILL);
-            return ExitCode::SUCCESS;
+            return match args.positional.as_slice() {
+                [] => {
+                    print!("{}", crate::SKILL);
+                    ExitCode::SUCCESS
+                }
+                [name] if name == "move-in" || name == "nodkey-move-in" => {
+                    print!("{}", crate::MOVE_IN_SKILL);
+                    ExitCode::SUCCESS
+                }
+                _ => usage_error("nodkey skill takes no argument, or move-in"),
+            };
         }
         "webauthn" => return crate::webauthn::main(&args, agent(&args, profile::TERMINAL)),
         "card-fill" => return crate::cardfill::main(&args, host_agent(&args)),
@@ -188,6 +199,7 @@ pub fn main(raw: Vec<String>) -> ExitCode {
         "pair" | "code" | "login" | "credentials" | "pay" | "accounts" | "insights" | "cleanup"
         | "phones" | "unpair" | "agents" | "end-session" => check(command, &args),
         "suggest" | "sms-code" => crate::signin::check_cli(command, &args),
+        "import" => crate::import::check_cli(&args),
         other => Err(format!("unknown command {other:?}; see nodkey --help")),
     };
     if let Err(e) = result {
