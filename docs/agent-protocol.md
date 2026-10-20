@@ -1422,6 +1422,11 @@ approval. It checks in this order and refuses with `decision: denied` and `error
 | the request breaks another rule above; the file did not arrive within 60 s (`FILE_WAIT`), does not open, or its size or SHA-256 differs from the request | `bad_import` |
 | the importers cannot read it: an unknown format, an encrypted export, or not one login or code | `import_unreadable` |
 
+The refusals up to `too_large` need no file, so the phone sends them at once, often before the
+upload is done. The relay then turns the upload away with `409 already_claimed` (the request is
+answered); the agent does not treat that as a failure, reads the answer as usual and reports the
+refusal.
+
 The phone fetches the file with `GET /v1/requests/{request_id}/attachment` and retries a `404`
 for up to 60 s, because a large upload can take longer than the relay's 5 s push hold. It opens
 the file in memory, reads it with its importers (`PasswordImport`, `AuthenticatorImport`,

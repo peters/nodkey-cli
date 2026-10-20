@@ -59,16 +59,14 @@ fn denied(rid: &str, error: &str) -> Answer {
     a
 }
 
-/// The phone's answer to an `import` request, `None` for other kinds.
-pub(crate) async fn answer(
+/// The refusals the phone decides without the file, at once: often before the agent uploaded it,
+/// so the relay then turns the upload away with `409` (the request is answered).
+pub(crate) fn refuse_at_once(
     fake: &Fake,
     agent_id: &str,
     rid: &str,
     request: &Request,
 ) -> Option<Answer> {
-    if request.kind != Kind::Import {
-        return None;
-    }
     if !*fake.passcode.lock().unwrap() {
         return Some(denied(rid, import::errors::NO_PASSCODE));
     }
@@ -90,9 +88,23 @@ pub(crate) async fn answer(
     let Some(info) = &request.import else {
         return Some(denied(rid, import::errors::BAD_IMPORT));
     };
-    if let Err((code, _)) = info.check() {
-        return Some(denied(rid, code));
+    info.check().err().map(|(code, _)| denied(rid, code))
+}
+
+/// The phone's answer to an `import` request, `None` for other kinds.
+pub(crate) async fn answer(
+    fake: &Fake,
+    agent_id: &str,
+    rid: &str,
+    request: &Request,
+) -> Option<Answer> {
+    if request.kind != Kind::Import {
+        return None;
     }
+    if let Some(refused) = refuse_at_once(fake, agent_id, rid, request) {
+        return Some(refused);
+    }
+    let info = request.import.as_ref()?;
     // The upload follows the request; wait for it a little, as the phone retries a 404.
     let mut file = None;
     for _ in 0..50 {

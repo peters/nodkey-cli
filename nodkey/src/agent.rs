@@ -382,15 +382,23 @@ impl Agent {
                 }
                 _ => e.to_string(),
             };
-            if file.is_some() {
-                return Err(format!(
-                    "The file could not be uploaded ({why}); nothing was staged, and the export is still \
-                     on this computer."
-                ));
+            let answered = matches!(&e, crate::relay::RelayError::Status { status: 409, .. });
+            match file {
+                // The phone refuses an import it can decide without the file (no window, a full
+                // one) at once, often before the upload: the relay then holds that answer.
+                Some(_) if answered => {}
+                Some(_) => {
+                    return Err(format!(
+                        "The file could not be uploaded ({why}); nothing was staged, and the export is \
+                         still on this computer."
+                    ));
+                }
+                None => {
+                    attachment_warning = Some(format!(
+                        "The picture could not be uploaded ({why}); the request was sent without it."
+                    ));
+                }
             }
-            attachment_warning = Some(format!(
-                "The picture could not be uploaded ({why}); the request was sent without it."
-            ));
         }
 
         let total = self.timing.request + crate::signin::extra_wait(&request);

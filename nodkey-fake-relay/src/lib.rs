@@ -356,6 +356,12 @@ async fn put_attachment(
         return fail(StatusCode::FORBIDDEN, "not_paired");
     }
     if seen.request.kind == Kind::Import {
+        // The phone refused at once, before the upload: the request is answered.
+        if *fake.mode.lock().unwrap() == Mode::Approve
+            && imports::refuse_at_once(&fake, &agent_id, &rid, &seen.request).is_some()
+        {
+            return fail(StatusCode::CONFLICT, "already_claimed");
+        }
         // An export file: the phone checks its size and hash when it answers.
         let file = nodkey_proto::import::open_file(fake.phone.kem_secret(), &rid, &agent_id, &body)
             .expect("the import file opens with the phone key");
