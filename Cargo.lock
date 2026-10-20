@@ -929,7 +929,7 @@ dependencies = [
 
 [[package]]
 name = "nodkey"
-version = "0.3.0"
+version = "0.4.0"
 dependencies = [
  "libc",
  "nodkey-fake-relay",
@@ -945,7 +945,7 @@ dependencies = [
 
 [[package]]
 name = "nodkey-fake-relay"
-version = "0.3.0"
+version = "0.4.0"
 dependencies = [
  "axum",
  "nodkey-proto",
@@ -957,7 +957,7 @@ dependencies = [
 
 [[package]]
 name = "nodkey-proto"
-version = "0.3.0"
+version = "0.4.0"
 dependencies = [
  "chacha20poly1305",
  "ed25519-dalek",

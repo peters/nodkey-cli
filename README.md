@@ -245,8 +245,9 @@ nodkey agents
   agent is paused, 64 bad arguments. `pay` also has
   5 above your limit, 6 full card numbers off, 7 cards off, 10 no passcode on your iPhone;
   `card-fill` also 8 for a page total above the amount and 9 for cards for later payments that
-  are off. `run` exits with the code of the
-  command it ran.
+  are off. `import` also has 10 no passcode on your iPhone, 11 no import window open, 12 the
+  window is full, 13 a file Nodkey cannot read and 14 a file that is too large. `run` exits with
+  the code of the command it ran.
 - `nodkey webauthn` is for browser hosts such as Horizon: it reads one passkey request (sign in or
   create) as JSON on stdin and writes the result as JSON on stdout. Your iPhone shows the site and
   signs with a passkey that never leaves it. It can also get a secret key from a passkey (the

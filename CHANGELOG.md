@@ -3,7 +3,11 @@
 What changed in each release of `nodkey`. The protocol is in
 [docs/agent-protocol.md](docs/agent-protocol.md).
 
-## Unreleased
+## 0.4.0 (2026-10-20)
+
+Move your passwords and codes into Nodkey from your computer. Moving in needs
+[Nodkey](https://apps.apple.com/app/id6820952672) 1.4 or later on your iPhone; everything else
+works with Nodkey 1.3 or later, as before.
 
 ### What you can do
 
@@ -12,11 +16,33 @@ What changed in each release of `nodkey`. The protocol is in
   Bitwarden, 1Password, LastPass, Dashlane, Proton Pass, NordPass, KeePassXC, code lists, 2FAS) to
   the import window you opened in Nodkey on your iPhone. The file is encrypted for your iPhone,
   waits there until you have looked at it, and is deleted from the computer afterwards. Only counts
-  come back. `--dry-run` shows what a file holds without sending it. This needs Nodkey 1.4 or later.
+  come back. `--dry-run` shows what a file holds without sending it, and `--keep` leaves the file
+  where it is.
 - A new skill, `nodkey-move-in`, guides an agent through a first move or a clean-up round. It finds
   your browsers and password managers, shows you each export step by step, and never reads the
   files itself. `nodkey setup` installs it next to the `nodkey` skill; `nodkey skill move-in`
   prints it.
+
+### Safety
+
+- The agent never reads an export file. Only `nodkey import` touches it: it reads the file once,
+  encrypts it for your iPhone, and after your iPhone has taken it, overwrites it and deletes it.
+  What comes back is the kind of file and the counts, never a password or a code.
+- Your iPhone takes files only while you have an import window open for that agent: 30 minutes,
+  up to 20 files of at most 1 MiB each. Without one it turns every file away. Nothing is added
+  until you have looked through the list in Nodkey and added it with Face ID.
+- The counts compare a file with the earlier files of the same window only, never with what is
+  already in Nodkey, so they tell an agent nothing about your saved passwords.
+
+### Good to know
+
+- Keep Nodkey open on the import screen while your agent sends the files. A file sent while
+  Nodkey is closed may get no answer in time; open the import screen and send it again.
+- `nodkey import` has a few exit codes of its own: 10 no passcode on your iPhone, 11 no import
+  window open, 12 the window is full, 13 the file cannot be read (for example a zip archive or an
+  encrypted export), 14 the file is too large.
+- The install scripts download without the GitHub CLI when it cannot use the GitHub API, and then
+  check the checksum only.
 
 ## 0.3.0 (2026-10-20)
 
