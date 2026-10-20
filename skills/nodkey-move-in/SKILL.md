@@ -126,7 +126,7 @@ shows the comparison with what Nodkey already holds.
 
 When every source is sent, tell the user: "Everything is in Nodkey under To review. Check it there
 and add it with one Face ID." Nodkey shows new logins, merged ones, ones already saved, and
-conflicts (the same site and user name with another password; it suggests the newest). Nothing is
+conflicts (the same address and user name with another password; it suggests the newest). Nothing is
 added before they confirm.
 
 ## 5. Clean up (offer, do not push)

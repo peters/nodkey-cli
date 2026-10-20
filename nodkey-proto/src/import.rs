@@ -258,12 +258,13 @@ pub struct ImportCounts {
     pub found: u32,
     /// Entries this file added to the window's staging list.
     pub new: u32,
-    /// Entries merged into one staged before in this window (the same login on another host of
-    /// the website, or a code for a staged login).
+    /// Entries merged into one staged before in this window (the same user name and password on
+    /// another host of the website, or a code for a staged login).
     pub merged: u32,
     /// Entries the same as one staged before in this window; left out.
     pub duplicates: u32,
-    /// Of `new`: the same website and user name as an entry staged before, with another password.
+    /// Of `new`: the same address (host without `www.`) and user name as an entry staged before,
+    /// with another password. Another host of the website with another password is no conflict.
     pub conflicts: u32,
     /// Rows the phone could not use (no password and no code key, or not readable).
     pub skipped: u32,

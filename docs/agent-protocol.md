@@ -1453,9 +1453,9 @@ app did not see in time ends as `expired`, and the agent sends the file again on
 | --- | --- |
 | `found` | entries read from this file (a login with a code is one entry) |
 | `new` | entries this file added to the staging list |
-| `merged` | entries merged into one staged before in this window: the same login on another host of the website, or a code for a staged login |
+| `merged` | entries merged into one staged before in this window: the same user name and password on another host of the website, or a code for a staged login |
 | `duplicates` | entries the same as one staged before in this window (site, user name and password, or the same code key); left out |
-| `conflicts` | of `new`: the same website and user name as an entry staged before in this window, with another password; the user picks one in the review |
+| `conflicts` | of `new`: the same address (host, without `www.`) and user name as an entry staged before in this window, with another password; the user picks one in the review. The same user name with another password on another host of the website (`jira.example.com` and `mail.example.com`) is two new entries, not a conflict. |
 | `skipped` | rows the phone could not use (no password and no code key, or not readable) |
 | `logins`, `codes` | optional, of `found`: how many have a password, how many a code key |
 | `files` | optional: how many files the window holds now, this one included |
@@ -1473,7 +1473,7 @@ tells the user to look at the phone.
 
 The user opens "To review" on the phone when the agent is done, or when the window's time is up.
 It shows every entry with the agent and the file it came from: new, merged, already saved (left
-out) and conflicts with the vault or between files (the same site and user name with another
+out) and conflicts with the vault or between files (the same address and user name with another
 password; the source and date of each, the newest suggested). One Face ID adds it all and closes
 the window. Nothing is added before that; what the user does not add is dropped with the staging
 list. The Agents history shows which agent sent which file. An `import` is never covered by a lease
