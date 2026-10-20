@@ -219,8 +219,8 @@ fn message(a: &Answer, phone: &str, name: &str) -> String {
             "The phone did not take the file. Ask the user to look at Nodkey on their iPhone.".into()
         }
         (Decision::Expired, _) => {
-            "The phone did not answer in time. Ask the user to keep Nodkey open on the iPhone, then send the \
-             file again."
+            "The phone did not answer in time: Nodkey takes a file in only while it is open. Ask the user to \
+             open Nodkey on the import screen and keep it open, then send the file again."
                 .into()
         }
         _ => crate::outcome::MISFIT.into(),

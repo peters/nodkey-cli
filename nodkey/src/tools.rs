@@ -411,7 +411,8 @@ pub fn tools() -> Value {
                 skipped: counts against the files sent in this window, never against the vault), or an error: \
                 import_closed (ask the user to open the window, then send again), window_full (20 files), too_large \
                 (more than 1 MiB), import_unreadable (export again as plain CSV or plain text, without a password), \
-                no_passcode or paused. deleted says whether the export is gone; still_at says where it is when it is not. \
+                no_passcode or paused; expired means Nodkey was not open (ask the user to keep it open on the \
+                import screen, then send again). deleted says whether the export is gone; still_at says where it is when it is not. \
                 dry_run: true sends nothing and returns the format and counts per type. Follow the nodkey-move-in skill.",
             "inputSchema": {
                 "type": "object",

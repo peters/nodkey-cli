@@ -30,6 +30,8 @@ nothing is added before the user's review.
 2. Ask the user to open the import window on the iPhone:
    **Nodkey → Settings → Import → "From your computer, with an agent"**, pick this agent and
    confirm with Face ID. The window takes up to 20 files for 30 minutes and can be closed any time.
+   Ask them to **keep Nodkey open on that screen** while you send files (it keeps the iPhone
+   awake there): Nodkey takes a file in only while it is open.
 3. You learn that it is open only when you send the first file. `import_closed` means it is not
    open (yet), or it is open for another agent.
 
@@ -114,7 +116,8 @@ file's full path. Never open it to check it; if you are unsure it is the right f
 | `import_unreadable` | Export again as plain CSV (plain text for codes), without a password. Ask, then delete the old file. |
 | `too_large` | Export a smaller part (one vault or folder at a time). |
 | `no_passcode` | The iPhone needs a passcode first (Settings → Face ID & Passcode). |
-| `paused`, `denied`, `expired` | Tell the user in one line and wait for them; do not loop. |
+| `expired` | Nodkey was probably not open. Ask the user to open it on the import screen, then send the same file once more. |
+| `paused`, `denied` | Tell the user in one line and wait for them; do not loop. |
 
 `duplicates` and `conflicts` compare the file with the files sent before in this window; the iPhone
 shows the comparison with what Nodkey already holds.

@@ -161,7 +161,7 @@ agent do the legwork. This needs Nodkey 1.4 or later on your iPhone.
 
 1. On your iPhone, open Nodkey, then **Settings → Import → From your computer, with an agent**.
    Pick your agent and confirm with Face ID. The window stays open for 30 minutes and takes up to
-   20 files.
+   20 files. Keep Nodkey open on that screen while your agent sends the files.
 2. Ask your agent to help. It finds the browsers and password managers on this computer, shows you
    how to export from each one, sends each file to Nodkey and deletes it right after.
 3. On your iPhone, look through everything under **To review** and add it with one Face ID.

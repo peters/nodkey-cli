@@ -1428,7 +1428,15 @@ the file in memory, reads it with its importers (`PasswordImport`, `Authenticato
 `LoginImport`) and drops the raw file at once. The entries go into the window's staging list "To
 review", with the agent, the file name, the source and the time. Within the window, each file is
 compared with the files staged before it: the same entry is left out, and the same login on
-another host of the website is merged, as in any import. Then the phone answers `staged`:
+another host of the website is merged, as in any import. Then the phone answers `staged`.
+
+Only the app stages a file: it parses the export in memory, which the notification service
+extension does not. While Nodkey is not open, the extension answers only the refusals it can decide
+without the app (`paused`, `no_passcode`, `import_closed`, `window_full`, `too_large`) and leaves
+any other import for the app, with a notification to open Nodkey. So the user keeps Nodkey open on
+the window's screen while the agent sends files (the app keeps the screen on there); a request the
+app did not see in time ends as `expired`, and the agent sends the file again once Nodkey is open.
+
 
 ```json
 {"v":1, "request_id":"…", "decision":"staged",
