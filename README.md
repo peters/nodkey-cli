@@ -107,8 +107,9 @@ signed and notarized. TLS uses rustls, so no OpenSSL is needed.
 The install scripts take the newest stable release (`NODKEY_VERSION=vX.Y.Z` picks another one) and
 check the archive against `SHA256SUMS`. When the GitHub CLI (`gh`) is installed and logged in, they
 also check the build provenance: `gh attestation verify` shows that the release workflow of this
-repository built the archive. On macOS they check the Developer ID signature of the binary instead,
-because it is signed after the build. To check an archive yourself:
+repository built the archive. When `gh` cannot reach GitHub, they download without it and check
+the checksum only. On macOS they check the Developer ID signature of the binary instead, because it
+is signed after the build. To check an archive yourself:
 `gh attestation verify nodkey-x86_64-unknown-linux-musl.tar.gz --repo peters/nodkey-cli`.
 
 ## Set up your agents

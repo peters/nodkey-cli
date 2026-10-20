@@ -56,3 +56,10 @@ jobs:
       - name: Shell scripts
         if: runner.os == 'Linux'
         run: sh -n install.sh && bash -n scripts/sign-macos.sh && sh -n scripts/update-psl.sh
+      - name: PowerShell script
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          $errors = $null
+          [void][System.Management.Automation.Language.Parser]::ParseFile("$PWD\install.ps1", [ref]$null, [ref]$errors)
+          if ($errors) { $errors | ForEach-Object { Write-Error $_.ToString() }; exit 1 }

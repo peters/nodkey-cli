@@ -3,7 +3,8 @@
 #   curl -fsSL https://raw.githubusercontent.com/peters/nodkey-cli/main/install.sh | sh
 # NODKEY_INSTALL_DIR picks the folder (default ~/.local/bin). NODKEY_VERSION picks a tag.
 # The archive must match SHA256SUMS. With a logged-in GitHub CLI, its build provenance must also
-# show that the release workflow of this repository built it (gh attestation verify). On macOS
+# show that the release workflow of this repository built it (gh attestation verify). A GitHub CLI
+# that cannot use the API is left out: curl downloads, and only the checksum is checked. On macOS
 # the binary must have a valid Developer ID signature.
 set -eu
 
@@ -24,19 +25,26 @@ esac
 target="$arch-$os"
 asset="nodkey-$target.tar.gz"
 
-# A logged-in GitHub CLI avoids the API's limit on anonymous calls; plain curl works too.
+# A logged-in GitHub CLI avoids the API's limit on anonymous calls; plain curl works too. gh can
+# hold a token it cannot use (no login for this HOME, an expired token, no way to the API), so a
+# call that does not count against the limit decides.
 use_gh=no
-if command -v gh >/dev/null 2>&1 && gh auth token >/dev/null 2>&1; then
+if command -v gh >/dev/null 2>&1 && gh auth token >/dev/null 2>&1 &&
+  gh api rate_limit --jq .rate.limit >/dev/null 2>&1; then
   use_gh=yes
 fi
 
 if [ "$version" = latest ]; then
   # The newest stable release; while there is none, the newest pre-release. Drafts never.
+  version=""
   if [ "$use_gh" = yes ]; then
     version="$(gh api "repos/$repo/releases?per_page=30" \
       --jq '[.[] | select(.draft | not)] | (map(select(.prerelease | not)) + .)[0].tag_name // empty' \
       2>/dev/null || true)"
-  else
+    # A failed lookup: go on without gh.
+    [ -n "$version" ] || use_gh=no
+  fi
+  if [ -z "$version" ]; then
     tag() { sed -n 's/.*"tag_name": *"\([^"]*\)".*/\1/p' | head -n 1; }
     version="$(curl -fsSL "https://api.github.com/repos/$repo/releases/latest" 2>/dev/null | tag)"
     [ -n "$version" ] ||
@@ -50,9 +58,13 @@ mkdir -p "$scratch"
 work="$(mktemp -d "$scratch/nodkey-install.XXXXXX")"
 trap 'rm -rf "$work"' EXIT
 echo "nodkey: downloading $asset ($version)"
-if [ "$use_gh" = yes ]; then
-  gh release download "$version" --repo "$repo" --pattern "$asset" --pattern SHA256SUMS --dir "$work"
-else
+if [ "$use_gh" = yes ] &&
+  ! gh release download "$version" --repo "$repo" --pattern "$asset" --pattern SHA256SUMS --dir "$work" 2>/dev/null; then
+  echo "nodkey: the GitHub CLI could not download it; downloading without it"
+  rm -f "$work/$asset" "$work/SHA256SUMS"
+  use_gh=no
+fi
+if [ "$use_gh" = no ]; then
   base="https://github.com/$repo/releases/download/$version"
   curl -fsSL "$base/$asset" -o "$work/$asset"
   curl -fsSL "$base/SHA256SUMS" -o "$work/SHA256SUMS"
