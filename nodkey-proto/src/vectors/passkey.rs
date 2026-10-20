@@ -222,6 +222,7 @@ fn request(name: &str, passkey: PasskeyRequest, reason: &str) -> Request {
         save_secret: None,
         project: None,
         nonce: None,
+        import: None,
     }
 }
 

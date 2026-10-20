@@ -113,6 +113,7 @@ pub fn check_request(r: &Request) -> Result<(), String> {
         _ => Ok(()),
     }?;
     check_signin(r)?;
+    check_import(r)?;
     crate::apikey::check_request(r)?;
     check_session(r)?;
     if sealed_ct_len(r) > REQUEST_CT_MAX {
@@ -144,7 +145,8 @@ fn check_pairing(r: &Request) -> Result<(), String> {
         || r.suggest.is_some()
         || r.wait_seconds.is_some()
         || r.save_secret.is_some()
-        || r.project.is_some();
+        || r.project.is_some()
+        || r.import.is_some();
     if extra || !r.target.is_empty() || !r.reason.is_empty() {
         return Err("a pairing_check request carries only the nonce".into());
     }
@@ -173,6 +175,24 @@ fn check_signin(r: &Request) -> Result<(), String> {
         )),
         (Kind::SmsCode, _) | (_, None) => Ok(()),
         (_, Some(_)) => Err("only an sms_code request carries wait_seconds".into()),
+    }
+}
+
+/// An `import` request describes its file and nothing else; no other kind carries one.
+fn check_import(r: &Request) -> Result<(), String> {
+    match (r.kind, &r.import) {
+        (Kind::Import, None) => {
+            Err("an import request needs the file's name, size, hash and source".into())
+        }
+        (Kind::Import, Some(_)) if !r.target.is_empty() => {
+            Err("an import request has no target".into())
+        }
+        (Kind::Import, Some(_)) if r.attachment.is_some() => {
+            Err("an import request sends the file, not a picture".into())
+        }
+        (Kind::Import, Some(i)) => i.check().map_err(|(_, e)| e),
+        (_, Some(_)) => Err("only an import request carries a file".into()),
+        _ => Ok(()),
     }
 }
 

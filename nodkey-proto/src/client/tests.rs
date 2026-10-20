@@ -24,6 +24,7 @@ fn request(kind: Kind, target: &str, reason: &str) -> Request {
         save_secret: None,
         project: None,
         nonce: None,
+        import: None,
     }
 }
 

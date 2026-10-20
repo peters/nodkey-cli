@@ -455,6 +455,7 @@ pub fn new_request(kind: Kind, target: &str, reason: &str, client: ClientInfo) -
         save_secret: None,
         project: None,
         nonce: None,
+        import: None,
     }
 }
 

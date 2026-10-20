@@ -7,6 +7,8 @@ mcp`). The iOS app and the relay live in the private repository `peters/nodkey`;
 ## Layout
 
 - `nodkey-proto/`: the protocol (messages, HPKE, signed relay calls, check number, pairing codes),
+  `import.rs` (moving in: the `import` request, the sealed file and `import/detect.rs`, the format
+  and counts of an export without its values),
   `client.rs` (the agent's side of requests and pairing, shared with the browser extension in
   `peters/nodkey-browser`), `passkey.rs` (passkey requests and the client data check), `prf.rs`
   (the WebAuthn PRF extension: inputs, outputs and the derivation), `webauthn.rs`

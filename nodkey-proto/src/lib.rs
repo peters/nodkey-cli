@@ -6,6 +6,7 @@
 //! commitment and its check number, and pairing codes.
 
 pub mod apikey;
+pub mod attachment;
 pub mod auth;
 pub mod b64u;
 pub mod bundle;
@@ -15,6 +16,7 @@ pub mod client;
 mod client_info;
 pub mod code;
 pub mod dh;
+pub mod import;
 pub mod keys;
 pub mod messages;
 pub mod pairing;
@@ -38,6 +40,7 @@ pub use bundle::{BundleItem, BundleItemAnswer, BundleRequest};
 pub use card::{
     CardAnswer, CardEntry, CardMode, CardPurpose, CardRequest, Money, SaveCard, TotalSource,
 };
+pub use import::{ImportCounts, ImportFormat, ImportRequest};
 pub use keys::{KeyPair, PublicKeys};
 pub use messages::*;
 pub use pairing::PairingGrant;

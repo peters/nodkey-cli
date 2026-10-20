@@ -43,6 +43,9 @@ pub enum Purpose {
     /// The value of a `save_secret` request (an API key), agent → phone, sealed on its own like a
     /// password. `aad` = `agent_id`.
     Secret,
+    /// The export file of an `import` request, agent → phone, uploaded like a picture.
+    /// `aad` = `request_id` ‖ `agent_id`.
+    Import,
 }
 
 impl Purpose {
@@ -56,6 +59,7 @@ impl Purpose {
             Purpose::Password => "nodkey/v1/password",
             Purpose::Card => "nodkey/v1/card",
             Purpose::Secret => "nodkey/v1/secret",
+            Purpose::Import => "nodkey/v1/import",
         }
     }
 
@@ -185,21 +189,37 @@ pub fn seal_attachment_body(
     image: &[u8],
     rng: &mut impl CryptoRng,
 ) -> Result<Vec<u8>, Error> {
+    seal_upload_body(Purpose::Attachment, recipient_kem, aad, image, rng)
+}
+
+/// Seals what follows a request on the attachment path (a picture with [`Purpose::Attachment`],
+/// an export file with [`Purpose::Import`]) into the raw body `enc ‖ ct`. The plaintext is copied
+/// once, into the buffer that is then encrypted in place.
+pub fn seal_upload_body(
+    purpose: Purpose,
+    recipient_kem: &[u8; 32],
+    aad: &[u8],
+    plaintext: &[u8],
+    rng: &mut impl CryptoRng,
+) -> Result<Vec<u8>, Error> {
     let pk =
         PublicKey::from_bytes(recipient_kem).map_err(|_| Error::Crypto("bad recipient key"))?;
-    let mut body = Vec::with_capacity(ENC_LEN + image.len() + TAG_LEN);
+    let mut body = Vec::with_capacity(ENC_LEN + plaintext.len() + TAG_LEN);
     body.resize(ENC_LEN, 0);
-    body.extend_from_slice(image);
-    let (enc, tag) =
-        hpke::single_shot_seal_inout_detached_with_rng::<ChaCha20Poly1305, HkdfSha256, Kem>(
-            &OpModeS::Base,
-            &pk,
-            Purpose::Attachment.info().as_bytes(),
-            InOutBuf::from(&mut body[ENC_LEN..]),
-            aad,
-            rng,
-        )
-        .map_err(|_| Error::Crypto("seal failed"))?;
+    body.extend_from_slice(plaintext);
+    let sealed = hpke::single_shot_seal_inout_detached_with_rng::<ChaCha20Poly1305, HkdfSha256, Kem>(
+        &OpModeS::Base,
+        &pk,
+        purpose.info().as_bytes(),
+        InOutBuf::from(&mut body[ENC_LEN..]),
+        aad,
+        rng,
+    );
+    let Ok((enc, tag)) = sealed else {
+        // The buffer still holds the plaintext.
+        zeroize::Zeroize::zeroize(&mut body);
+        return Err(Error::Crypto("seal failed"));
+    };
     body[..ENC_LEN].copy_from_slice(&enc.to_bytes());
     body.extend_from_slice(&tag.to_bytes());
     Ok(body)
@@ -211,11 +231,21 @@ pub fn open_attachment_body(
     aad: &[u8],
     body: &[u8],
 ) -> Result<Zeroizing<Vec<u8>>, Error> {
+    open_upload_body(Purpose::Attachment, recipient_kem_sk, aad, body)
+}
+
+/// Opens a body `enc ‖ ct` from the attachment path with `purpose` (the phone's side).
+pub fn open_upload_body(
+    purpose: Purpose,
+    recipient_kem_sk: &[u8; 32],
+    aad: &[u8],
+    body: &[u8],
+) -> Result<Zeroizing<Vec<u8>>, Error> {
     if body.len() < ENC_LEN + TAG_LEN {
         return Err(Error::Crypto("attachment too short"));
     }
     let (enc, ct) = body.split_at(ENC_LEN);
-    Purpose::Attachment.open(recipient_kem_sk, enc, aad, ct)
+    purpose.open(recipient_kem_sk, enc, aad, ct)
 }
 
 /// The operating system's random source as a `rand_core` generator.
@@ -297,6 +327,7 @@ mod tests {
             Purpose::Answer,
             Purpose::Pairing,
             Purpose::Attachment,
+            Purpose::Import,
         ] {
             let s = p.seal(&pk, b"aad", b"hello").unwrap();
             assert_eq!(s.ct.len(), 5 + TAG_LEN);
@@ -364,5 +395,12 @@ mod tests {
         assert!(open_attachment_body(&sk, b"ridaid", &bad).is_err());
         assert!(open_attachment_body(&sk, b"ridaiX", &body).is_err());
         assert!(open_attachment_body(&sk, b"ridaid", &body[..40]).is_err());
+        // An export file is sealed for another purpose: it does not open as a picture.
+        let file = seal_upload_body(Purpose::Import, &pk, b"ridaid", b"a,b\n", &mut OsRng).unwrap();
+        assert!(open_attachment_body(&sk, b"ridaid", &file).is_err());
+        assert_eq!(
+            &*open_upload_body(Purpose::Import, &sk, b"ridaid", &file).unwrap(),
+            b"a,b\n"
+        );
     }
 }

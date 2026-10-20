@@ -159,7 +159,7 @@ fn result(checked: &Checked, ex: &Exchanged) -> (Text, u8) {
             };
             (text(&filled), 0)
         }
-        Decision::Queued | Decision::Rejected => {
+        Decision::Queued | Decision::Rejected | Decision::Staged => {
             (failure("error", crate::outcome::MISFIT, None), 1)
         }
         Decision::Expired => (

@@ -282,7 +282,9 @@ pub fn outcome<'a>(a: &'a Answer, target: &'a str, phone: &'a str) -> SecretOutc
         Decision::Approved => "The phone approved but sent no key.".to_owned(),
         Decision::Denied => refusal(a),
         Decision::Expired => "The request expired on the phone without an answer.".to_owned(),
-        Decision::Queued | Decision::Rejected => crate::outcome::MISFIT.to_owned(),
+        Decision::Queued | Decision::Rejected | Decision::Staged => {
+            crate::outcome::MISFIT.to_owned()
+        }
     } + &limit_note(a);
     SecretOutcome {
         decision: a.decision,
@@ -336,7 +338,9 @@ pub fn save_outcome<'a>(a: &'a Answer, target: &'a str, phone: &'a str) -> Secre
             saved; ask the user before you send it again."
                 .to_owned()
         }
-        (Decision::Queued | Decision::Rejected, _) => crate::outcome::MISFIT.to_owned(),
+        (Decision::Queued | Decision::Rejected | Decision::Staged, _) => {
+            crate::outcome::MISFIT.to_owned()
+        }
     };
     SecretOutcome {
         decision: a.decision,

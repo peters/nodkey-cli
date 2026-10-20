@@ -35,6 +35,8 @@ pub const PNG: [u8; 76] = [
 mod bundle;
 mod card;
 mod ctx;
+pub mod import;
+mod import_samples;
 mod matching;
 mod pairing;
 pub mod passkey;
@@ -133,6 +135,7 @@ fn request(
         save_secret: None,
         project: None,
         nonce: None,
+        import: None,
     }
 }
 
@@ -361,12 +364,17 @@ pub fn build() -> Value {
     let prf = prf::add(&mut ctx, &agent, &phone); // After the agent limit, for the same reason.
     let secrets = secret::add(&mut ctx, &agent, &phone); // After PRF, for the same reason.
     let key_projects = project::add(&mut ctx, &agent, &phone); // After the keys, likewise.
-    let (pairing, signed) = pairing::add(&mut ctx, &agent, &phone); // After projects, likewise.
+    let (pairing, mut signed) = pairing::add(&mut ctx, &agent, &phone); // After projects, likewise.
     card::add_setup(&mut ctx, &agent, &phone); // After pairing, likewise.
     card::add_no_passcode(&mut ctx, &agent, &phone); // After card setup, likewise.
     secret::add_no_passcode(&mut ctx, &agent, &phone); // Likewise.
     passkey::add_no_passcode(&mut ctx, &agent, &phone); // Likewise.
+    let (import, import_signed) = import::add(&mut ctx, &agent, &phone); // Likewise.
     let sites = sites::add(); // No HPKE: earlier bytes stay the same.
+    signed
+        .as_array_mut()
+        .expect("signed vectors")
+        .push(import_signed);
 
     // Signed relay calls.
     let agent_info = crate::AgentInfo {
@@ -559,5 +567,6 @@ pub fn build() -> Value {
         "sites": sites,
         "pairing": pairing,
         "signed": signed,
+        "import": import,
     })
 }

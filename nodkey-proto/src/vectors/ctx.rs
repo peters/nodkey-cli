@@ -53,7 +53,7 @@ impl Ctx {
         if text {
             v["plaintext"] = Value::String(String::from_utf8(plaintext.to_vec()).expect("utf-8"));
         }
-        if purpose == Purpose::Attachment {
+        if matches!(purpose, Purpose::Attachment | Purpose::Import) {
             let mut body = Vec::with_capacity(ENC_LEN + s.ct.len());
             body.extend_from_slice(&s.enc);
             body.extend_from_slice(&s.ct);

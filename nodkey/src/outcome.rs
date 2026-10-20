@@ -213,7 +213,7 @@ impl<'a> Outcome<'a> {
             }
             Decision::Expired if kind == Kind::SmsCode => crate::signin::SMS_EXPIRED,
             Decision::Expired => "The request expired on the phone without an answer.",
-            Decision::Queued | Decision::Rejected => MISFIT,
+            Decision::Queued | Decision::Rejected | Decision::Staged => MISFIT,
         }
         .to_owned();
         if a.decision == Decision::Approved && a.match_kind == Some(MatchKind::Chosen) {
@@ -334,7 +334,7 @@ impl<'a> Outcome<'a> {
             Decision::Expired => {
                 "The request expired on the phone without an answer. Nothing was moved.".to_owned()
             }
-            Decision::Queued | Decision::Rejected => MISFIT.to_owned(),
+            Decision::Queued | Decision::Rejected | Decision::Staged => MISFIT.to_owned(),
         };
         let accounts = a
             .accounts

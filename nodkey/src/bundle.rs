@@ -352,7 +352,7 @@ pub fn outcome<'a>(
                 .to_owned()
         }
         Decision::Expired => "The request expired on the phone without an answer.".to_owned(),
-        Decision::Queued | Decision::Rejected => crate::outcome::MISFIT.to_owned(),
+        Decision::Queued | Decision::Rejected | Decision::Staged => crate::outcome::MISFIT.to_owned(),
     } + &limit_note(a);
     BundleOutcome {
         decision: a.decision,

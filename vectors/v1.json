@@ -2264,8 +2264,620 @@
       "recipient_kem_pk": "fE5zmodqNC-MJSk500yxJtz4i2vlbx3Hpg2qO712pTQ",
       "recipient_kem_sk": "WVg29q7eTJuYsXMJkPAqAx2veoBDBCceAKKxCEs90KU",
       "sender": "phone"
+    },
+    {
+      "aad": "8bVEb4i0Es9Cf9YCcK5BtgIdQP77UDyu6DAF-4aCs1-Q",
+      "ct": "Gp8GjzA637BvDKE_F00f8hLLLzf4fSmLqIFkMQdexuCCAZXWS7MfCH1N8o_W7jAA7556hnZOAkDWlpPVZKkZFiSlzNQsksgQCJcFQfQxrOtNadEMf3jrbWgBkReS1105kai-IMCyH0HMzNinJdprjbMJeG68tKisL1H-mgV4nCF9XS_ZAUUrdZtBOQmeE6bYCKpaCAVyqq_IxdHXyVPOT0Fe98tsP32eajdpjNHe6GyBnTh4-uzwqu9cSF0dN6L4ctp8L5tlhs_HaCAbs6rw8Uuyv3gxxM2o6TFw_Z2jKUC6ThWgD65VXD6L_r1oJkZlB-715xkjj7ICCxmkhttZyddYD2IdOIMvfrGaQ257F577fVv1Ud6psjDUW-8U7w-tOV7abXEECwgZ9v2uzbYcjX4y_q3PZMkGA8R8LgPjkaEC_KqcySDPzZv9mwvHw3CuqjLi412iDRZOhv7zotyttne1PIfKqsBGs4FFPA",
+      "enc": "TGDUehUAAm3bfrB_E8eSVDe9gxPKcynJizxRgVDN8UI",
+      "ikm_e": "IMynePwKEWKlPfgSSvnSU6GUmGtH30gDwnanORTOvVw",
+      "info": "nodkey/v1/request",
+      "name": "request_import",
+      "plaintext": "{\"v\":1,\"request_id\":\"8bVEb4i0Es9Cf9YCcK5Btg\",\"kind\":\"import\",\"target\":\"\",\"reason\":\"Move the passwords saved in Chrome into Nodkey\",\"agent\":\"Agent · Horizon\",\"ts\":1791620000,\"import\":{\"file_name\":\"Chrome Passwords.csv\",\"size\":243,\"sha256\":\"fomLLc-QCrPoXSjLGMW5Zhy_S29QHbce4vLRxQfLMtU\",\"format_hint\":\"chrome_csv\",\"source\":\"Chrome, profile Default\"}}",
+      "plaintext_b64u": "eyJ2IjoxLCJyZXF1ZXN0X2lkIjoiOGJWRWI0aTBFczlDZjlZQ2NLNUJ0ZyIsImtpbmQiOiJpbXBvcnQiLCJ0YXJnZXQiOiIiLCJyZWFzb24iOiJNb3ZlIHRoZSBwYXNzd29yZHMgc2F2ZWQgaW4gQ2hyb21lIGludG8gTm9ka2V5IiwiYWdlbnQiOiJBZ2VudCDCtyBIb3Jpem9uIiwidHMiOjE3OTE2MjAwMDAsImltcG9ydCI6eyJmaWxlX25hbWUiOiJDaHJvbWUgUGFzc3dvcmRzLmNzdiIsInNpemUiOjI0Mywic2hhMjU2IjoiZm9tTExjLVFDclBvWFNqTEdNVzVaaHlfUzI5UUhiY2U0dkxSeFFmTE10VSIsImZvcm1hdF9oaW50IjoiY2hyb21lX2NzdiIsInNvdXJjZSI6IkNocm9tZSwgcHJvZmlsZSBEZWZhdWx0In19",
+      "purpose": "request",
+      "recipient_kem_pk": "Td-3-HXWLqROvCB5uulMNssHXo3O2K_LQIby38T-z28",
+      "recipient_kem_sk": "vazvVwr6Ybz3fJM8Ey3EblV_Ow4P6yCovbNOvWY7IiI",
+      "sender": "agent"
+    },
+    {
+      "aad": "8bVEb4i0Es9Cf9YCcK5BtgIdQP77UDyu6DAF-4aCs1-Q",
+      "body_b64u": "hGo6--Ehk9eJ0ficXcWlSV3IkpIFS_Wq0whFAS0JmmtTeWOC1Towr0XB_vogSdgQ31SwOhgQ4iuFaRd15L1Bh4BadwwN4x7qzvtJnpS8jXaE5LJ_9ZTmrXnLvvKrgIChKz_SJB5-iIMQWMvfqIjcVbRyMtks364hHk2zpgrbYtI55xiYfKcbHBP9do4DtwP9GKw0S0jg4bxNtnABJ58O4GxUbIhaipLZq7DuTLyaKICBWBE_QxPZgYA3SDnYnSWseSIOb_QhYWhpmumqNxuyRnoGnVGFvVF9qwgRypuBl4p3_BHQHufeGav80pKyzQZVonb6zSAQMGDzdpVbN-kKgcpDuqaboTOYlfUCVBPj6OKgib4SUxoNvUH18Mmqq9W-4dH3",
+      "ct": "U3ljgtU6MK9Fwf76IEnYEN9UsDoYEOIrhWkXdeS9QYeAWncMDeMe6s77SZ6UvI12hOSyf_WU5q15y77yq4CAoSs_0iQefoiDEFjL36iI3FW0cjLZLN-uIR5Ns6YK22LSOecYmHynGxwT_XaOA7cD_RisNEtI4OG8TbZwASefDuBsVGyIWoqS2auw7ky8miiAgVgRP0MT2YGAN0g52J0lrHkiDm_0IWFoaZrpqjcbskZ6Bp1Rhb1RfasIEcqbgZeKd_wR0B7n3hmr_NKSss0GVaJ2-s0gEDBg83aVWzfpCoHKQ7qmm6EzmJX1AlQT4-jioIm-ElMaDb1B9fDJqqvVvuHR9w",
+      "enc": "hGo6--Ehk9eJ0ficXcWlSV3IkpIFS_Wq0whFAS0Jmms",
+      "ikm_e": "N5lq2nu7m9nddf-MCg7vWZH0iAGQi52l7utstfijgoA",
+      "info": "nodkey/v1/import",
+      "name": "import_file",
+      "plaintext_b64u": "bmFtZSx1cmwsdXNlcm5hbWUscGFzc3dvcmQsbm90ZQpleGFtcGxlLmNvbSxodHRwczovL2V4YW1wbGUuY29tL2xvZ2luLGFsZXhAZXhhbXBsZS5jb20sdGVzdC1wYXNzd29yZC0xLApzaG9wLmV4YW1wbGUubmV0LGh0dHBzOi8vc2hvcC5leGFtcGxlLm5ldC8sYWxleCx0ZXN0LXBhc3N3b3JkLTIsImEgbm90ZSwgd2l0aCBhIGNvbW1hIgpub3Rlcy5leGFtcGxlLm9yZyxodHRwczovL25vdGVzLmV4YW1wbGUub3JnLyxhbGV4LCwK",
+      "purpose": "import",
+      "recipient_kem_pk": "Td-3-HXWLqROvCB5uulMNssHXo3O2K_LQIby38T-z28",
+      "recipient_kem_sk": "vazvVwr6Ybz3fJM8Ey3EblV_Ow4P6yCovbNOvWY7IiI",
+      "sender": "agent"
+    },
+    {
+      "aad": "8bVEb4i0Es9Cf9YCcK5BtgIdQP77UDyu6DAF-4aCs1-Q",
+      "ct": "bd8C0HjBBxiD4WkAGeAhiY8J97frRiBgp0DGeSWcdQe2_I9BuxQEnXKfiISVY2o5YBl3tpn-NveLiOuN7rRcbp2joEcd0MRWq54NV6T5Dyy-9En4q1MX78NYzh8K1MZTRQo4v-WqAhCHQeBTw5Me8WYBmmQrpynHEj_IIiXm00SNTzNE30J5XNIo0poYIXHEXgKMXPaMY8dAOX27I_yrbvEzuXS8GndivblHa33LaZEbKkkGjtXu4pCQmQZbniByDXj4Ej-X5ZsWHi3-IIDbLpwCXzYZOx72feurB75QoN6gmDw7lQYH6SU2OF4ZS_9VGGcdMTPtPESs26Y1_EwpQYdX8xwGEpo27mri7rLeIzPyQ_Z4aWyAWi-B28fGFi2XJ6-9JlX2UQWy8qDNsdHwUkzLgkUQpqy7TU4utSzt4IIU4JRJqbqLQsqEUrmDTRbpagXKVBQO91zCcQ4YecLs_p8LCQVqJAUYPJO-l2iMw-UyD_zgrZ8UrY3ky7CdU2-r7GCvbn447IHj7wCg5ffAd75Mg0rvmE095ju-Qf19_1t6exso_OTvKF5Qd5WfGlOtqs7OZz7PrwSLxagBf2dKlPXoDl5AX0101J4O",
+      "enc": "DZ562Sj4lOdMgI09oYwKDWYoYsl8D3xNxzRqgfbqHmo",
+      "ikm_e": "CtfRGYf-lOC-hJSFEa30Vo13OpW0uq5Y-zyCXhx5qq0",
+      "info": "nodkey/v1/request",
+      "name": "request_import_signed",
+      "plaintext": "{\"v\":1,\"request_id\":\"8bVEb4i0Es9Cf9YCcK5Btg\",\"kind\":\"import\",\"target\":\"\",\"reason\":\"Move the passwords saved in Chrome into Nodkey\",\"agent\":\"Agent · Horizon\",\"ts\":1791620000,\"import\":{\"file_name\":\"Chrome Passwords.csv\",\"size\":243,\"sha256\":\"fomLLc-QCrPoXSjLGMW5Zhy_S29QHbce4vLRxQfLMtU\",\"format_hint\":\"chrome_csv\",\"source\":\"Chrome, profile Default\"},\"sig\":\"JMNHl9fYCO5zlDamnmYR22mXc5qhJtD-DCdwUrypQBqzIQAJ0u-DijFxXC7DLt50qWOba9THTBgBBY5j62qFCw\"}",
+      "plaintext_b64u": "eyJ2IjoxLCJyZXF1ZXN0X2lkIjoiOGJWRWI0aTBFczlDZjlZQ2NLNUJ0ZyIsImtpbmQiOiJpbXBvcnQiLCJ0YXJnZXQiOiIiLCJyZWFzb24iOiJNb3ZlIHRoZSBwYXNzd29yZHMgc2F2ZWQgaW4gQ2hyb21lIGludG8gTm9ka2V5IiwiYWdlbnQiOiJBZ2VudCDCtyBIb3Jpem9uIiwidHMiOjE3OTE2MjAwMDAsImltcG9ydCI6eyJmaWxlX25hbWUiOiJDaHJvbWUgUGFzc3dvcmRzLmNzdiIsInNpemUiOjI0Mywic2hhMjU2IjoiZm9tTExjLVFDclBvWFNqTEdNVzVaaHlfUzI5UUhiY2U0dkxSeFFmTE10VSIsImZvcm1hdF9oaW50IjoiY2hyb21lX2NzdiIsInNvdXJjZSI6IkNocm9tZSwgcHJvZmlsZSBEZWZhdWx0In0sInNpZyI6IkpNTkhsOWZZQ081emxEYW1ubVlSMjJtWGM1cWhKdEQtRENkd1VyeXBRQnF6SVFBSjB1LURpakZ4WEM3REx0NTBxV09iYTlUSFRCZ0JCWTVqNjJxRkN3In0",
+      "purpose": "request",
+      "recipient_kem_pk": "Td-3-HXWLqROvCB5uulMNssHXo3O2K_LQIby38T-z28",
+      "recipient_kem_sk": "vazvVwr6Ybz3fJM8Ey3EblV_Ow4P6yCovbNOvWY7IiI",
+      "sender": "agent"
+    },
+    {
+      "aad": "8bVEb4i0Es9Cf9YCcK5Btg0g0Bt23Hxsm5z-wpZp2lpA",
+      "ct": "oq3aWfaH6Y4W32gkx9nmjOmBg68hn75VWhJ1kgNkVVQHRzBobelkk_aB0Ht2BvuI3nwDEnL1iurqClt1Y705aTpz0M_TDstS0fhwX66oN-mhTE8iFguL7hmbDLIxmt5_9VDuTbQ7Z-TrVHp1YTsIfqnlWMvLu2HxFLFbv-HeqvQfjc1CSC2FC37U0lYIMA_dVG-uvMt8e_m-iQP9PNTeVdnAmDqT6VhrbgBtU0AwrTK4Ia85msAYK5iWI2tTlANkzQxXNLUae7dpXEzc3VUo0IA2Gi4",
+      "enc": "F2XDaaHXHcp5eU1x48ZRBh01ptP8-o083ZKt6gbaIH4",
+      "ikm_e": "P7lJBMcEbQuYGMO_PmKzM_IxKafy6v9KuC5wEBcbmRI",
+      "info": "nodkey/v1/answer",
+      "name": "answer_import_staged",
+      "plaintext": "{\"v\":1,\"request_id\":\"8bVEb4i0Es9Cf9YCcK5Btg\",\"decision\":\"staged\",\"import\":{\"found\":2,\"new\":2,\"merged\":0,\"duplicates\":0,\"conflicts\":0,\"skipped\":1,\"logins\":2,\"codes\":0,\"files\":1,\"until\":1791621800}}",
+      "plaintext_b64u": "eyJ2IjoxLCJyZXF1ZXN0X2lkIjoiOGJWRWI0aTBFczlDZjlZQ2NLNUJ0ZyIsImRlY2lzaW9uIjoic3RhZ2VkIiwiaW1wb3J0Ijp7ImZvdW5kIjoyLCJuZXciOjIsIm1lcmdlZCI6MCwiZHVwbGljYXRlcyI6MCwiY29uZmxpY3RzIjowLCJza2lwcGVkIjoxLCJsb2dpbnMiOjIsImNvZGVzIjowLCJmaWxlcyI6MSwidW50aWwiOjE3OTE2MjE4MDB9fQ",
+      "purpose": "answer",
+      "recipient_kem_pk": "fE5zmodqNC-MJSk500yxJtz4i2vlbx3Hpg2qO712pTQ",
+      "recipient_kem_sk": "WVg29q7eTJuYsXMJkPAqAx2veoBDBCceAKKxCEs90KU",
+      "sender": "phone"
+    },
+    {
+      "aad": "8bVEb4i0Es9Cf9YCcK5Btg0g0Bt23Hxsm5z-wpZp2lpA",
+      "ct": "RWAWoqZe8nyAzQHB6LB-ioxpXONER8cx6nDLzMXzqr7YcWCSPbpD5vjRuDbOkGUBr7682KcwYXwrmhopAzOxEPEPioHlmRzmMkxjj-fou6O6CAUSDj8EcYTPY2PgTUsKI280CCYaoq7Y",
+      "enc": "MnDQfyGbRzu7rPMrJAc-7FGfA1-UW4Pf5kP3rgMMugw",
+      "ikm_e": "ZmAgWM1e4Bf7VA5D5BIimgIt1-tAfFFddDp2b1Un7XY",
+      "info": "nodkey/v1/answer",
+      "name": "answer_import_closed",
+      "plaintext": "{\"v\":1,\"request_id\":\"8bVEb4i0Es9Cf9YCcK5Btg\",\"decision\":\"denied\",\"error\":\"import_closed\"}",
+      "plaintext_b64u": "eyJ2IjoxLCJyZXF1ZXN0X2lkIjoiOGJWRWI0aTBFczlDZjlZQ2NLNUJ0ZyIsImRlY2lzaW9uIjoiZGVuaWVkIiwiZXJyb3IiOiJpbXBvcnRfY2xvc2VkIn0",
+      "purpose": "answer",
+      "recipient_kem_pk": "fE5zmodqNC-MJSk500yxJtz4i2vlbx3Hpg2qO712pTQ",
+      "recipient_kem_sk": "WVg29q7eTJuYsXMJkPAqAx2veoBDBCceAKKxCEs90KU",
+      "sender": "phone"
+    },
+    {
+      "aad": "8bVEb4i0Es9Cf9YCcK5Btg0g0Bt23Hxsm5z-wpZp2lpA",
+      "ct": "QQdh3oRixIqhnTecX37JU3jFqcFFPvZI-g_wEVFWKaor2TNBSzibZi4q_kRUzYw3qlEt8Q_vMTJxcWne9s551-awT2LAlAqde5GjJtEXdyACn7PQwaRyOM1aV_2N6LbaIMPSsHGeUw",
+      "enc": "eKZwyCloMjLWX37GB1DlzccZxAEb6K6KSKb5jxshfRo",
+      "ikm_e": "3l3jocjVWEcQr98WaWhkNJl-9rLrLVWbdH6Vy4DlRm0",
+      "info": "nodkey/v1/answer",
+      "name": "answer_import_window_full",
+      "plaintext": "{\"v\":1,\"request_id\":\"8bVEb4i0Es9Cf9YCcK5Btg\",\"decision\":\"denied\",\"error\":\"window_full\"}",
+      "plaintext_b64u": "eyJ2IjoxLCJyZXF1ZXN0X2lkIjoiOGJWRWI0aTBFczlDZjlZQ2NLNUJ0ZyIsImRlY2lzaW9uIjoiZGVuaWVkIiwiZXJyb3IiOiJ3aW5kb3dfZnVsbCJ9",
+      "purpose": "answer",
+      "recipient_kem_pk": "fE5zmodqNC-MJSk500yxJtz4i2vlbx3Hpg2qO712pTQ",
+      "recipient_kem_sk": "WVg29q7eTJuYsXMJkPAqAx2veoBDBCceAKKxCEs90KU",
+      "sender": "phone"
+    },
+    {
+      "aad": "8bVEb4i0Es9Cf9YCcK5Btg0g0Bt23Hxsm5z-wpZp2lpA",
+      "ct": "9kY-Sy9PTVOh0oTyHDgK7ubyWRGrS1pr9Ga1l7n5mlzo3JEJEvJaDheOn34B8V0oD4y_aMJbKBPIgVcDfT42ru3NM2xtG7VHa9K5pcPtrgVOes5YY4yK8VlQykdN53ltDJaPpTk",
+      "enc": "bw1vCWOzCWrwh7jdDylvzdlHPy-rIt6A9XtpH-K4aAo",
+      "ikm_e": "NW1uurD0QEN8oo671UF8FHc4WTo1Z83YL7w2yS7yOeM",
+      "info": "nodkey/v1/answer",
+      "name": "answer_import_too_large",
+      "plaintext": "{\"v\":1,\"request_id\":\"8bVEb4i0Es9Cf9YCcK5Btg\",\"decision\":\"denied\",\"error\":\"too_large\"}",
+      "plaintext_b64u": "eyJ2IjoxLCJyZXF1ZXN0X2lkIjoiOGJWRWI0aTBFczlDZjlZQ2NLNUJ0ZyIsImRlY2lzaW9uIjoiZGVuaWVkIiwiZXJyb3IiOiJ0b29fbGFyZ2UifQ",
+      "purpose": "answer",
+      "recipient_kem_pk": "fE5zmodqNC-MJSk500yxJtz4i2vlbx3Hpg2qO712pTQ",
+      "recipient_kem_sk": "WVg29q7eTJuYsXMJkPAqAx2veoBDBCceAKKxCEs90KU",
+      "sender": "phone"
+    },
+    {
+      "aad": "8bVEb4i0Es9Cf9YCcK5Btg0g0Bt23Hxsm5z-wpZp2lpA",
+      "ct": "o2P0470yoXqZ0-Mg4h-dVRGp9pT7kq5B1NMwAFPxrofwqtDqJAQMX7On796U6Jx_4-yKJC5RGYUuieCTT43mUExGQiMyFHzkOeD3inUZQuYhLJ5ldzbkTHP-SK5BfbjAANSUYrXx",
+      "enc": "scYErAgssL786XSd5CGLCtongkOSmg_BzLf7-DL8kTw",
+      "ikm_e": "NKHgZVvslrBbf9atvH918Fq5ki0DHUrXKdevjCladlc",
+      "info": "nodkey/v1/answer",
+      "name": "answer_import_bad_import",
+      "plaintext": "{\"v\":1,\"request_id\":\"8bVEb4i0Es9Cf9YCcK5Btg\",\"decision\":\"denied\",\"error\":\"bad_import\"}",
+      "plaintext_b64u": "eyJ2IjoxLCJyZXF1ZXN0X2lkIjoiOGJWRWI0aTBFczlDZjlZQ2NLNUJ0ZyIsImRlY2lzaW9uIjoiZGVuaWVkIiwiZXJyb3IiOiJiYWRfaW1wb3J0In0",
+      "purpose": "answer",
+      "recipient_kem_pk": "fE5zmodqNC-MJSk500yxJtz4i2vlbx3Hpg2qO712pTQ",
+      "recipient_kem_sk": "WVg29q7eTJuYsXMJkPAqAx2veoBDBCceAKKxCEs90KU",
+      "sender": "phone"
+    },
+    {
+      "aad": "8bVEb4i0Es9Cf9YCcK5Btg0g0Bt23Hxsm5z-wpZp2lpA",
+      "ct": "P4lpKvmdelmaBggntc6jFX_zJ0Go11685mEzy5KGBTbTaP8Cq3MqQB6-ao_CQLNLxOrZZldQwDBnSxcmKE7eEOnIKlbq4hrj8qEgdChr2lRHGJEdDY5GPr30hnOWpVp8sn11P6bpMwS0HW-vfw",
+      "enc": "cWkgOJFtRWP9uWLRjDyOslipFTu9o9nQF40P_P_Aczs",
+      "ikm_e": "0_NjRNxCHTy0BzNT4YJ8JqxQOTZfaK3FOfcS04bRPM4",
+      "info": "nodkey/v1/answer",
+      "name": "answer_import_unreadable",
+      "plaintext": "{\"v\":1,\"request_id\":\"8bVEb4i0Es9Cf9YCcK5Btg\",\"decision\":\"denied\",\"error\":\"import_unreadable\"}",
+      "plaintext_b64u": "eyJ2IjoxLCJyZXF1ZXN0X2lkIjoiOGJWRWI0aTBFczlDZjlZQ2NLNUJ0ZyIsImRlY2lzaW9uIjoiZGVuaWVkIiwiZXJyb3IiOiJpbXBvcnRfdW5yZWFkYWJsZSJ9",
+      "purpose": "answer",
+      "recipient_kem_pk": "fE5zmodqNC-MJSk500yxJtz4i2vlbx3Hpg2qO712pTQ",
+      "recipient_kem_sk": "WVg29q7eTJuYsXMJkPAqAx2veoBDBCceAKKxCEs90KU",
+      "sender": "phone"
+    },
+    {
+      "aad": "8bVEb4i0Es9Cf9YCcK5Btg0g0Bt23Hxsm5z-wpZp2lpA",
+      "ct": "4GP7QHzU15wV1lQIPTkszNJ83Uae2pN1nBVjtPhewsQXsUByew0p9FOOT9FfyAEAxtZZxk7o1jeoolNZxOCLgFIceUfMEXXG01sxhVjXTOpr4N4JILsPOtjBdgNbfMaTy1CgYFfR0w",
+      "enc": "7xKDiZ9y0iDiGTHvE4q5XpcmlHyUTUHyGmB6zJNLShc",
+      "ikm_e": "epx7y-OnVRlNxb3rxxarTLttyxbfKWpg9DvlPnuKLQk",
+      "info": "nodkey/v1/answer",
+      "name": "answer_import_no_passcode",
+      "plaintext": "{\"v\":1,\"request_id\":\"8bVEb4i0Es9Cf9YCcK5Btg\",\"decision\":\"denied\",\"error\":\"no_passcode\"}",
+      "plaintext_b64u": "eyJ2IjoxLCJyZXF1ZXN0X2lkIjoiOGJWRWI0aTBFczlDZjlZQ2NLNUJ0ZyIsImRlY2lzaW9uIjoiZGVuaWVkIiwiZXJyb3IiOiJub19wYXNzY29kZSJ9",
+      "purpose": "answer",
+      "recipient_kem_pk": "fE5zmodqNC-MJSk500yxJtz4i2vlbx3Hpg2qO712pTQ",
+      "recipient_kem_sk": "WVg29q7eTJuYsXMJkPAqAx2veoBDBCceAKKxCEs90KU",
+      "sender": "phone"
     }
   ],
+  "import": {
+    "checks": [
+      {
+        "error": null,
+        "import": {
+          "file_name": "Chrome Passwords.csv",
+          "format_hint": "chrome_csv",
+          "sha256": "fomLLc-QCrPoXSjLGMW5Zhy_S29QHbce4vLRxQfLMtU",
+          "size": 243,
+          "source": "Chrome, profile Default"
+        },
+        "name": "chrome"
+      },
+      {
+        "error": null,
+        "import": {
+          "file_name": "Chrome Passwords.csv",
+          "sha256": "fomLLc-QCrPoXSjLGMW5Zhy_S29QHbce4vLRxQfLMtU",
+          "size": 243,
+          "source": "Chrome, profile Default"
+        },
+        "name": "no_hint"
+      },
+      {
+        "error": null,
+        "import": {
+          "file_name": "Chrome Passwords.csv",
+          "format_hint": "edge_csv",
+          "sha256": "fomLLc-QCrPoXSjLGMW5Zhy_S29QHbce4vLRxQfLMtU",
+          "size": 243,
+          "source": "Chrome, profile Default"
+        },
+        "name": "unknown_hint"
+      },
+      {
+        "error": null,
+        "import": {
+          "file_name": "Chrome Passwords.csv",
+          "format_hint": "chrome_csv",
+          "sha256": "fomLLc-QCrPoXSjLGMW5Zhy_S29QHbce4vLRxQfLMtU",
+          "size": 1048528,
+          "source": "Chrome, profile Default"
+        },
+        "name": "largest"
+      },
+      {
+        "error": "too_large",
+        "import": {
+          "file_name": "Chrome Passwords.csv",
+          "format_hint": "chrome_csv",
+          "sha256": "fomLLc-QCrPoXSjLGMW5Zhy_S29QHbce4vLRxQfLMtU",
+          "size": 1048529,
+          "source": "Chrome, profile Default"
+        },
+        "name": "too_large"
+      },
+      {
+        "error": "bad_import",
+        "import": {
+          "file_name": "Chrome Passwords.csv",
+          "format_hint": "chrome_csv",
+          "sha256": "fomLLc-QCrPoXSjLGMW5Zhy_S29QHbce4vLRxQfLMtU",
+          "size": 0,
+          "source": "Chrome, profile Default"
+        },
+        "name": "empty_file"
+      },
+      {
+        "error": "bad_import",
+        "import": {
+          "file_name": "Downloads/Chrome Passwords.csv",
+          "format_hint": "chrome_csv",
+          "sha256": "fomLLc-QCrPoXSjLGMW5Zhy_S29QHbce4vLRxQfLMtU",
+          "size": 243,
+          "source": "Chrome, profile Default"
+        },
+        "name": "folder_in_name"
+      },
+      {
+        "error": "bad_import",
+        "import": {
+          "file_name": "C:\\Users\\alex\\Passwords.csv",
+          "format_hint": "chrome_csv",
+          "sha256": "fomLLc-QCrPoXSjLGMW5Zhy_S29QHbce4vLRxQfLMtU",
+          "size": 243,
+          "source": "Chrome, profile Default"
+        },
+        "name": "backslash_in_name"
+      },
+      {
+        "error": "bad_import",
+        "import": {
+          "file_name": " ",
+          "format_hint": "chrome_csv",
+          "sha256": "fomLLc-QCrPoXSjLGMW5Zhy_S29QHbce4vLRxQfLMtU",
+          "size": 243,
+          "source": "Chrome, profile Default"
+        },
+        "name": "blank_name"
+      },
+      {
+        "error": "bad_import",
+        "import": {
+          "file_name": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "format_hint": "chrome_csv",
+          "sha256": "fomLLc-QCrPoXSjLGMW5Zhy_S29QHbce4vLRxQfLMtU",
+          "size": 243,
+          "source": "Chrome, profile Default"
+        },
+        "name": "long_name"
+      },
+      {
+        "error": null,
+        "import": {
+          "file_name": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "format_hint": "chrome_csv",
+          "sha256": "fomLLc-QCrPoXSjLGMW5Zhy_S29QHbce4vLRxQfLMtU",
+          "size": 243,
+          "source": "Chrome, profile Default"
+        },
+        "name": "longest_name"
+      },
+      {
+        "error": "bad_import",
+        "import": {
+          "file_name": "Chrome Passwords.csv",
+          "format_hint": "chrome_csv",
+          "sha256": "abc",
+          "size": 243,
+          "source": "Chrome, profile Default"
+        },
+        "name": "short_hash"
+      },
+      {
+        "error": "bad_import",
+        "import": {
+          "file_name": "Chrome Passwords.csv",
+          "format_hint": "chrome_csv",
+          "sha256": "fomLLc-QCrPoXSjLGMW5Zhy_S29QHbce4vLRxQfLMtU",
+          "size": 243,
+          "source": ""
+        },
+        "name": "blank_source"
+      },
+      {
+        "error": "bad_import",
+        "import": {
+          "file_name": "Chrome Passwords.csv",
+          "format_hint": "chrome_csv",
+          "sha256": "fomLLc-QCrPoXSjLGMW5Zhy_S29QHbce4vLRxQfLMtU",
+          "size": 243,
+          "source": "sssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssss"
+        },
+        "name": "long_source"
+      },
+      {
+        "error": "bad_import",
+        "import": {
+          "file_name": "Chrome Passwords.csv",
+          "format_hint": "chrome_csv",
+          "sha256": "fomLLc-QCrPoXSjLGMW5Zhy_S29QHbce4vLRxQfLMtU",
+          "size": 243,
+          "source": "Chrome\nprofile"
+        },
+        "name": "control_in_source"
+      }
+    ],
+    "detect": [
+      {
+        "archive": false,
+        "codes": 0,
+        "content": "name,url,username,password,note\nexample.com,https://example.com/login,alex@example.com,test-password-1,\nshop.example.net,https://shop.example.net/,alex,test-password-2,\"a note, with a comma\"\nnotes.example.org,https://notes.example.org/,alex,,\n",
+        "content_b64u": "bmFtZSx1cmwsdXNlcm5hbWUscGFzc3dvcmQsbm90ZQpleGFtcGxlLmNvbSxodHRwczovL2V4YW1wbGUuY29tL2xvZ2luLGFsZXhAZXhhbXBsZS5jb20sdGVzdC1wYXNzd29yZC0xLApzaG9wLmV4YW1wbGUubmV0LGh0dHBzOi8vc2hvcC5leGFtcGxlLm5ldC8sYWxleCx0ZXN0LXBhc3N3b3JkLTIsImEgbm90ZSwgd2l0aCBhIGNvbW1hIgpub3Rlcy5leGFtcGxlLm9yZyxodHRwczovL25vdGVzLmV4YW1wbGUub3JnLyxhbGV4LCwK",
+        "encrypted": false,
+        "format": "chrome_csv",
+        "found": 2,
+        "logins": 2,
+        "name": "chrome_csv",
+        "skipped": 1
+      },
+      {
+        "archive": false,
+        "codes": 0,
+        "content": "﻿name,url,username,password\r\nexample.com,https://example.com/,alex,test-password-1\r\n\r\n",
+        "content_b64u": "77u_bmFtZSx1cmwsdXNlcm5hbWUscGFzc3dvcmQNCmV4YW1wbGUuY29tLGh0dHBzOi8vZXhhbXBsZS5jb20vLGFsZXgsdGVzdC1wYXNzd29yZC0xDQoNCg",
+        "encrypted": false,
+        "format": "chrome_csv",
+        "found": 1,
+        "logins": 1,
+        "name": "chrome_csv_bom_crlf",
+        "skipped": 0
+      },
+      {
+        "archive": false,
+        "codes": 0,
+        "content": "\"url\",\"username\",\"password\",\"httpRealm\",\"formActionOrigin\",\"guid\",\"timeCreated\",\"timeLastUsed\",\"timePasswordChanged\"\n\"https://example.com\",\"alex@example.com\",\"test-password-1\",,\"https://example.com\",\"{00000000-0000-0000-0000-000000000001}\",\"1700000000000\",\"1700000000000\",\"1700000000000\"\n\"https://mail.example.org\",\"alex\",\"test \"\"quoted\"\" password\",,\"https://mail.example.org\",\"{00000000-0000-0000-0000-000000000002}\",\"1700000000000\",\"1700000000000\",\"1700000000000\"\n",
+        "content_b64u": "InVybCIsInVzZXJuYW1lIiwicGFzc3dvcmQiLCJodHRwUmVhbG0iLCJmb3JtQWN0aW9uT3JpZ2luIiwiZ3VpZCIsInRpbWVDcmVhdGVkIiwidGltZUxhc3RVc2VkIiwidGltZVBhc3N3b3JkQ2hhbmdlZCIKImh0dHBzOi8vZXhhbXBsZS5jb20iLCJhbGV4QGV4YW1wbGUuY29tIiwidGVzdC1wYXNzd29yZC0xIiwsImh0dHBzOi8vZXhhbXBsZS5jb20iLCJ7MDAwMDAwMDAtMDAwMC0wMDAwLTAwMDAtMDAwMDAwMDAwMDAxfSIsIjE3MDAwMDAwMDAwMDAiLCIxNzAwMDAwMDAwMDAwIiwiMTcwMDAwMDAwMDAwMCIKImh0dHBzOi8vbWFpbC5leGFtcGxlLm9yZyIsImFsZXgiLCJ0ZXN0ICIicXVvdGVkIiIgcGFzc3dvcmQiLCwiaHR0cHM6Ly9tYWlsLmV4YW1wbGUub3JnIiwiezAwMDAwMDAwLTAwMDAtMDAwMC0wMDAwLTAwMDAwMDAwMDAwMn0iLCIxNzAwMDAwMDAwMDAwIiwiMTcwMDAwMDAwMDAwMCIsIjE3MDAwMDAwMDAwMDAiCg",
+        "encrypted": false,
+        "format": "firefox_csv",
+        "found": 2,
+        "logins": 2,
+        "name": "firefox_csv",
+        "skipped": 0
+      },
+      {
+        "archive": false,
+        "codes": 1,
+        "content": "Title,URL,Username,Password,Notes,OTPAuth\nexample.com (alex@example.com),https://example.com/,alex@example.com,test-password-1,,otpauth://totp/Example:alex@example.com?secret=JBSWY3DPEHPK3PXP&issuer=Example\nexample.net (alex),https://example.net/,alex,test-password-2,\"line one\nline two\",\n",
+        "content_b64u": "VGl0bGUsVVJMLFVzZXJuYW1lLFBhc3N3b3JkLE5vdGVzLE9UUEF1dGgKZXhhbXBsZS5jb20gKGFsZXhAZXhhbXBsZS5jb20pLGh0dHBzOi8vZXhhbXBsZS5jb20vLGFsZXhAZXhhbXBsZS5jb20sdGVzdC1wYXNzd29yZC0xLCxvdHBhdXRoOi8vdG90cC9FeGFtcGxlOmFsZXhAZXhhbXBsZS5jb20_c2VjcmV0PUpCU1dZM0RQRUhQSzNQWFAmaXNzdWVyPUV4YW1wbGUKZXhhbXBsZS5uZXQgKGFsZXgpLGh0dHBzOi8vZXhhbXBsZS5uZXQvLGFsZXgsdGVzdC1wYXNzd29yZC0yLCJsaW5lIG9uZQpsaW5lIHR3byIsCg",
+        "encrypted": false,
+        "format": "apple_passwords_csv",
+        "found": 2,
+        "logins": 2,
+        "name": "apple_passwords_csv",
+        "skipped": 0
+      },
+      {
+        "archive": false,
+        "codes": 1,
+        "content": "folder,favorite,type,name,notes,fields,reprompt,login_uri,login_username,login_password,login_totp\n,,login,Example,,,0,https://example.com,alex@example.com,test-password-1,JBSWY3DPEHPK3PXP\n,,note,A note,just a note,,0,,,,\n",
+        "content_b64u": "Zm9sZGVyLGZhdm9yaXRlLHR5cGUsbmFtZSxub3RlcyxmaWVsZHMscmVwcm9tcHQsbG9naW5fdXJpLGxvZ2luX3VzZXJuYW1lLGxvZ2luX3Bhc3N3b3JkLGxvZ2luX3RvdHAKLCxsb2dpbixFeGFtcGxlLCwsMCxodHRwczovL2V4YW1wbGUuY29tLGFsZXhAZXhhbXBsZS5jb20sdGVzdC1wYXNzd29yZC0xLEpCU1dZM0RQRUhQSzNQWFAKLCxub3RlLEEgbm90ZSxqdXN0IGEgbm90ZSwsMCwsLCwK",
+        "encrypted": false,
+        "format": "bitwarden_csv",
+        "found": 1,
+        "logins": 1,
+        "name": "bitwarden_csv",
+        "skipped": 1
+      },
+      {
+        "archive": false,
+        "codes": 1,
+        "content": "{\"encrypted\":false,\"folders\":[],\"items\":[\n {\"id\":\"1\",\"type\":1,\"name\":\"Example\",\"login\":{\"username\":\"alex@example.com\",\"password\":\"test-password-1\",\"totp\":\"otpauth://totp/Example?secret=JBSWY3DPEHPK3PXP\",\"uris\":[{\"uri\":\"https://example.com\"}]}},\n {\"id\":\"2\",\"type\":1,\"name\":\"Example Net\",\"login\":{\"username\":\"alex\",\"password\":\"test-password-2\",\"totp\":null}},\n {\"id\":\"3\",\"type\":2,\"name\":\"A secure note\",\"secureNote\":{\"type\":0},\"notes\":\"just a note\"}]}\n",
+        "content_b64u": "eyJlbmNyeXB0ZWQiOmZhbHNlLCJmb2xkZXJzIjpbXSwiaXRlbXMiOlsKIHsiaWQiOiIxIiwidHlwZSI6MSwibmFtZSI6IkV4YW1wbGUiLCJsb2dpbiI6eyJ1c2VybmFtZSI6ImFsZXhAZXhhbXBsZS5jb20iLCJwYXNzd29yZCI6InRlc3QtcGFzc3dvcmQtMSIsInRvdHAiOiJvdHBhdXRoOi8vdG90cC9FeGFtcGxlP3NlY3JldD1KQlNXWTNEUEVIUEszUFhQIiwidXJpcyI6W3sidXJpIjoiaHR0cHM6Ly9leGFtcGxlLmNvbSJ9XX19LAogeyJpZCI6IjIiLCJ0eXBlIjoxLCJuYW1lIjoiRXhhbXBsZSBOZXQiLCJsb2dpbiI6eyJ1c2VybmFtZSI6ImFsZXgiLCJwYXNzd29yZCI6InRlc3QtcGFzc3dvcmQtMiIsInRvdHAiOm51bGx9fSwKIHsiaWQiOiIzIiwidHlwZSI6MiwibmFtZSI6IkEgc2VjdXJlIG5vdGUiLCJzZWN1cmVOb3RlIjp7InR5cGUiOjB9LCJub3RlcyI6Imp1c3QgYSBub3RlIn1dfQo",
+        "encrypted": false,
+        "format": "bitwarden_json",
+        "found": 2,
+        "logins": 2,
+        "name": "bitwarden_json",
+        "skipped": 1
+      },
+      {
+        "archive": false,
+        "codes": 0,
+        "content": "{\"encrypted\":true,\"passwordProtected\":true,\"salt\":\"c2FsdA\",\"kdfType\":0,\"kdfIterations\":600000,\"encKeyValidation_DO_NOT_EDIT\":\"2.AAAA\",\"data\":\"2.BBBB\"}",
+        "content_b64u": "eyJlbmNyeXB0ZWQiOnRydWUsInBhc3N3b3JkUHJvdGVjdGVkIjp0cnVlLCJzYWx0IjoiYzJGc2RBIiwia2RmVHlwZSI6MCwia2RmSXRlcmF0aW9ucyI6NjAwMDAwLCJlbmNLZXlWYWxpZGF0aW9uX0RPX05PVF9FRElUIjoiMi5BQUFBIiwiZGF0YSI6IjIuQkJCQiJ9",
+        "encrypted": true,
+        "format": "bitwarden_json",
+        "found": 0,
+        "logins": 0,
+        "name": "bitwarden_json_encrypted",
+        "skipped": 0
+      },
+      {
+        "archive": false,
+        "codes": 0,
+        "content": "Title,Url,Username,Password,OTPAuth,Favorite,Archived,Tags,Notes\nExample,https://example.com,alex@example.com,test-password-1,,false,false,,\n",
+        "content_b64u": "VGl0bGUsVXJsLFVzZXJuYW1lLFBhc3N3b3JkLE9UUEF1dGgsRmF2b3JpdGUsQXJjaGl2ZWQsVGFncyxOb3RlcwpFeGFtcGxlLGh0dHBzOi8vZXhhbXBsZS5jb20sYWxleEBleGFtcGxlLmNvbSx0ZXN0LXBhc3N3b3JkLTEsLGZhbHNlLGZhbHNlLCwK",
+        "encrypted": false,
+        "format": "1password_csv",
+        "found": 1,
+        "logins": 1,
+        "name": "1password_csv",
+        "skipped": 0
+      },
+      {
+        "archive": false,
+        "codes": 0,
+        "content": "url,username,password,totp,extra,name,grouping,fav\nhttps://example.com,alex@example.com,test-password-1,,,Example,,0\nhttp://sn,,,,NoteType:Server,A secure note,,0\n",
+        "content_b64u": "dXJsLHVzZXJuYW1lLHBhc3N3b3JkLHRvdHAsZXh0cmEsbmFtZSxncm91cGluZyxmYXYKaHR0cHM6Ly9leGFtcGxlLmNvbSxhbGV4QGV4YW1wbGUuY29tLHRlc3QtcGFzc3dvcmQtMSwsLEV4YW1wbGUsLDAKaHR0cDovL3NuLCwsLE5vdGVUeXBlOlNlcnZlcixBIHNlY3VyZSBub3RlLCwwCg",
+        "encrypted": false,
+        "format": "lastpass_csv",
+        "found": 1,
+        "logins": 1,
+        "name": "lastpass_csv",
+        "skipped": 1
+      },
+      {
+        "archive": false,
+        "codes": 0,
+        "content": "username,username2,username3,title,password,note,url,category,otpSecret\nalex@example.com,,,Example,test-password-1,,https://example.com,,\n",
+        "content_b64u": "dXNlcm5hbWUsdXNlcm5hbWUyLHVzZXJuYW1lMyx0aXRsZSxwYXNzd29yZCxub3RlLHVybCxjYXRlZ29yeSxvdHBTZWNyZXQKYWxleEBleGFtcGxlLmNvbSwsLEV4YW1wbGUsdGVzdC1wYXNzd29yZC0xLCxodHRwczovL2V4YW1wbGUuY29tLCwK",
+        "encrypted": false,
+        "format": "dashlane_csv",
+        "found": 1,
+        "logins": 1,
+        "name": "dashlane_csv",
+        "skipped": 0
+      },
+      {
+        "archive": false,
+        "codes": 0,
+        "content": "name,url,email,username,password,note,totp,createTime,modifyTime,vault\nExample,https://example.com,alex@example.com,,test-password-1,,,1700000000,1700000000,Personal\n",
+        "content_b64u": "bmFtZSx1cmwsZW1haWwsdXNlcm5hbWUscGFzc3dvcmQsbm90ZSx0b3RwLGNyZWF0ZVRpbWUsbW9kaWZ5VGltZSx2YXVsdApFeGFtcGxlLGh0dHBzOi8vZXhhbXBsZS5jb20sYWxleEBleGFtcGxlLmNvbSwsdGVzdC1wYXNzd29yZC0xLCwsMTcwMDAwMDAwMCwxNzAwMDAwMDAwLFBlcnNvbmFsCg",
+        "encrypted": false,
+        "format": "proton_pass_csv",
+        "found": 1,
+        "logins": 1,
+        "name": "proton_pass_csv",
+        "skipped": 0
+      },
+      {
+        "archive": false,
+        "codes": 0,
+        "content": "name,url,additional_urls,username,password,note,cardholdername,cardnumber,cvc,expirydate,type\nExample,https://example.com,,alex@example.com,test-password-1,,,,,,password\nTest card,,,,,,Alex Example,4242424242424242,123,12/30,credit_card\n",
+        "content_b64u": "bmFtZSx1cmwsYWRkaXRpb25hbF91cmxzLHVzZXJuYW1lLHBhc3N3b3JkLG5vdGUsY2FyZGhvbGRlcm5hbWUsY2FyZG51bWJlcixjdmMsZXhwaXJ5ZGF0ZSx0eXBlCkV4YW1wbGUsaHR0cHM6Ly9leGFtcGxlLmNvbSwsYWxleEBleGFtcGxlLmNvbSx0ZXN0LXBhc3N3b3JkLTEsLCwsLCxwYXNzd29yZApUZXN0IGNhcmQsLCwsLCxBbGV4IEV4YW1wbGUsNDI0MjQyNDI0MjQyNDI0MiwxMjMsMTIvMzAsY3JlZGl0X2NhcmQK",
+        "encrypted": false,
+        "format": "nordpass_csv",
+        "found": 1,
+        "logins": 1,
+        "name": "nordpass_csv",
+        "skipped": 1
+      },
+      {
+        "archive": false,
+        "codes": 1,
+        "content": "\"Group\",\"Title\",\"Username\",\"Password\",\"URL\",\"Notes\",\"TOTP\",\"Icon\",\"Last Modified\",\"Created\"\n\"Root\",\"Example\",\"alex@example.com\",\"test-password-1\",\"https://example.com\",\"\",\"otpauth://totp/Example:alex?secret=JBSWY3DPEHPK3PXP&issuer=Example\",\"0\",\"2026-01-01T00:00:00Z\",\"2026-01-01T00:00:00Z\"\n",
+        "content_b64u": "Ikdyb3VwIiwiVGl0bGUiLCJVc2VybmFtZSIsIlBhc3N3b3JkIiwiVVJMIiwiTm90ZXMiLCJUT1RQIiwiSWNvbiIsIkxhc3QgTW9kaWZpZWQiLCJDcmVhdGVkIgoiUm9vdCIsIkV4YW1wbGUiLCJhbGV4QGV4YW1wbGUuY29tIiwidGVzdC1wYXNzd29yZC0xIiwiaHR0cHM6Ly9leGFtcGxlLmNvbSIsIiIsIm90cGF1dGg6Ly90b3RwL0V4YW1wbGU6YWxleD9zZWNyZXQ9SkJTV1kzRFBFSFBLM1BYUCZpc3N1ZXI9RXhhbXBsZSIsIjAiLCIyMDI2LTAxLTAxVDAwOjAwOjAwWiIsIjIwMjYtMDEtMDFUMDA6MDA6MDBaIgo",
+        "encrypted": false,
+        "format": "keepassxc_csv",
+        "found": 1,
+        "logins": 1,
+        "name": "keepassxc_csv",
+        "skipped": 0
+      },
+      {
+        "archive": false,
+        "codes": 0,
+        "content": "site,login,password\nexample.com,alex,test-password-1\n",
+        "content_b64u": "c2l0ZSxsb2dpbixwYXNzd29yZApleGFtcGxlLmNvbSxhbGV4LHRlc3QtcGFzc3dvcmQtMQo",
+        "encrypted": false,
+        "format": "generic_csv",
+        "found": 1,
+        "logins": 1,
+        "name": "generic_csv",
+        "skipped": 0
+      },
+      {
+        "archive": false,
+        "codes": 2,
+        "content": "otpauth://totp/Example:alex@example.com?secret=JBSWY3DPEHPK3PXP&issuer=Example\notpauth://totp/Example%20Net:alex?secret=KRSXG5CTMVRXEZLU&issuer=Example%20Net\n\nnot a link\n",
+        "content_b64u": "b3RwYXV0aDovL3RvdHAvRXhhbXBsZTphbGV4QGV4YW1wbGUuY29tP3NlY3JldD1KQlNXWTNEUEVIUEszUFhQJmlzc3Vlcj1FeGFtcGxlCm90cGF1dGg6Ly90b3RwL0V4YW1wbGUlMjBOZXQ6YWxleD9zZWNyZXQ9S1JTWEc1Q1RNVlJYRVpMVSZpc3N1ZXI9RXhhbXBsZSUyME5ldAoKbm90IGEgbGluawo",
+        "encrypted": false,
+        "format": "otpauth_list",
+        "found": 2,
+        "logins": 0,
+        "name": "otpauth_list",
+        "skipped": 1
+      },
+      {
+        "archive": false,
+        "codes": 1,
+        "content": "{\"services\":[{\"name\":\"Example\",\"secret\":\"JBSWY3DPEHPK3PXP\",\"otp\":{\"account\":\"alex@example.com\",\"issuer\":\"Example\",\"digits\":6,\"period\":30,\"algorithm\":\"SHA1\",\"tokenType\":\"TOTP\"},\"order\":{\"position\":0}}],\"groups\":[],\"updatedAt\":1700000000000,\"schemaVersion\":4,\"appVersionCode\":5000000,\"appOrigin\":\"ios\"}",
+        "content_b64u": "eyJzZXJ2aWNlcyI6W3sibmFtZSI6IkV4YW1wbGUiLCJzZWNyZXQiOiJKQlNXWTNEUEVIUEszUFhQIiwib3RwIjp7ImFjY291bnQiOiJhbGV4QGV4YW1wbGUuY29tIiwiaXNzdWVyIjoiRXhhbXBsZSIsImRpZ2l0cyI6NiwicGVyaW9kIjozMCwiYWxnb3JpdGhtIjoiU0hBMSIsInRva2VuVHlwZSI6IlRPVFAifSwib3JkZXIiOnsicG9zaXRpb24iOjB9fV0sImdyb3VwcyI6W10sInVwZGF0ZWRBdCI6MTcwMDAwMDAwMDAwMCwic2NoZW1hVmVyc2lvbiI6NCwiYXBwVmVyc2lvbkNvZGUiOjUwMDAwMDAsImFwcE9yaWdpbiI6ImlvcyJ9",
+        "encrypted": false,
+        "format": "2fas_json",
+        "found": 1,
+        "logins": 0,
+        "name": "2fas_json",
+        "skipped": 0
+      },
+      {
+        "archive": false,
+        "codes": 0,
+        "content": "{\"services\":[],\"groups\":[],\"updatedAt\":1700000000000,\"schemaVersion\":4,\"servicesEncrypted\":\"AAAA:BBBB:CCCC\",\"reference\":\"DDDD\"}",
+        "content_b64u": "eyJzZXJ2aWNlcyI6W10sImdyb3VwcyI6W10sInVwZGF0ZWRBdCI6MTcwMDAwMDAwMDAwMCwic2NoZW1hVmVyc2lvbiI6NCwic2VydmljZXNFbmNyeXB0ZWQiOiJBQUFBOkJCQkI6Q0NDQyIsInJlZmVyZW5jZSI6IkREREQifQ",
+        "encrypted": true,
+        "format": "2fas_json",
+        "found": 0,
+        "logins": 0,
+        "name": "2fas_json_encrypted",
+        "skipped": 0
+      },
+      {
+        "archive": false,
+        "codes": 1,
+        "content": "{\"version\":1,\"header\":{\"slots\":null,\"params\":null},\"db\":{\"version\":3,\"entries\":[{\"type\":\"totp\",\"uuid\":\"00000000-0000-0000-0000-000000000001\",\"name\":\"alex@example.com\",\"issuer\":\"Example\",\"info\":{\"secret\":\"JBSWY3DPEHPK3PXP\",\"algo\":\"SHA1\",\"digits\":6,\"period\":30}}]}}",
+        "content_b64u": "eyJ2ZXJzaW9uIjoxLCJoZWFkZXIiOnsic2xvdHMiOm51bGwsInBhcmFtcyI6bnVsbH0sImRiIjp7InZlcnNpb24iOjMsImVudHJpZXMiOlt7InR5cGUiOiJ0b3RwIiwidXVpZCI6IjAwMDAwMDAwLTAwMDAtMDAwMC0wMDAwLTAwMDAwMDAwMDAwMSIsIm5hbWUiOiJhbGV4QGV4YW1wbGUuY29tIiwiaXNzdWVyIjoiRXhhbXBsZSIsImluZm8iOnsic2VjcmV0IjoiSkJTV1kzRFBFSFBLM1BYUCIsImFsZ28iOiJTSEExIiwiZGlnaXRzIjo2LCJwZXJpb2QiOjMwfX1dfX0",
+        "encrypted": false,
+        "format": "aegis_json",
+        "found": 1,
+        "logins": 0,
+        "name": "aegis_json",
+        "skipped": 0
+      },
+      {
+        "archive": false,
+        "codes": 0,
+        "content": "{\"version\":1,\"header\":{\"slots\":[{\"type\":1}],\"params\":{\"nonce\":\"00\",\"tag\":\"00\"}},\"db\":\"AAAA\"}",
+        "content_b64u": "eyJ2ZXJzaW9uIjoxLCJoZWFkZXIiOnsic2xvdHMiOlt7InR5cGUiOjF9XSwicGFyYW1zIjp7Im5vbmNlIjoiMDAiLCJ0YWciOiIwMCJ9fSwiZGIiOiJBQUFBIn0",
+        "encrypted": true,
+        "format": "aegis_json",
+        "found": 0,
+        "logins": 0,
+        "name": "aegis_json_encrypted",
+        "skipped": 0
+      },
+      {
+        "archive": true,
+        "codes": 0,
+        "content": "PK\u0003\u0004\u0014\u0000\u0000\u0000\b\u0000credentials.csv",
+        "content_b64u": "UEsDBBQAAAAIAGNyZWRlbnRpYWxzLmNzdg",
+        "encrypted": false,
+        "format": "unknown",
+        "found": 0,
+        "logins": 0,
+        "name": "zip_archive",
+        "skipped": 0
+      },
+      {
+        "archive": false,
+        "codes": 0,
+        "content": "name,url\nExample,https://example.com\n",
+        "content_b64u": "bmFtZSx1cmwKRXhhbXBsZSxodHRwczovL2V4YW1wbGUuY29tCg",
+        "encrypted": false,
+        "format": "unknown",
+        "found": 0,
+        "logins": 0,
+        "name": "csv_without_password",
+        "skipped": 0
+      },
+      {
+        "archive": false,
+        "codes": 0,
+        "content": "hello\n",
+        "content_b64u": "aGVsbG8K",
+        "encrypted": false,
+        "format": "unknown",
+        "found": 0,
+        "logins": 0,
+        "name": "plain_text",
+        "skipped": 0
+      }
+    ],
+    "errors": [
+      "no_passcode",
+      "import_closed",
+      "window_full",
+      "too_large",
+      "bad_import",
+      "import_unreadable"
+    ],
+    "file": "import_file",
+    "file_sha256": "fomLLc-QCrPoXSjLGMW5Zhy_S29QHbce4vLRxQfLMtU",
+    "formats": [
+      "chrome_csv",
+      "firefox_csv",
+      "apple_passwords_csv",
+      "bitwarden_csv",
+      "bitwarden_json",
+      "1password_csv",
+      "lastpass_csv",
+      "dashlane_csv",
+      "proton_pass_csv",
+      "nordpass_csv",
+      "keepassxc_csv",
+      "generic_csv",
+      "otpauth_list",
+      "2fas_json",
+      "aegis_json",
+      "unknown"
+    ],
+    "limits": {
+      "attachment_max": 1048576,
+      "file_wait": 60,
+      "max_file": 1048528,
+      "max_file_name": 120,
+      "max_source": 80,
+      "window_files": 20,
+      "window_seconds": 1800
+    },
+    "request": "request_import"
+  },
   "key_projects": {
     "from": [
       "project",
@@ -3144,6 +3756,18 @@
       "phone_id": "0g0Bt23Hxsm5z-wpZp2lpA",
       "plaintext": "{\"v\":1,\"request_id\":\"DjEzC-6pdiLjv71vyq2Rag\",\"kind\":\"login\",\"target\":\"vg.no\",\"reason\":\"Sign in to read the article a friend sent\",\"agent\":\"Agent · Horizon\",\"ts\":1791620000,\"attachment\":{\"type\":\"image/png\",\"bytes\":76,\"caption\":\"vg.no login page\",\"sha256\":\"EHZFH0blvPonExbfXyK55sAP77xua9O0po0UsusmxME\"},\"sig\":\"h_0t5-w9zY8R-DjqgPSSLMgiFE33HQN2H-stDgKjXNv_l3R7b41crWdCQa17zqBbTDTLJgP7a8lkwVnLkFv0Aw\"}",
       "sig": "h_0t5-w9zY8R-DjqgPSSLMgiFE33HQN2H-stDgKjXNv_l3R7b41crWdCQa17zqBbTDTLJgP7a8lkwVnLkFv0Aw",
+      "sign_pk": "bOp7Vh4eecFjmSW9F1BoO_BAhHKC4mrGJXQb6K3A-j0"
+    },
+    {
+      "agent_id": "IdQP77UDyu6DAF-4aCs1-Q",
+      "body": "{\"v\":1,\"request_id\":\"8bVEb4i0Es9Cf9YCcK5Btg\",\"kind\":\"import\",\"target\":\"\",\"reason\":\"Move the passwords saved in Chrome into Nodkey\",\"agent\":\"Agent · Horizon\",\"ts\":1791620000,\"import\":{\"file_name\":\"Chrome Passwords.csv\",\"size\":243,\"sha256\":\"fomLLc-QCrPoXSjLGMW5Zhy_S29QHbce4vLRxQfLMtU\",\"format_hint\":\"chrome_csv\",\"source\":\"Chrome, profile Default\"}}",
+      "direction": "request",
+      "hpke": "request_import_signed",
+      "message": "nodkey/v1/signed\nrequest\nIdQP77UDyu6DAF-4aCs1-Q\n0g0Bt23Hxsm5z-wpZp2lpA\n{\"v\":1,\"request_id\":\"8bVEb4i0Es9Cf9YCcK5Btg\",\"kind\":\"import\",\"target\":\"\",\"reason\":\"Move the passwords saved in Chrome into Nodkey\",\"agent\":\"Agent · Horizon\",\"ts\":1791620000,\"import\":{\"file_name\":\"Chrome Passwords.csv\",\"size\":243,\"sha256\":\"fomLLc-QCrPoXSjLGMW5Zhy_S29QHbce4vLRxQfLMtU\",\"format_hint\":\"chrome_csv\",\"source\":\"Chrome, profile Default\"}}",
+      "name": "request_import_signed",
+      "phone_id": "0g0Bt23Hxsm5z-wpZp2lpA",
+      "plaintext": "{\"v\":1,\"request_id\":\"8bVEb4i0Es9Cf9YCcK5Btg\",\"kind\":\"import\",\"target\":\"\",\"reason\":\"Move the passwords saved in Chrome into Nodkey\",\"agent\":\"Agent · Horizon\",\"ts\":1791620000,\"import\":{\"file_name\":\"Chrome Passwords.csv\",\"size\":243,\"sha256\":\"fomLLc-QCrPoXSjLGMW5Zhy_S29QHbce4vLRxQfLMtU\",\"format_hint\":\"chrome_csv\",\"source\":\"Chrome, profile Default\"},\"sig\":\"JMNHl9fYCO5zlDamnmYR22mXc5qhJtD-DCdwUrypQBqzIQAJ0u-DijFxXC7DLt50qWOba9THTBgBBY5j62qFCw\"}",
+      "sig": "JMNHl9fYCO5zlDamnmYR22mXc5qhJtD-DCdwUrypQBqzIQAJ0u-DijFxXC7DLt50qWOba9THTBgBBY5j62qFCw",
       "sign_pk": "bOp7Vh4eecFjmSW9F1BoO_BAhHKC4mrGJXQb6K3A-j0"
     }
   ],

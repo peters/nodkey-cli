@@ -32,6 +32,10 @@
 //! - `PUT /_fake/passcode` with `true` or `false`: whether the phone has a passcode (`true` to
 //!   begin with). Without one it refuses cards, keys and passkey requests that need user
 //!   verification or PRF with `no_passcode`, and signs other passkey answers without UV.
+//! - `PUT /_fake/import` with `{"agent_id"?, "seconds"?}`: the user opens an import window for that
+//!   agent (absent: the first agent that sends), for `seconds` (1800 when absent); `DELETE` closes
+//!   it; `GET` gives the window, `{agent_id, until, files: [{agent_id, file_name, source, sha256,
+//!   format, counts}]}`, or `null` (see [`crate::imports`]).
 //!
 //! The phone answers a `pairing_check` with its nonce (the first one of a pairing only), and drops
 //! a request without the agent's valid signature: it never answers it.
@@ -67,6 +71,27 @@ pub(crate) fn routes() -> Router<Shared> {
         .route("/_fake/account", axum::routing::put(set_account))
         .route("/_fake/pairing", axum::routing::put(set_pairing))
         .route("/_fake/passcode", axum::routing::put(set_passcode))
+        .route(
+            "/_fake/import",
+            get(import_window).put(open_import).delete(close_import),
+        )
+}
+
+async fn import_window(State(fake): State<Shared>) -> Response {
+    Json(fake.import.lock().unwrap().clone()).into_response()
+}
+
+async fn open_import(
+    State(fake): State<Shared>,
+    Json(open): Json<crate::imports::OpenWindow>,
+) -> StatusCode {
+    *fake.import.lock().unwrap() = Some(crate::imports::Window::open(open));
+    StatusCode::NO_CONTENT
+}
+
+async fn close_import(State(fake): State<Shared>) -> StatusCode {
+    *fake.import.lock().unwrap() = None;
+    StatusCode::NO_CONTENT
 }
 
 async fn set_passcode(State(fake): State<Shared>, Json(on): Json<bool>) -> StatusCode {

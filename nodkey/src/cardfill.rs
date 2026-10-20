@@ -201,7 +201,7 @@ fn result(checked: &Checked, ex: &Exchanged) -> (Text, u8) {
             failure("error", "The phone approved but sent no card.", None),
             1,
         ),
-        (Decision::Queued | Decision::Rejected, _) => {
+        (Decision::Queued | Decision::Rejected | Decision::Staged, _) => {
             (failure("error", crate::outcome::MISFIT, None), 1)
         }
         (Decision::Expired, _) => (

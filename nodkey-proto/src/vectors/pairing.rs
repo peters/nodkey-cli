@@ -13,7 +13,7 @@ use crate::{
 };
 
 /// One signed message: what was signed, the signature and the plaintext that went into HPKE.
-fn signed_vector(
+pub(super) fn signed_vector(
     name: &str,
     hpke: &str,
     direction: Direction,

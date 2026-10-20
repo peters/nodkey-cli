@@ -45,6 +45,7 @@ HPKE (RFC 9180) base mode, suite DHKEM(X25519, HKDF-SHA256) / HKDF-SHA256 / ChaC
 | saved password (agent → phone, inside a `save` request) | `nodkey/v1/password` | `agent_id` |
 | saved card number or CVC (agent → phone, inside a `save` request) | `nodkey/v1/card` | `agent_id` |
 | saved key (agent → phone, inside a `save_secret` request) | `nodkey/v1/secret` | `agent_id` |
+| import file (agent → phone, after an `import` request; see "Moving in") | `nodkey/v1/import` | `request_id` ‖ `agent_id` |
 
 ## Signing relay calls
 
@@ -86,7 +87,9 @@ plaintext = B without its last byte "}" + ",\"sig\":\"" + b64u(sig) + "\"}"
   The saved password, card values and key of a `save` or `save_secret` request are sealed boxes
   inside the signed request, so the signature covers them.
 - An attachment is not JSON. The signed request carries `attachment.sha256` (b64u of SHA-256 of
-  the image bytes), and the phone shows the picture only when the opened image has that hash.
+  the image bytes), and the phone shows the picture only when the opened image has that hash. An
+  import file likewise: the signed request carries `import.sha256`, and the phone stages only a
+  file with that hash.
 - Receivers made before signatures ignore the unknown `sig` member and read the message as before.
 
 When a signature is required:
@@ -200,7 +203,7 @@ computer (`localhost`, `127.0.0.1`, `[::1]`), and does not follow redirects.
 | `POST /v1/pairings/{code}/claim` | phone | `{enc, ct}` (sealed grant to the agent) → `200 {agent_id, name, sign, kem}`; the phone checks these are the keys the lookup returned |
 | `GET /v1/pairings/{code}?wait=60` | agent | → `{phone_id, sign, kem, enc, ct}` once claimed, `204` on timeout, `404` when expired |
 | `POST /v1/phones/{phone_id}/requests` | agent (paired) | `{request_id, enc, ct, attachment?: true, ttl?}` → `202`. Rate limit 20 per hour per agent. Sends a push when the phone has an APNs token; with `attachment: true` the push waits until the attachment is uploaded or 5 s have passed. `ttl` (120 to 360, default 120): how many seconds the relay keeps the request and its answer; the agent sends it only for `sms_code` (see "SMS codes"). A relay that does not know `ttl` keeps the request 120 s, and the agent then sees `expired`. |
-| `PUT /v1/requests/{request_id}/attachment` | agent (the requester) | raw body = `enc` (32 bytes) ‖ ciphertext of the image; the whole body at most 1 MiB (1 048 576 bytes, so the image at most 1 048 528) → `204`, bigger → `413 too_large`; within 120 s of the request. Optional; see Attachments. |
+| `PUT /v1/requests/{request_id}/attachment` | agent (the requester) | raw body = `enc` (32 bytes) ‖ ciphertext of the image (or of the export file of an `import` request); the whole body at most 1 MiB (1 048 576 bytes, so the image at most 1 048 528) → `204`, bigger → `413 too_large`; within 120 s of the request. Optional; see Attachments. |
 | `GET /v1/requests/{request_id}/attachment` | phone | → the same bytes (`application/octet-stream`), `404` when there is none |
 | `GET /v1/phones/{phone_id}/requests?wait=25` | phone | → `[{request_id, agent_id, enc, ct, created, has_attachment, ip?, country?}]` pending requests (the app polls while open and when a push arrives); `ip`/`country` are what Cloudflare saw of the agent; a `Nodkey-Push: none` header means the relay holds no push token (APNs refused it), and the phone registers again |
 | `POST /v1/requests/{request_id}/answer` | phone | `{enc, ct}` → `204` |
@@ -228,7 +231,7 @@ grant.
 Request (agent → phone):
 
 ```json
-{"v":1, "request_id":"…", "kind":"code|login|list|insights|cleanup|save|passkey|bundle|card|session_end|suggest|sms_code|secret|save_secret|pairing_check", "target":"github.com/alex",
+{"v":1, "request_id":"…", "kind":"code|login|list|insights|cleanup|save|passkey|bundle|card|session_end|suggest|sms_code|secret|save_secret|pairing_check|import", "target":"github.com/alex",
  "reason":"Merge PR #42", "agent":"Claude · Horizon", "ts":1791620000}
 ```
 
@@ -332,7 +335,7 @@ Answer (phone → agent):
 
 Only the fields that apply are present. `until` is absent for `once` and `always`. `session`
 means the answer came from a task session (see "Task sessions"). `decision` is also `queued` or
-`rejected`, only for `suggest`. `login` and `code` answers may carry `method`, `via` and
+`rejected`, only for `suggest`, and `staged`, only for `import` (see "Moving in"). `login` and `code` answers may carry `method`, `via` and
 `second_step` (see "Sign-in methods").
 
 A `code` or `login` answer also carries `match`: `direct` (the account's own site is the target's
@@ -1337,6 +1340,163 @@ read (`methods`), which suggestions pass (`suggestions`), second step choices
 (`second_step_picks`), where `via` may be filled (`via_fill`), site names (`sites`), the sites of
 each provider (`provider_sites`) and the limits (`sms_wait`, `suggest_limits`).
 
+## Moving in
+
+A user can bring the passwords and codes from their browsers and password managers into Nodkey
+from their computer, with an agent's help: a first move, or a clean-up round. The phone opens an
+**import window** for one agent. The agent sends each export file to the phone, end to end
+encrypted; the phone stages what it reads for review; the user adds it all with one Face ID. The
+window is **inbound only**: the agent never gets a secret back, and nothing is added without the
+user's review. `nodkey_proto::import` implements this section (peters/nodkey#130).
+
+### The import window
+
+- The user opens it on the phone: Settings → Import → "From your computer, with an agent". They
+  pick one paired agent and confirm with Face ID or the passcode. A phone without a passcode
+  cannot open one.
+- It takes files for 30 minutes (`WINDOW_SECONDS`), at most 20 (`WINDOW_FILES`). The user can
+  close it at any time; adding the reviewed entries closes it too. One window at a time per phone.
+- No message opens it: the agent learns that it is open only from the answer to an `import`
+  request. Without an open window for this agent the phone refuses at once (`import_closed`), so
+  no agent can push logins unasked.
+
+### The request
+
+```json
+{"v":1, "request_id":"…", "kind":"import", "target":"", "reason":"Move the passwords saved in Chrome into Nodkey",
+ "agent":"Claude Code @ my-laptop", "ts":1791620000,
+ "import":{"file_name":"Chrome Passwords.csv", "size":243, "sha256":"fomLLc-QCrPoXSjLGMW5Zhy_S29QHbce4vLRxQfLMtU",
+           "format_hint":"chrome_csv", "source":"Chrome, profile Default"}}
+```
+
+| Field | Meaning |
+| --- | --- |
+| `file_name` | the export's name without folders: 1 to 120 characters (`MAX_FILE_NAME`), no `/`, `\` or control characters |
+| `size` | the file's size in bytes, 1 to 1 048 576 − 48 = 1 048 528 (`MAX_FILE`), so the sealed body fits the relay's 1 MiB attachment limit |
+| `sha256` | b64u of SHA-256 of the file's bytes |
+| `format_hint` | optional: what the agent thinks the file is (table below). A hint only: the phone reads the file with its own importers. An unknown value reads as `unknown`. |
+| `source` | a short label for the phone's list: 1 to 80 characters (`MAX_SOURCE`) without control characters (`Chrome, profile Default`, `Firefox`, `Bitwarden`) |
+
+`target` is empty and `reason` is required, as for `list`. The request has no `attachment` field
+and no `session_id`, and is never part of a bundle. The file follows like a picture: the envelope
+carries `attachment: true`, and right after posting, the agent uploads the body `enc ‖ ct` with
+`PUT /v1/requests/{request_id}/attachment`: the file sealed to the phone on its own, HPKE `info`
+`nodkey/v1/import`, `aad` = `request_id` ‖ `agent_id`. The relay limits are those of a picture
+(1 MiB, within 120 s of the request), and the relay forgets the file when the phone answers. Both
+sides check these rules (`ImportRequest::check`); the agent tools send nothing that breaks them.
+
+| `format_hint` | File |
+| --- | --- |
+| `chrome_csv` | Chrome, Chromium, Edge, Brave, Vivaldi or Opera: `name,url,username,password,note` |
+| `firefox_csv` | Firefox (`about:logins`, Export Logins) |
+| `apple_passwords_csv` | Apple Passwords or Safari on a Mac (with `OTPAuth`) |
+| `bitwarden_csv`, `bitwarden_json` | Bitwarden, CSV or JSON (not encrypted) |
+| `1password_csv` | 1Password CSV |
+| `lastpass_csv` | LastPass |
+| `dashlane_csv` | Dashlane `credentials.csv` (from the zip it exports) |
+| `proton_pass_csv` | Proton Pass CSV |
+| `nordpass_csv` | NordPass |
+| `keepassxc_csv` | KeePassXC CSV |
+| `generic_csv` | another CSV with a password column |
+| `otpauth_list` | one `otpauth://` link per line (the plain text export of Aegis or Ente Auth, other code apps) |
+| `2fas_json` | a 2FAS backup (`.2fas`) |
+| `aegis_json` | an Aegis JSON export, not encrypted |
+| `unknown` | none of these |
+
+`nodkey_proto::import::detect` makes the hint from the content alone, never from the file name,
+with the column rules of the app's `PasswordImport.source`.
+
+### What the phone does
+
+The phone answers an `import` request at once, without asking: the open window is the user's
+approval. It checks in this order and refuses with `decision: denied` and `error`:
+
+| Check | `error` |
+| --- | --- |
+| the request's `v` and `kind` | `unsupported_version`, `unsupported_kind` |
+| the agent is paused | `paused` |
+| the phone has no passcode | `no_passcode` |
+| no open window for this agent (none, closed, timed out, or another agent's) | `import_closed` |
+| the window already holds 20 files | `window_full` |
+| `size` above 1 048 528, or a body above 1 MiB | `too_large` |
+| the request breaks another rule above; the file did not arrive within 60 s (`FILE_WAIT`), does not open, or its size or SHA-256 differs from the request | `bad_import` |
+| the importers cannot read it: an unknown format, an encrypted export, or not one login or code | `import_unreadable` |
+
+The phone fetches the file with `GET /v1/requests/{request_id}/attachment` and retries a `404`
+for up to 60 s, because a large upload can take longer than the relay's 5 s push hold. It opens
+the file in memory, reads it with its importers (`PasswordImport`, `AuthenticatorImport`,
+`LoginImport`) and drops the raw file at once. The entries go into the window's staging list "To
+review", with the agent, the file name, the source and the time. Within the window, each file is
+compared with the files staged before it: the same entry is left out, and the same login on
+another host of the website is merged, as in any import. Then the phone answers `staged`:
+
+```json
+{"v":1, "request_id":"…", "decision":"staged",
+ "import":{"found":2, "new":2, "merged":0, "duplicates":0, "conflicts":0, "skipped":1,
+           "logins":2, "codes":0, "files":1, "until":1791621800}}
+```
+
+| Field | Meaning |
+| --- | --- |
+| `found` | entries read from this file (a login with a code is one entry) |
+| `new` | entries this file added to the staging list |
+| `merged` | entries merged into one staged before in this window: the same login on another host of the website, or a code for a staged login |
+| `duplicates` | entries the same as one staged before in this window (site, user name and password, or the same code key); left out |
+| `conflicts` | of `new`: the same website and user name as an entry staged before in this window, with another password; the user picks one in the review |
+| `skipped` | rows the phone could not use (no password and no code key, or not readable) |
+| `logins`, `codes` | optional, of `found`: how many have a password, how many a code key |
+| `files` | optional: how many files the window holds now, this one included |
+| `until` | optional: when the window stops taking files (Unix seconds) |
+
+`found` = `new` + `merged` + `duplicates`, and `conflicts` ≤ `new`. **No count depends on the
+vault.** The comparison with what Nodkey already holds (new, already saved, a newer password) is
+shown on the phone only: a count against the vault would let an agent test a guessed password by
+sending a file with it and reading `duplicates`. An answer never carries a site, a user name, a
+password or a code. `staged` is used only for `import`. `denied` without `error` is a refusal for
+another reason, and `expired` means no answer came within the request's 120 s; the agent then
+tells the user to look at the phone.
+
+### The review
+
+The user opens "To review" on the phone when the agent is done, or when the window's time is up.
+It shows every entry with the agent and the file it came from: new, merged, already saved (left
+out) and conflicts with the vault or between files (the same site and user name with another
+password; the source and date of each, the newest suggested). One Face ID adds it all and closes
+the window. Nothing is added before that; what the user does not add is dropped with the staging
+list. The Agents history shows which agent sent which file. An `import` is never covered by a lease
+and does not count for the agent limit (the relay's 20 requests per hour per agent still apply).
+Every scope may import: the user picked this agent for the window.
+
+### The agent side
+
+- `nodkey import FILE [--source LABEL] [--reason TEXT] [--keep] [--dry-run] [--phone PHONE]` and
+  the MCP tool `import_file(path, source?, reason?, keep?, dry_run?)` do the same.
+- They read the file once into memory (wiped afterwards), refuse an empty file or one above
+  1 048 528 bytes before anything is sent (`too_large`), and refuse a zip archive or an encrypted
+  export (`import_unreadable`: unpack the archive, or export again without a password). They
+  detect the format for `format_hint` and use its name as `source` when none is given.
+- `--dry-run` sends nothing. It shows the format and the counts per type (logins, codes, skipped
+  rows), never a value.
+- After `staged` they delete the export: they overwrite its bytes with zeros, flush them to disk,
+  and remove the file, unless `--keep` is given. After a refusal the file stays where it is, and
+  the result says so. On SSDs and copy-on-write file systems an overwrite may not reach every old
+  block; the disk encryption of the system (FileVault, BitLocker, LUKS) covers what is left.
+- They never print, log or keep the content; the result carries only the counts. The model never
+  reads the export itself (no `cat`, no file reading tool, no copy); the `nodkey-move-in` skill
+  says so.
+- Exit codes: 0 `staged`, 1 error (also `bad_import`), 2 denied, 3 expired, 4 `paused`, 10
+  `no_passcode`, 11 `import_closed`, 12 `window_full`, 13 `import_unreadable`, 14 `too_large`, 64
+  bad arguments. An older app answers `unsupported_kind`; the agent tells the user to update
+  Nodkey.
+
+Vectors: `request_import`, `import_file` (the sealed Chrome sample; `body_b64u` is the upload),
+`request_import_signed` (also in `signed`), `answer_import_staged`, `answer_import_closed`,
+`answer_import_window_full`, `answer_import_too_large`, `answer_import_bad_import`,
+`answer_import_unreadable`, `answer_import_no_passcode`, and the `import` section: the limits, the
+formats, the errors in the phone's order, `checks` (requests and the `error` each gets, `null` when
+it passes) and `detect` (invented export files with the format and counts `detect` reads from
+them; the phone's own counts may differ where its importers read a row differently).
+
 ## Opening with the X25519 step elsewhere
 
 An agent may keep its X25519 private key where it cannot be read out, for example as a
@@ -1354,12 +1514,14 @@ plaintext describes it. The notification service extension downloads it (retryin
 attaches it
 (`UNNotificationAttachment`; animated GIFs play when the notification is expanded on iPhone, a Mac
 showing iPhone notifications shows a still image). Limits: 1 MiB, PNG/JPEG/GIF, kept by the relay only as
-long as the request (120 s). Without a picture everything works the same.
+long as the request (120 s). Without a picture everything works the same. The export file of an
+`import` request takes the same path, sealed with `nodkey/v1/import` (see "Moving in"); the relay
+does not tell the two apart.
 
 ## Leases
 
 A lease is `(agent_id, account_id, kind: code|login, until)` (for passkeys see "Passkeys"; cards,
-keys, `suggest` and `sms_code` never have one), kept only on the phone (keychain-backed
+keys, `suggest`, `sms_code` and `import` never have one), kept only on the phone (keychain-backed
 store shared with the notification extensions). While a matching lease is valid the phone answers by
 itself and shows a quiet notification ("Claude got the password for vg.no"), but only for a target
 that is an exact match for the account (see "Websites"). Durations: once (no lease),
@@ -1382,8 +1544,8 @@ everything out of Nodkey. The phone counts and decides; the agent sees the limit
   `login` or `code` item of a bundle, the provider login in `via`, a `secret` answer or an approved
   `secret` item of a bundle (also a plan item without a value), and answers that a lease, a task
   session or the follow-up window gave. Passkey signatures (the key never leaves the phone), cards
-  (they have their own limits), `sms_code`, `list`, `insights`, `cleanup`, `save`, `save_secret` and
-  `suggest` do not count.
+  (they have their own limits), `sms_code`, `list`, `insights`, `cleanup`, `save`, `save_secret`,
+  `suggest` and `import` do not count.
 - The count is per agent, over a rolling 24 hours.
 - The limit is per agent: 5, 10 or 25 (the user picks it under Agents; 10 when they did not).
 
@@ -1506,7 +1668,7 @@ answers".
   goes as `seen`, a `failed` one without `certainty`), `request_sms_code(target, reason,
   wait_seconds?)`, `request_secret(variable?, service?, project?, reason, image_path?)` and
   `save_secret(variable, service?, value, title?, notes?, expires?, projects?, reason)` (see "API
-  keys and secrets"). Every approved `request_code` and `request_login` result, and each approved
+  keys and secrets") and `import_file(path, source?, reason?, keep?, dry_run?)` (see "Moving in"). Every approved `request_code` and `request_login` result, and each approved
   login and code item of `request_credentials`, carries `fill_only_on` (see "Websites"). A
   `request_login` result shows `via` with its own `fill_only_on` (`via_sites`), and its
   message says what to do with `method`, `via` and `second_step`. `image_path` is an optional PNG/JPEG/GIF file (for example
@@ -1520,12 +1682,13 @@ answers".
 - The command line does the same in one process: `nodkey pair` shows the code and then the check
   number, and reads one line on stdin: `y` (or `yes`) when the iPhone shows the same number saves the
   pairing; anything else, or no line, saves nothing (exit code 2); `nodkey code`, `login`, `credentials`, `pay`, `suggest`, `sms-code`, `run`, `secret save`,
-  `accounts`, `insights`, `cleanup`, `phones`, `unpair`. `nodkey suggest SITE --kind KIND [--provider NAME] [--mailbox ADDR]
+  `accounts`, `insights`, `cleanup`, `phones`, `unpair`, `import`. `nodkey suggest SITE --kind KIND [--provider NAME] [--mailbox ADDR]
   [--outcome failed] --reason TEXT`; `nodkey sms-code TARGET --reason TEXT [--wait SECS]`. Exit codes:
   0 approved (or queued), 1 error, 2 denied (or rejected), 3 expired, 4 paused (`error: paused`),
   64 bad arguments; for `pay` and `card-fill` also 5
   `over_limit`, 6 `reveal_off`, 7 `cards_off` or `no_card`, 8 `total_mismatch`, 10 `no_passcode`,
-  and for `card-fill` 9 `setup_off`. `nodkey pay MERCHANT
+  and for `card-fill` 9 `setup_off`; for `import` 0 is `staged`, and 10 `no_passcode`, 11
+  `import_closed`, 12 `window_full`, 13 `import_unreadable`, 14 `too_large`. `nodkey pay MERCHANT
   AMOUNT CURRENCY --reason TEXT --reveal` prints the full card, so it requires `--reveal`; without a
   host nothing can fill a card for it. A missing amount is refused before anything is sent.
   `nodkey run` passes on the exit code of the command it ran (126 or 127 when the command cannot

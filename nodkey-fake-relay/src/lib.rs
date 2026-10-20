@@ -11,6 +11,7 @@
 mod bundle;
 pub mod cards;
 pub mod control;
+pub mod imports;
 pub mod pairing;
 pub mod passkeys;
 mod phone;
@@ -124,6 +125,8 @@ pub struct Fake {
     pub account: Mutex<Option<phone::FakeAccount>>,
     /// How the phone pairs and signs, and each agent's pairing nonces.
     pub pairing: Mutex<pairing::FakePairing>,
+    /// The import window a test opened, and what it staged.
+    pub import: Mutex<Option<imports::Window>>,
     /// Where this relay listens; the phone calls it for the pairing lookup.
     addr: std::sync::OnceLock<SocketAddr>,
     inner: Mutex<Inner>,
@@ -352,6 +355,13 @@ async fn put_attachment(
     if seen.agent_id != agent_id {
         return fail(StatusCode::FORBIDDEN, "not_paired");
     }
+    if seen.request.kind == Kind::Import {
+        // An export file: the phone checks its size and hash when it answers.
+        let file = nodkey_proto::import::open_file(fake.phone.kem_secret(), &rid, &agent_id, &body)
+            .expect("the import file opens with the phone key");
+        seen.attachment = Some(file.to_vec());
+        return StatusCode::NO_CONTENT.into_response();
+    }
     let image = seal::open_attachment_body(fake.phone.kem_secret(), &aad(&rid, &agent_id), &body)
         .expect("attachment opens with the phone key");
     // The phone shows only the picture the signed request names by its hash.
@@ -401,6 +411,16 @@ async fn wait_answer(
     }
     if let Some(refused) = quota::refuse(&fake, &rid, &request) {
         return seal_answer(&fake, &agent_id, &rid, &refused);
+    }
+    // The open import window answers at once; `deny` plays a refusal without a reason.
+    if request.kind == Kind::Import && matches!(mode, Mode::Approve | Mode::Deny) {
+        let answer = match mode {
+            Mode::Deny => Answer::decision(&rid, Decision::Denied),
+            _ => imports::answer(&fake, &agent_id, &rid, &request)
+                .await
+                .expect("an import request"),
+        };
+        return seal_answer(&fake, &agent_id, &rid, &answer);
     }
     let warned = quota::warn(&fake, &agent_id, &mut request);
     // The phone refuses an empty clean-up filter by itself, whatever the user would say.
@@ -487,6 +507,7 @@ pub fn start_on(bind: &str, claim_on_poll: u32) -> (Shared, SocketAddr) {
         secrets: Mutex::new(secrets::test_keys()),
         account: Mutex::new(None),
         pairing: Mutex::new(pairing::FakePairing::default()),
+        import: Mutex::new(None),
         addr: std::sync::OnceLock::new(),
         inner: Mutex::new(Inner::default()),
     });
