@@ -57,10 +57,14 @@ stale). The app's tests keep a copy of that file; copy the new one there in the 
 The repository is public. Do not publish a release or announce an install link without the
 owner's explicit yes.
 
-1. Raise `version` in `Cargo.toml`, run the checks, commit, tag `vX.Y.Z` and push the tag.
+1. Raise `version` in `Cargo.toml`, add the release to `CHANGELOG.md` (plain words, for users), run
+   the checks and the WebAssembly build
+   (`cargo build -p nodkey-proto --target wasm32-unknown-unknown --features getrandom/wasm_js`; the
+   browser extension picks the same random source), commit, tag `vX.Y.Z` and push the tag.
    `release.yml` builds every target, attests the build provenance of each archive
    (`actions/attest`) and makes a **draft** release with `SHA256SUMS`. Only the attest and release
-   jobs get write permissions; the build jobs read only.
+   jobs get write permissions; the build jobs read only. Put the release's section of
+   `CHANGELOG.md` into the draft: `gh release edit vX.Y.Z --notes-file <file>`.
 2. Sign and notarize the macOS binaries on the Mac that holds the team's Developer ID certificate:
    `gh release download vX.Y.Z --repo peters/nodkey-cli --dir <dir>`, then
    `scripts/sign-macos.sh <mac-host> <dir>` (it signs only archives that pass

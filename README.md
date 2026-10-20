@@ -79,13 +79,11 @@ deletes them with the request (after 2 minutes, up to 6 for an SMS code).
 
 ## What you need
 
-- An iPhone with iOS 18 or later and [Nodkey](https://apps.apple.com/app/id6820952672) from the
-  App Store (free).
+- An iPhone with iOS 18 or later and [Nodkey](https://apps.apple.com/app/id6820952672) 1.3 or later
+  from the App Store (free).
 - Linux, macOS or Windows for `nodkey`.
 
 ## Install
-
-> The first public release is on its way. Until it is out, build `nodkey` with Rust (see below).
 
 ```sh
 curl -fsSL https://raw.githubusercontent.com/peters/nodkey-cli/main/install.sh | sh
@@ -152,8 +150,8 @@ asks you whether your iPhone shows the same number.
 Each side makes a random value for the check number, and the iPhone commits to its value before it
 sees the computer's. So the relay that passes the keys cannot pick keys that give the same number
 on both screens. After pairing, every request and every answer is signed by the side that sent it,
-inside the encryption. Nodkey on your iPhone must be new enough for this; an older app gets a
-message to update it.
+inside the encryption. This needs Nodkey 1.3 or later on your iPhone; an older app gets a message
+to update it.
 
 ## Use it from the terminal
 
@@ -189,7 +187,7 @@ nodkey agents
   variables. Nothing prints the key, so your agent can use it without seeing it, and no `.env` file
   is needed. `secret save` keeps a new key in Nodkey; it reads the key from stdin, never from the
   command line, and on a terminal the key does not show while you paste it. Your iPhone asks with
-  Face ID for every key. Keys need Nodkey 1.4 or later.
+  Face ID for every key.
 - Keys can belong to projects. A key without a project is global: every project can use it. Put a
   `.nodkey` file in a repository to say which keys it needs. It holds names only, so it is safe to
   commit, also in a public repository:
@@ -307,6 +305,10 @@ see [SECURITY.md](SECURITY.md).
 - [Nodkey for Firefox and Chromium](https://github.com/peters/nodkey-browser): the browser
   extension. It uses the same protocol code, compiled to WebAssembly.
 - [kh-labs.dev/nodkey](https://kh-labs.dev/nodkey/): the app's website.
+
+## Changes
+
+What changed in each release: [CHANGELOG.md](CHANGELOG.md).
 
 ## License
 
