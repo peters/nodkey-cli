@@ -45,6 +45,7 @@ pub fn check_request(r: &Request) -> Result<(), String> {
             | Kind::SmsCode
             | Kind::Secret
             | Kind::SaveSecret
+            | Kind::Generate
     );
     if needs_target && r.target.trim().is_empty() {
         return Err(
@@ -114,6 +115,7 @@ pub fn check_request(r: &Request) -> Result<(), String> {
     }?;
     check_signin(r)?;
     check_import(r)?;
+    check_generate(r)?;
     crate::apikey::check_request(r)?;
     check_session(r)?;
     if sealed_ct_len(r) > REQUEST_CT_MAX {
@@ -146,7 +148,8 @@ fn check_pairing(r: &Request) -> Result<(), String> {
         || r.wait_seconds.is_some()
         || r.save_secret.is_some()
         || r.project.is_some()
-        || r.import.is_some();
+        || r.import.is_some()
+        || r.generate.is_some();
     if extra || !r.target.is_empty() || !r.reason.is_empty() {
         return Err("a pairing_check request carries only the nonce".into());
     }
@@ -192,6 +195,16 @@ fn check_import(r: &Request) -> Result<(), String> {
         }
         (Kind::Import, Some(i)) => i.check().map_err(|(_, e)| e),
         (_, Some(_)) => Err("only an import request carries a file".into()),
+        _ => Ok(()),
+    }
+}
+
+/// A `generate` request names its page; no other kind carries one.
+fn check_generate(r: &Request) -> Result<(), String> {
+    match (r.kind, &r.generate) {
+        (Kind::Generate, None) => Err("a generate request needs the page it is for".into()),
+        (Kind::Generate, Some(g)) => g.check(&r.target),
+        (_, Some(_)) => Err("only a generate request carries a page for a new password".into()),
         _ => Ok(()),
     }
 }

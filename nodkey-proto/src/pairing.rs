@@ -124,6 +124,7 @@ pub fn check_request(agent_name: &str, agent_nonce: &[u8; NONCE_LEN], ts: u64) -
         project: None,
         nonce: Some(b64u::encode(agent_nonce)),
         import: None,
+        generate: None,
     }
 }
 

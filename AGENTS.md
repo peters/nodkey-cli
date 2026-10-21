@@ -17,7 +17,9 @@ mcp`). The iOS app and the relay live in the private repository `peters/nodkey`;
   in `data/`, registrable domains, the same website, `fill_only_on`; `scripts/update-psl.sh`
   updates the list), `quota.rs` (the agent limit:
   `quota_warning`, `paused` and its numbers), `apikey.rs` (API keys: `secret` targets, the key in
-  answers and `save_secret`; `apikey/project.rs` keys by project and the lookup), `dh.rs` (HPKE open when X25519 runs in WebCrypto) and the generator of
+  answers and `save_secret`; `apikey/project.rs` keys by project and the lookup), `generate.rs`
+  (a new password: the `generate` request, `generate/rules.rs` the `passwordrules` reading and
+  `bad_rules`, `generate/make.rs` a generator that plays the phone in tests), `dh.rs` (HPKE open when X25519 runs in WebCrypto) and the generator of
   `vectors/v1.json`. It builds for `wasm32-unknown-unknown`; keep it free of OS-only dependencies.
 - `nodkey-fake-relay/`: a relay that plays the phone, for tests (library and binary with `/_fake/...`
   control routes). The extension's tests use it too.

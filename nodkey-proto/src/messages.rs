@@ -166,6 +166,10 @@ pub enum Kind {
     /// An export file for the phone's import window ([`crate::ImportRequest`]); the file follows
     /// sealed on its own. Answered at once with `staged` and counts, never with a secret.
     Import,
+    /// A new password the phone makes for a sign-up or a password change
+    /// ([`crate::GenerateRequest`]), saves first and then gives. Face ID every time: never a
+    /// lease, a task session or a bundle.
+    Generate,
 }
 
 /// The login a `save` request asks the phone to keep.
@@ -301,6 +305,9 @@ pub struct Request {
     /// The export file an `import` request sends; absent for the other kinds.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub import: Option<crate::ImportRequest>,
+    /// The page a `generate` request makes a password for; absent for the other kinds.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub generate: Option<crate::GenerateRequest>,
 }
 
 /// the user's decision.
@@ -411,7 +418,7 @@ pub struct Answer {
     /// `cleanup`: how many logins were moved to "Recently deleted".
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub moved: Option<u32>,
-    /// What an approved `save` did.
+    /// What an approved `save` did; for `generate`, `added` or `updated`.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub saved: Option<Saved>,
     /// What an approved `passkey` request made or signed.
@@ -431,7 +438,7 @@ pub struct Answer {
     /// `unsupported_algorithm` or `excluded` (see [`crate::passkey::errors`]), and for cards
     /// [`crate::card::errors`]. Also `quota_warning`, with any decision: the phone asked with the
     /// agent limit warning ([`crate::quota::errors`]). For keys [`crate::apikey::errors`],
-    /// for imports [`crate::import::errors`].
+    /// for imports [`crate::import::errors`], for new passwords [`crate::generate::errors`].
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<String>,
     /// `insights`: counts, age buckets and anonymous groups (docs/agent-protocol.md), passed on as is.

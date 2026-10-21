@@ -11,6 +11,7 @@
 mod bundle;
 pub mod cards;
 pub mod control;
+pub mod generate;
 pub mod imports;
 pub mod pairing;
 pub mod passkeys;
@@ -127,6 +128,8 @@ pub struct Fake {
     pub pairing: Mutex<pairing::FakePairing>,
     /// The import window a test opened, and what it staged.
     pub import: Mutex<Option<imports::Window>>,
+    /// What the user does with a new password, and the logins saved for one.
+    pub generate: Mutex<generate::FakeGenerate>,
     /// Where this relay listens; the phone calls it for the pairing lookup.
     addr: std::sync::OnceLock<SocketAddr>,
     inner: Mutex<Inner>,
@@ -444,6 +447,9 @@ async fn wait_answer(
     {
         return seal_answer(&fake, &agent_id, &rid, &refused);
     }
+    if let Some(refused) = generate::refuse(&fake, &rid, &request) {
+        return seal_answer(&fake, &agent_id, &rid, &refused);
+    }
     if let Some(refused) = secrets::refuse(&fake, &rid, &request) {
         return seal_answer(&fake, &agent_id, &rid, &refused);
     }
@@ -470,6 +476,9 @@ async fn wait_answer(
     };
     if mode == Mode::Approve {
         phone::approve(&fake, &mut answer, &request);
+        if request.kind == Kind::Generate {
+            generate::approve(&fake, &agent_id, &mut answer, &request);
+        }
     }
     sessions::after(&fake, &agent_id, &request, &mut answer);
     if warned {
@@ -514,6 +523,7 @@ pub fn start_on(bind: &str, claim_on_poll: u32) -> (Shared, SocketAddr) {
         account: Mutex::new(None),
         pairing: Mutex::new(pairing::FakePairing::default()),
         import: Mutex::new(None),
+        generate: Mutex::new(generate::FakeGenerate::default()),
         addr: std::sync::OnceLock::new(),
         inner: Mutex::new(Inner::default()),
     });

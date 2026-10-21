@@ -488,6 +488,7 @@ pub fn new_request(kind: Kind, target: &str, reason: &str, client: ClientInfo) -
         project: None,
         nonce: None,
         import: None,
+        generate: None,
     }
 }
 

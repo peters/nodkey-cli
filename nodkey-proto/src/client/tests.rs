@@ -25,6 +25,7 @@ fn request(kind: Kind, target: &str, reason: &str) -> Request {
         project: None,
         nonce: None,
         import: None,
+        generate: None,
     }
 }
 
@@ -420,5 +421,38 @@ fn attachment_hash() {
     assert_eq!(
         info.sha256.unwrap(),
         b64u::encode(&Sha256::digest(b"png bytes"))
+    );
+}
+
+#[test]
+fn generate_requests_carry_their_page_only() {
+    let mut g = request(
+        Kind::Generate,
+        "accounts.example.com",
+        "Sign up, as you asked",
+    );
+    assert!(check_request(&g).unwrap_err().contains("page"));
+    g.generate = Some(crate::GenerateRequest {
+        url: Some("https://accounts.example.com/signup".into()),
+        ..Default::default()
+    });
+    assert!(check_request(&g).is_ok());
+    g.target = "example.com".into();
+    assert!(check_request(&g).unwrap_err().contains("url"));
+    g.target = String::new();
+    assert!(
+        check_request(&g)
+            .unwrap_err()
+            .contains("target is required")
+    );
+    g.target = "accounts.example.com".into();
+    g.session_id = Some(crate::random_id());
+    assert!(check_request(&g).unwrap_err().contains("session"));
+    let mut login = request(Kind::Login, "accounts.example.com", "Sign in");
+    login.generate = g.generate.clone();
+    assert!(
+        check_request(&login)
+            .unwrap_err()
+            .contains("only a generate")
     );
 }

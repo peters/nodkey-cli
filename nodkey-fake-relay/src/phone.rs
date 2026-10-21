@@ -156,9 +156,13 @@ pub(crate) fn approve(fake: &Fake, answer: &mut Answer, request: &Request) {
             crate::passkeys::approve(fake, answer, passkey);
         }
         Kind::Bundle => *answer = crate::bundle::answer(fake, request, &answer.request_id.clone()),
-        Kind::SessionEnd | Kind::Suggest | Kind::SmsCode | Kind::PairingCheck | Kind::Import => {
-            answer.lease = None
-        }
+        // A new password is made and saved by `generate::approve`; never a lease.
+        Kind::SessionEnd
+        | Kind::Suggest
+        | Kind::SmsCode
+        | Kind::PairingCheck
+        | Kind::Import
+        | Kind::Generate => answer.lease = None,
         Kind::Cleanup => {
             // Never a lease: the user confirms every clean-up.
             answer.lease = None;

@@ -36,6 +36,11 @@
 //!   agent (absent: the first agent that sends), for `seconds` (1800 when absent); `DELETE` closes
 //!   it; `GET` gives the window, `{agent_id, until, files: [{agent_id, file_name, source, sha256,
 //!   format, counts}]}`, or `null` (see [`crate::imports`]).
+//! - `PUT /_fake/generate` with `{"username"?, "codes_only"?, "save_fails"?}`: what the user does
+//!   with a new password: the user name they type on the phone instead of the request's, whether
+//!   the agent is paired for codes only (`not_allowed`), whether saving fails (`save_failed`).
+//!   `GET` gives those and `made`: every login saved for a `generate` request, `[{agent_id, site,
+//!   username, title, password, saved, old_password}]` (test data only).
 //!
 //! The phone answers a `pairing_check` with its nonce (the first one of a pairing only), and drops
 //! a request without the agent's valid signature: it never answers it.
@@ -75,6 +80,24 @@ pub(crate) fn routes() -> Router<Shared> {
             "/_fake/import",
             get(import_window).put(open_import).delete(close_import),
         )
+        .route("/_fake/generate", get(generated).put(set_generate))
+}
+
+async fn generated(State(fake): State<Shared>) -> Response {
+    Json(fake.generate.lock().unwrap().clone()).into_response()
+}
+
+/// Keeps the logins saved so far.
+async fn set_generate(
+    State(fake): State<Shared>,
+    Json(set): Json<crate::generate::FakeGenerate>,
+) -> StatusCode {
+    let mut state = fake.generate.lock().unwrap();
+    *state = crate::generate::FakeGenerate {
+        made: std::mem::take(&mut state.made),
+        ..set
+    };
+    StatusCode::NO_CONTENT
 }
 
 async fn import_window(State(fake): State<Shared>) -> Response {

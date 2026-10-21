@@ -35,6 +35,7 @@ pub const PNG: [u8; 76] = [
 mod bundle;
 mod card;
 mod ctx;
+pub mod generate;
 pub mod import;
 mod import_samples;
 mod matching;
@@ -136,6 +137,7 @@ fn request(
         project: None,
         nonce: None,
         import: None,
+        generate: None,
     }
 }
 
@@ -370,11 +372,11 @@ pub fn build() -> Value {
     secret::add_no_passcode(&mut ctx, &agent, &phone); // Likewise.
     passkey::add_no_passcode(&mut ctx, &agent, &phone); // Likewise.
     let (import, import_signed) = import::add(&mut ctx, &agent, &phone); // Likewise.
+    let (generate, generate_signed) = generate::add(&mut ctx, &agent, &phone); // Likewise.
     let sites = sites::add(); // No HPKE: earlier bytes stay the same.
-    signed
-        .as_array_mut()
-        .expect("signed vectors")
-        .push(import_signed);
+    let signed_list = signed.as_array_mut().expect("signed vectors");
+    signed_list.push(import_signed);
+    signed_list.push(generate_signed);
 
     // Signed relay calls.
     let agent_info = crate::AgentInfo {
@@ -568,5 +570,6 @@ pub fn build() -> Value {
         "pairing": pairing,
         "signed": signed,
         "import": import,
+        "generate": generate,
     })
 }

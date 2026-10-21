@@ -56,6 +56,7 @@ fn request(name: &str, passkey: PasskeyRequest, reason: &str) -> Request {
         project: None,
         nonce: None,
         import: None,
+        generate: None,
     }
 }
 

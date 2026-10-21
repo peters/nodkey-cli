@@ -645,6 +645,934 @@
     "phone_kem": "Td-3-HXWLqROvCB5uulMNssHXo3O2K_LQIby38T-z28",
     "phone_sign": "NMu8YPC2uQEjppdcKSzQ6-Q7yN3dV8P4seeqq_EZwWE"
   },
+  "generate": {
+    "checks": [
+      {
+        "error": null,
+        "generate": {
+          "rules": {
+            "max_length": 64,
+            "min_length": 12,
+            "passwordrules": "minlength: 12; required: lower; required: upper; required: digit; allowed: [-_.!];"
+          },
+          "title": "Example Cloud",
+          "url": "https://accounts.example.com/signup",
+          "username": "alex@example.com"
+        },
+        "name": "signup",
+        "target": "accounts.example.com"
+      },
+      {
+        "error": null,
+        "generate": {},
+        "name": "bare_host",
+        "target": "example.com"
+      },
+      {
+        "error": null,
+        "generate": {},
+        "name": "ip_address",
+        "target": "192.168.1.1"
+      },
+      {
+        "error": null,
+        "generate": {},
+        "name": "localhost",
+        "target": "localhost"
+      },
+      {
+        "error": null,
+        "generate": {
+          "change": true
+        },
+        "name": "change",
+        "target": "www.example.org"
+      },
+      {
+        "error": null,
+        "generate": {
+          "rules": {},
+          "title": "Example Cloud",
+          "url": "https://accounts.example.com/signup",
+          "username": "alex@example.com"
+        },
+        "name": "empty_rules",
+        "target": "accounts.example.com"
+      },
+      {
+        "error": "bad_generate",
+        "generate": {},
+        "name": "upper_case_target",
+        "target": "Accounts.example.com"
+      },
+      {
+        "error": "bad_generate",
+        "generate": {},
+        "name": "account_in_target",
+        "target": "example.com/alex"
+      },
+      {
+        "error": "bad_generate",
+        "generate": {},
+        "name": "bare_name",
+        "target": "GitHub"
+      },
+      {
+        "error": "bad_generate",
+        "generate": {},
+        "name": "port_in_target",
+        "target": "example.com:8443"
+      },
+      {
+        "error": "bad_generate",
+        "generate": {},
+        "name": "scheme_in_target",
+        "target": "https://example.com"
+      },
+      {
+        "error": "bad_generate",
+        "generate": {},
+        "name": "blank_target",
+        "target": ""
+      },
+      {
+        "error": "bad_generate",
+        "generate": {
+          "rules": {
+            "max_length": 64,
+            "min_length": 12,
+            "passwordrules": "minlength: 12; required: lower; required: upper; required: digit; allowed: [-_.!];"
+          },
+          "title": "Example Cloud",
+          "url": "https://login.example.com/signup",
+          "username": "alex@example.com"
+        },
+        "name": "url_on_other_host",
+        "target": "accounts.example.com"
+      },
+      {
+        "error": "bad_generate",
+        "generate": {
+          "rules": {
+            "max_length": 64,
+            "min_length": 12,
+            "passwordrules": "minlength: 12; required: lower; required: upper; required: digit; allowed: [-_.!];"
+          },
+          "title": "Example Cloud",
+          "url": "https://accounts.example.com/signup?invite=abc",
+          "username": "alex@example.com"
+        },
+        "name": "url_with_query",
+        "target": "accounts.example.com"
+      },
+      {
+        "error": "bad_generate",
+        "generate": {
+          "rules": {
+            "max_length": 64,
+            "min_length": 12,
+            "passwordrules": "minlength: 12; required: lower; required: upper; required: digit; allowed: [-_.!];"
+          },
+          "title": "Example Cloud",
+          "url": "https://accounts.example.com/signup#step2",
+          "username": "alex@example.com"
+        },
+        "name": "url_with_fragment",
+        "target": "accounts.example.com"
+      },
+      {
+        "error": "bad_generate",
+        "generate": {
+          "rules": {
+            "max_length": 64,
+            "min_length": 12,
+            "passwordrules": "minlength: 12; required: lower; required: upper; required: digit; allowed: [-_.!];"
+          },
+          "title": "Example Cloud",
+          "url": "ftp://accounts.example.com/signup",
+          "username": "alex@example.com"
+        },
+        "name": "url_other_scheme",
+        "target": "accounts.example.com"
+      },
+      {
+        "error": "bad_generate",
+        "generate": {
+          "rules": {
+            "max_length": 64,
+            "min_length": 12,
+            "passwordrules": "minlength: 12; required: lower; required: upper; required: digit; allowed: [-_.!];"
+          },
+          "title": "Example Cloud",
+          "url": "accounts.example.com/signup",
+          "username": "alex@example.com"
+        },
+        "name": "url_without_scheme",
+        "target": "accounts.example.com"
+      },
+      {
+        "error": null,
+        "generate": {
+          "rules": {
+            "max_length": 64,
+            "min_length": 12,
+            "passwordrules": "minlength: 12; required: lower; required: upper; required: digit; allowed: [-_.!];"
+          },
+          "title": "Example Cloud",
+          "url": "http://accounts.example.com/signup",
+          "username": "alex@example.com"
+        },
+        "name": "url_http",
+        "target": "accounts.example.com"
+      },
+      {
+        "error": null,
+        "generate": {
+          "rules": {
+            "max_length": 64,
+            "min_length": 12,
+            "passwordrules": "minlength: 12; required: lower; required: upper; required: digit; allowed: [-_.!];"
+          },
+          "title": "Example Cloud",
+          "url": "https://accounts.example.com/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "username": "alex@example.com"
+        },
+        "name": "longest_url",
+        "target": "accounts.example.com"
+      },
+      {
+        "error": "bad_generate",
+        "generate": {
+          "rules": {
+            "max_length": 64,
+            "min_length": 12,
+            "passwordrules": "minlength: 12; required: lower; required: upper; required: digit; allowed: [-_.!];"
+          },
+          "title": "Example Cloud",
+          "url": "https://accounts.example.com/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "username": "alex@example.com"
+        },
+        "name": "long_url",
+        "target": "accounts.example.com"
+      },
+      {
+        "error": null,
+        "generate": {
+          "rules": {
+            "max_length": 64,
+            "min_length": 12,
+            "passwordrules": "minlength: 12; required: lower; required: upper; required: digit; allowed: [-_.!];"
+          },
+          "title": "Example Cloud",
+          "url": "https://accounts.example.com/signup",
+          "username": "uuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuu"
+        },
+        "name": "longest_username",
+        "target": "accounts.example.com"
+      },
+      {
+        "error": "bad_generate",
+        "generate": {
+          "rules": {
+            "max_length": 64,
+            "min_length": 12,
+            "passwordrules": "minlength: 12; required: lower; required: upper; required: digit; allowed: [-_.!];"
+          },
+          "title": "Example Cloud",
+          "url": "https://accounts.example.com/signup",
+          "username": "uuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuu"
+        },
+        "name": "long_username",
+        "target": "accounts.example.com"
+      },
+      {
+        "error": "bad_generate",
+        "generate": {
+          "rules": {
+            "max_length": 64,
+            "min_length": 12,
+            "passwordrules": "minlength: 12; required: lower; required: upper; required: digit; allowed: [-_.!];"
+          },
+          "title": "Example Cloud",
+          "url": "https://accounts.example.com/signup",
+          "username": "alex\n"
+        },
+        "name": "control_in_username",
+        "target": "accounts.example.com"
+      },
+      {
+        "error": "bad_generate",
+        "generate": {
+          "rules": {
+            "max_length": 64,
+            "min_length": 12,
+            "passwordrules": "minlength: 12; required: lower; required: upper; required: digit; allowed: [-_.!];"
+          },
+          "title": "ttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttt",
+          "url": "https://accounts.example.com/signup",
+          "username": "alex@example.com"
+        },
+        "name": "long_title",
+        "target": "accounts.example.com"
+      },
+      {
+        "error": null,
+        "generate": {
+          "rules": {
+            "max_length": 64,
+            "min_length": 12,
+            "passwordrules": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          },
+          "title": "Example Cloud",
+          "url": "https://accounts.example.com/signup",
+          "username": "alex@example.com"
+        },
+        "name": "longest_rules",
+        "target": "accounts.example.com"
+      },
+      {
+        "error": "bad_generate",
+        "generate": {
+          "rules": {
+            "max_length": 64,
+            "min_length": 12,
+            "passwordrules": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          },
+          "title": "Example Cloud",
+          "url": "https://accounts.example.com/signup",
+          "username": "alex@example.com"
+        },
+        "name": "long_rules",
+        "target": "accounts.example.com"
+      },
+      {
+        "error": "bad_generate",
+        "generate": {
+          "rules": {
+            "max_length": 64,
+            "min_length": 12,
+            "passwordrules": "required: digit;\nminlength: 8"
+          },
+          "title": "Example Cloud",
+          "url": "https://accounts.example.com/signup",
+          "username": "alex@example.com"
+        },
+        "name": "control_in_rules",
+        "target": "accounts.example.com"
+      },
+      {
+        "error": "bad_generate",
+        "generate": {
+          "rules": {
+            "max_length": 64,
+            "min_length": 12,
+            "passwordrules": "minlength: 12; required: lower; required: upper; required: digit; allowed: [-_.!];",
+            "pattern": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          },
+          "title": "Example Cloud",
+          "url": "https://accounts.example.com/signup",
+          "username": "alex@example.com"
+        },
+        "name": "long_pattern",
+        "target": "accounts.example.com"
+      }
+    ],
+    "classes": {
+      "ascii-printable": " !\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~",
+      "digit": "0123456789",
+      "lower": "abcdefghijklmnopqrstuvwxyz",
+      "special": " !\"#$%&'()*+,-./:;<=>?@[\\]^_`{|}~",
+      "unicode": " !\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~",
+      "upper": "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+    },
+    "errors": [
+      "no_passcode",
+      "not_allowed",
+      "bad_generate",
+      "bad_rules"
+    ],
+    "fill_only_on": [
+      {
+        "fill_only_on": [
+          "example.com"
+        ],
+        "target": "accounts.example.com"
+      },
+      {
+        "fill_only_on": [
+          "example.org"
+        ],
+        "target": "www.example.org"
+      },
+      {
+        "fill_only_on": [
+          "192.168.1.1"
+        ],
+        "target": "192.168.1.1"
+      }
+    ],
+    "fits": [
+      {
+        "fits": true,
+        "name": "fits",
+        "password": "abc1",
+        "rules": {
+          "passwordrules": "minlength: 4; maxlength: 6; required: digit; allowed: lower; max-consecutive: 2"
+        }
+      },
+      {
+        "fits": false,
+        "name": "no_digit",
+        "password": "abcd",
+        "rules": {
+          "passwordrules": "minlength: 4; maxlength: 6; required: digit; allowed: lower; max-consecutive: 2"
+        }
+      },
+      {
+        "fits": false,
+        "name": "too_short",
+        "password": "ab1",
+        "rules": {
+          "passwordrules": "minlength: 4; maxlength: 6; required: digit; allowed: lower; max-consecutive: 2"
+        }
+      },
+      {
+        "fits": false,
+        "name": "too_long",
+        "password": "abcdef1",
+        "rules": {
+          "passwordrules": "minlength: 4; maxlength: 6; required: digit; allowed: lower; max-consecutive: 2"
+        }
+      },
+      {
+        "fits": false,
+        "name": "not_allowed",
+        "password": "abC1",
+        "rules": {
+          "passwordrules": "minlength: 4; maxlength: 6; required: digit; allowed: lower; max-consecutive: 2"
+        }
+      },
+      {
+        "fits": false,
+        "name": "three_in_a_row",
+        "password": "aaa1",
+        "rules": {
+          "passwordrules": "minlength: 4; maxlength: 6; required: digit; allowed: lower; max-consecutive: 2"
+        }
+      },
+      {
+        "fits": true,
+        "name": "two_in_a_row",
+        "password": "aa1aa",
+        "rules": {
+          "passwordrules": "minlength: 4; maxlength: 6; required: digit; allowed: lower; max-consecutive: 2"
+        }
+      },
+      {
+        "fits": true,
+        "name": "signup",
+        "password": "q7Hs-Tw2k.Xp9_mRv4!z",
+        "rules": {
+          "max_length": 64,
+          "min_length": 12,
+          "passwordrules": "minlength: 12; required: lower; required: upper; required: digit; allowed: [-_.!];"
+        }
+      },
+      {
+        "fits": true,
+        "name": "no_rules_space",
+        "password": "correct horse",
+        "rules": {}
+      },
+      {
+        "fits": false,
+        "name": "no_rules_outside_ascii",
+        "password": "pässword",
+        "rules": {}
+      },
+      {
+        "fits": false,
+        "name": "field_max",
+        "password": "abcdefghi",
+        "rules": {
+          "max_length": 8
+        }
+      }
+    ],
+    "limits": {
+      "default_length": 20,
+      "keep_old_days": 30,
+      "max_length": 128,
+      "max_pattern": 300,
+      "max_rules": 300,
+      "max_title": 100,
+      "max_url": 500,
+      "max_username": 200,
+      "pattern_tries": 100
+    },
+    "requests": {
+      "change": "request_generate_change",
+      "signup": "request_generate"
+    },
+    "rules": [
+      {
+        "error": null,
+        "name": "none",
+        "read": {
+          "allowed": " !\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~",
+          "length": 20,
+          "max_consecutive": null,
+          "max_length": null,
+          "min_length": null,
+          "required": []
+        },
+        "rules": {}
+      },
+      {
+        "error": null,
+        "name": "signup",
+        "read": {
+          "allowed": "!-.0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ_abcdefghijklmnopqrstuvwxyz",
+          "length": 20,
+          "max_consecutive": null,
+          "max_length": 64,
+          "min_length": 12,
+          "required": [
+            "abcdefghijklmnopqrstuvwxyz",
+            "ABCDEFGHIJKLMNOPQRSTUVWXYZ",
+            "0123456789"
+          ]
+        },
+        "rules": {
+          "max_length": 64,
+          "min_length": 12,
+          "passwordrules": "minlength: 12; required: lower; required: upper; required: digit; allowed: [-_.!];"
+        }
+      },
+      {
+        "error": null,
+        "name": "typical",
+        "read": {
+          "allowed": "!#$%&*-.0123456789?@ABCDEFGHIJKLMNOPQRSTUVWXYZ_abcdefghijklmnopqrstuvwxyz",
+          "length": 16,
+          "max_consecutive": null,
+          "max_length": 16,
+          "min_length": 8,
+          "required": [
+            "abcdefghijklmnopqrstuvwxyz",
+            "ABCDEFGHIJKLMNOPQRSTUVWXYZ",
+            "0123456789",
+            "!#$%&*?@"
+          ]
+        },
+        "rules": {
+          "passwordrules": "minlength: 8; maxlength: 16; required: lower; required: upper; required: digit; required: [!#$%&*?@]; allowed: [-_.];"
+        }
+      },
+      {
+        "error": null,
+        "name": "field_only",
+        "read": {
+          "allowed": " !\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~",
+          "length": 20,
+          "max_consecutive": null,
+          "max_length": 64,
+          "min_length": 12,
+          "required": []
+        },
+        "rules": {
+          "max_length": 64,
+          "min_length": 12
+        }
+      },
+      {
+        "error": null,
+        "name": "field_and_rules",
+        "read": {
+          "allowed": " !\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~",
+          "length": 20,
+          "max_consecutive": null,
+          "max_length": 40,
+          "min_length": 12,
+          "required": []
+        },
+        "rules": {
+          "max_length": 64,
+          "min_length": 12,
+          "passwordrules": "minlength: 10; maxlength: 40"
+        }
+      },
+      {
+        "error": null,
+        "name": "digits_only",
+        "read": {
+          "allowed": "0123456789",
+          "length": 6,
+          "max_consecutive": null,
+          "max_length": 6,
+          "min_length": 6,
+          "required": []
+        },
+        "rules": {
+          "passwordrules": "allowed: digit; minlength: 6; maxlength: 6"
+        }
+      },
+      {
+        "error": null,
+        "name": "dash_first_and_bracket",
+        "read": {
+          "allowed": "-.]_",
+          "length": 20,
+          "max_consecutive": null,
+          "max_length": null,
+          "min_length": null,
+          "required": []
+        },
+        "rules": {
+          "passwordrules": "allowed: [-_.]]"
+        }
+      },
+      {
+        "error": null,
+        "name": "dash_not_first",
+        "read": {
+          "allowed": "az",
+          "length": 20,
+          "max_consecutive": null,
+          "max_length": null,
+          "min_length": null,
+          "required": []
+        },
+        "rules": {
+          "passwordrules": "allowed: [a-z]"
+        }
+      },
+      {
+        "error": null,
+        "name": "empty_class_then_text",
+        "read": {
+          "allowed": "0123456789",
+          "length": 20,
+          "max_consecutive": null,
+          "max_length": null,
+          "min_length": null,
+          "required": []
+        },
+        "rules": {
+          "passwordrules": "allowed: []abc], digit"
+        }
+      },
+      {
+        "error": null,
+        "name": "semicolon_in_class",
+        "read": {
+          "allowed": "!0123456789;",
+          "length": 20,
+          "max_consecutive": null,
+          "max_length": null,
+          "min_length": null,
+          "required": [
+            "!;",
+            "0123456789"
+          ]
+        },
+        "rules": {
+          "passwordrules": "required: [;!]; required: digit"
+        }
+      },
+      {
+        "error": null,
+        "name": "letters_outside_ascii",
+        "read": {
+          "allowed": "ab",
+          "length": 20,
+          "max_consecutive": null,
+          "max_length": null,
+          "min_length": null,
+          "required": [
+            "ab"
+          ]
+        },
+        "rules": {
+          "passwordrules": "required: [abéø]"
+        }
+      },
+      {
+        "error": null,
+        "name": "case_and_spaces",
+        "read": {
+          "allowed": "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ",
+          "length": 20,
+          "max_consecutive": null,
+          "max_length": null,
+          "min_length": 9,
+          "required": [
+            "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+          ]
+        },
+        "rules": {
+          "passwordrules": "  MinLength : 9 ;REQUIRED:Upper , Digit"
+        }
+      },
+      {
+        "error": null,
+        "name": "unknown_parts",
+        "read": {
+          "allowed": "0123456789",
+          "length": 20,
+          "max_consecutive": null,
+          "max_length": null,
+          "min_length": null,
+          "required": [
+            "0123456789"
+          ]
+        },
+        "rules": {
+          "passwordrules": "nonsense; colour: blue; required: sparkly, digit; minlength: ten; ;"
+        }
+      },
+      {
+        "error": null,
+        "name": "only_unknown_class",
+        "read": {
+          "allowed": " !\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~",
+          "length": 20,
+          "max_consecutive": null,
+          "max_length": null,
+          "min_length": null,
+          "required": []
+        },
+        "rules": {
+          "passwordrules": "required: sparkly"
+        }
+      },
+      {
+        "error": null,
+        "name": "unicode",
+        "read": {
+          "allowed": " !\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~",
+          "length": 20,
+          "max_consecutive": null,
+          "max_length": null,
+          "min_length": null,
+          "required": [
+            " !\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~",
+            "0123456789"
+          ]
+        },
+        "rules": {
+          "passwordrules": "required: unicode; required: digit"
+        }
+      },
+      {
+        "error": null,
+        "name": "special",
+        "read": {
+          "allowed": " !\"#$%&'()*+,-./:;<=>?@[\\]^_`{|}~",
+          "length": 20,
+          "max_consecutive": null,
+          "max_length": null,
+          "min_length": null,
+          "required": [
+            " !\"#$%&'()*+,-./:;<=>?@[\\]^_`{|}~"
+          ]
+        },
+        "rules": {
+          "passwordrules": "required: special"
+        }
+      },
+      {
+        "error": null,
+        "name": "smallest_and_largest_win",
+        "read": {
+          "allowed": " !\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~",
+          "length": 20,
+          "max_consecutive": 2,
+          "max_length": 24,
+          "min_length": 10,
+          "required": []
+        },
+        "rules": {
+          "passwordrules": "max-consecutive: 3; max-consecutive: 2; maxlength: 30; maxlength: 24; minlength: 8; minlength: 10"
+        }
+      },
+      {
+        "error": null,
+        "name": "longest",
+        "read": {
+          "allowed": " !\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~",
+          "length": 128,
+          "max_consecutive": null,
+          "max_length": null,
+          "min_length": 128,
+          "required": []
+        },
+        "rules": {
+          "min_length": 128
+        }
+      },
+      {
+        "error": null,
+        "name": "one_character_once",
+        "read": {
+          "allowed": "a",
+          "length": 1,
+          "max_consecutive": 1,
+          "max_length": 1,
+          "min_length": null,
+          "required": []
+        },
+        "rules": {
+          "passwordrules": "allowed: [a]; max-consecutive: 1; maxlength: 1"
+        }
+      },
+      {
+        "error": "bad_rules",
+        "name": "min_above_max",
+        "read": {
+          "allowed": " !\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~",
+          "length": 16,
+          "max_consecutive": null,
+          "max_length": 16,
+          "min_length": 20,
+          "required": []
+        },
+        "rules": {
+          "max_length": 16,
+          "passwordrules": "minlength: 20"
+        }
+      },
+      {
+        "error": "bad_rules",
+        "name": "max_zero",
+        "read": {
+          "allowed": " !\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~",
+          "length": 0,
+          "max_consecutive": null,
+          "max_length": 0,
+          "min_length": null,
+          "required": []
+        },
+        "rules": {
+          "max_length": 0
+        }
+      },
+      {
+        "error": "bad_rules",
+        "name": "min_above_128",
+        "read": {
+          "allowed": " !\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~",
+          "length": 128,
+          "max_consecutive": null,
+          "max_length": null,
+          "min_length": 129,
+          "required": []
+        },
+        "rules": {
+          "min_length": 129
+        }
+      },
+      {
+        "error": "bad_rules",
+        "name": "max_consecutive_zero",
+        "read": {
+          "allowed": " !\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~",
+          "length": 20,
+          "max_consecutive": 0,
+          "max_length": null,
+          "min_length": null,
+          "required": []
+        },
+        "rules": {
+          "passwordrules": "max-consecutive: 0"
+        }
+      },
+      {
+        "error": "bad_rules",
+        "name": "required_space_only",
+        "read": {
+          "allowed": " ",
+          "length": 20,
+          "max_consecutive": null,
+          "max_length": null,
+          "min_length": null,
+          "required": [
+            " "
+          ]
+        },
+        "rules": {
+          "passwordrules": "required: [ ]"
+        }
+      },
+      {
+        "error": "bad_rules",
+        "name": "required_empty",
+        "read": {
+          "allowed": "",
+          "length": 20,
+          "max_consecutive": null,
+          "max_length": null,
+          "min_length": null,
+          "required": [
+            ""
+          ]
+        },
+        "rules": {
+          "passwordrules": "required: []"
+        }
+      },
+      {
+        "error": "bad_rules",
+        "name": "allowed_space_only",
+        "read": {
+          "allowed": " ",
+          "length": 20,
+          "max_consecutive": null,
+          "max_length": null,
+          "min_length": null,
+          "required": []
+        },
+        "rules": {
+          "passwordrules": "allowed: [ ]"
+        }
+      },
+      {
+        "error": "bad_rules",
+        "name": "too_many_required",
+        "read": {
+          "allowed": "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz",
+          "length": 3,
+          "max_consecutive": null,
+          "max_length": 2,
+          "min_length": null,
+          "required": [
+            "ABCDEFGHIJKLMNOPQRSTUVWXYZ",
+            "abcdefghijklmnopqrstuvwxyz",
+            "0123456789"
+          ]
+        },
+        "rules": {
+          "passwordrules": "required: upper; required: lower; required: digit; maxlength: 2"
+        }
+      },
+      {
+        "error": "bad_rules",
+        "name": "one_character_repeated",
+        "read": {
+          "allowed": "a",
+          "length": 20,
+          "max_consecutive": 1,
+          "max_length": null,
+          "min_length": null,
+          "required": []
+        },
+        "rules": {
+          "passwordrules": "allowed: [a]; max-consecutive: 1"
+        }
+      }
+    ],
+    "symbols": "!#$%*+-.=?@_"
+  },
   "hpke": [
     {
       "aad": "K7P2QX0g0Bt23Hxsm5z-wpZp2lpA",
@@ -2404,6 +3332,146 @@
       "recipient_kem_pk": "fE5zmodqNC-MJSk500yxJtz4i2vlbx3Hpg2qO712pTQ",
       "recipient_kem_sk": "WVg29q7eTJuYsXMJkPAqAx2veoBDBCceAKKxCEs90KU",
       "sender": "phone"
+    },
+    {
+      "aad": "MgRcl3sckQTU_Z9kGoRGJAIdQP77UDyu6DAF-4aCs1-Q",
+      "ct": "zIJAIq5TwhHzkCgTqU-9e41dwFblwTCZglS44w602GlV9uhlomlPNW2p4g5QvT2fOBSprr8RMUsqVVnbss1_fjqsss6vayYf2bR5OlAuygBKCdeiHBXSIpuaIF0km2dbxdEu6MUyXomGKgyFxQkTxRH9IWVYNaoA7cLPPaSYlX5eCZ4M9eHRBmnYzvMT3DbrpvfM9xm3l-4T4u22QA3RIhNLBsru0GtPQTuirK-kTi9lArzd5Y15UN1-N2aLdGYEX6y2o0q0rB-dd0azHqQ1Lpyv4I_HSKx8MrvuGOxKwF97YvpV_FT8J1hZdS6rSjmSzKYTed9M7ljZ2vrdnB3Nqzf8zTL7aclbLtBp_W3OK9B6ox3NyafMLz6lFBXrM6j45X6bfLP0P3dGsAkVLdTnT2Y8JbKLUycnl1pIcPcMNK13Xh4-8DftwsAj1a69shM8SWjO_RHRpg3AuM14SCxmgQDxuKpiFqTgGovOYETNBwYMO7Tdrf_spAqDvxwWtPSvBkXL6HMgZE0Cy8_0NyWvbKjUPKsPgU1Zp2rOXmeWUSRF2ivkRznDaN0N1Y-SHtrSh-UPGyC7bJ5krAWylUdjBtHgnKIUCyfk2JzO",
+      "enc": "E4ws9ivkIXsCIYscUMfTzdm9S7AmyyTGQ5-weqgDkiU",
+      "ikm_e": "gWugmh5L9fpw47niTUO5cl39OaEYosdDOLHuy2zoa_8",
+      "info": "nodkey/v1/request",
+      "name": "request_generate",
+      "plaintext": "{\"v\":1,\"request_id\":\"MgRcl3sckQTU_Z9kGoRGJA\",\"kind\":\"generate\",\"target\":\"accounts.example.com\",\"reason\":\"Sign up for Example Cloud, as you asked\",\"agent\":\"Agent · Horizon\",\"ts\":1791620000,\"generate\":{\"url\":\"https://accounts.example.com/signup\",\"username\":\"alex@example.com\",\"title\":\"Example Cloud\",\"rules\":{\"passwordrules\":\"minlength: 12; required: lower; required: upper; required: digit; allowed: [-_.!];\",\"min_length\":12,\"max_length\":64}}}",
+      "plaintext_b64u": "eyJ2IjoxLCJyZXF1ZXN0X2lkIjoiTWdSY2wzc2NrUVRVX1o5a0dvUkdKQSIsImtpbmQiOiJnZW5lcmF0ZSIsInRhcmdldCI6ImFjY291bnRzLmV4YW1wbGUuY29tIiwicmVhc29uIjoiU2lnbiB1cCBmb3IgRXhhbXBsZSBDbG91ZCwgYXMgeW91IGFza2VkIiwiYWdlbnQiOiJBZ2VudCDCtyBIb3Jpem9uIiwidHMiOjE3OTE2MjAwMDAsImdlbmVyYXRlIjp7InVybCI6Imh0dHBzOi8vYWNjb3VudHMuZXhhbXBsZS5jb20vc2lnbnVwIiwidXNlcm5hbWUiOiJhbGV4QGV4YW1wbGUuY29tIiwidGl0bGUiOiJFeGFtcGxlIENsb3VkIiwicnVsZXMiOnsicGFzc3dvcmRydWxlcyI6Im1pbmxlbmd0aDogMTI7IHJlcXVpcmVkOiBsb3dlcjsgcmVxdWlyZWQ6IHVwcGVyOyByZXF1aXJlZDogZGlnaXQ7IGFsbG93ZWQ6IFstXy4hXTsiLCJtaW5fbGVuZ3RoIjoxMiwibWF4X2xlbmd0aCI6NjR9fX0",
+      "purpose": "request",
+      "recipient_kem_pk": "Td-3-HXWLqROvCB5uulMNssHXo3O2K_LQIby38T-z28",
+      "recipient_kem_sk": "vazvVwr6Ybz3fJM8Ey3EblV_Ow4P6yCovbNOvWY7IiI",
+      "sender": "agent"
+    },
+    {
+      "aad": "wkTG9JvyhiUXAcAPLWcnXwIdQP77UDyu6DAF-4aCs1-Q",
+      "ct": "sq1medSg3XEJVMFPT022CZzWmJa_PBzCO-vDeZmBRQtfDZB9yvnyP0YwTpnXN_YRYJdLSgHneuCzyqL-FQvn8OeMPxpBnRnHn9rcaYVN8hWRMvYYEyNo9Yp2SPPuTixLeMwwMhki0B9t6aDf8xF3Bl_qwRMoZfJ7Dg0dKkx7j-Gge4IRgpH92-VP_5oz5tKP2lo5-jhBGIMk-nDNKcYS8b9TQidfV4Tzdo8S6VHJMYRGdZOyrINmemNdgWE3xdMvKokgyALYecYC69uaelub6qgXFh1k53cBmnHWfpwCi99pVmzPFHVpMitiz7cKz5Xvfo-5g-Or4EmMQNQnnHXVj3BOrmQHhk25k3LEgvARtodBL9tWUbsg28TfQLzUgCh39oo9G-t0XqkJ5tdrQswlYsF0ohcSICOvdDSZMGy1zC0bqV7jVAkfQD_ftJU-xofqbfZSqn1E_P-lcRC_NRZQgP_KPrShbAcDulBwHwqRKff12k8",
+      "enc": "YJukSmxvU411kol0eC9oXJwqCMs6TXoJfGWTBo_lTyk",
+      "ikm_e": "u91D57Hml1DR0oDT5-YAWdhk3gwT50qz5aTSREG8y4I",
+      "info": "nodkey/v1/request",
+      "name": "request_generate_change",
+      "plaintext": "{\"v\":1,\"request_id\":\"wkTG9JvyhiUXAcAPLWcnXw\",\"kind\":\"generate\",\"target\":\"www.example.org\",\"reason\":\"Change the password you asked me to change\",\"agent\":\"Agent · Horizon\",\"ts\":1791620000,\"generate\":{\"url\":\"https://www.example.org/account/password\",\"username\":\"alex\",\"change\":true,\"rules\":{\"min_length\":12,\"max_length\":32,\"pattern\":\"(?=.*[0-9]).{12,32}\"}}}",
+      "plaintext_b64u": "eyJ2IjoxLCJyZXF1ZXN0X2lkIjoid2tURzlKdnloaVVYQWNBUExXY25YdyIsImtpbmQiOiJnZW5lcmF0ZSIsInRhcmdldCI6Ind3dy5leGFtcGxlLm9yZyIsInJlYXNvbiI6IkNoYW5nZSB0aGUgcGFzc3dvcmQgeW91IGFza2VkIG1lIHRvIGNoYW5nZSIsImFnZW50IjoiQWdlbnQgwrcgSG9yaXpvbiIsInRzIjoxNzkxNjIwMDAwLCJnZW5lcmF0ZSI6eyJ1cmwiOiJodHRwczovL3d3dy5leGFtcGxlLm9yZy9hY2NvdW50L3Bhc3N3b3JkIiwidXNlcm5hbWUiOiJhbGV4IiwiY2hhbmdlIjp0cnVlLCJydWxlcyI6eyJtaW5fbGVuZ3RoIjoxMiwibWF4X2xlbmd0aCI6MzIsInBhdHRlcm4iOiIoPz0uKlswLTldKS57MTIsMzJ9In19fQ",
+      "purpose": "request",
+      "recipient_kem_pk": "Td-3-HXWLqROvCB5uulMNssHXo3O2K_LQIby38T-z28",
+      "recipient_kem_sk": "vazvVwr6Ybz3fJM8Ey3EblV_Ow4P6yCovbNOvWY7IiI",
+      "sender": "agent"
+    },
+    {
+      "aad": "MgRcl3sckQTU_Z9kGoRGJAIdQP77UDyu6DAF-4aCs1-Q",
+      "ct": "r2MB58VcSPenC25FCVu8Xd4IP5-4UyHYdz0G4B6VV1WHP6Fqb1HrkDqq-WsDU9hAseYnrcxT-acx0vP2oPaQRnOo0Cf9o8a1je2hk9mQ_7uUGQK1nibE1-D2la-fVxFIjYXcSZh5maOgWjRQluzwrpXz-LAJ9wPg42DrdzNXjWHws762vp53uh7WjWBjiGuNNa0WFhDTUvnQWllbXAbxgOiWg5KsxN6kJRD7s1I6Q344MXHRRQVxqp4UD0a5GSYM87jOSqRukYobyZhry1OmEiO--QI8Y5dQ0J4wuh6QtP7XIAzqaa_PYuNYE3AevsGZOGxL0_WZX1ScBT02lkOV70xKYynSIHm-1k7rLPagvoA7X_lDW3ma8Z3naEk6GGIehmtUqtQfvbdsna7glLJqufb8jTyDHro_EgWW7NC7NpiQ6ZOaKRd25gh2DkreHTub_VLDwa5SixJSCM0i1nuriSX6oj2AQaSY6SE2gm8-3_VU8DMUg3TtxYiqlA9SDbBaRy0QgdjwtUMJKl1D0VHtKy3FvKxhczcmsyTTPzsEXSYkPalHXlx9p2yw6VDYpha0BPigetOmBL8TF8ZFSZf0IftJe4JKiLK-_NS2O9AwCWqDIM5JXy611b2Px_jQsBzjO6bjEdAGwX87Ga2jkfkMq9ZZT7O90PzEKNnlhrM8N7kJYuK7OR3dH7GyZlob05EnT1iUaB6moj2W38pgUDZaga3fR6aatjLiQPI",
+      "enc": "Qc4sNz9jaNkE2Aby_bnye2hywwFbRNHEAHkt1kixDhQ",
+      "ikm_e": "CT_TxYxV05MChP5K-yAvpca_41IPKM2Q-RcxAflzgVQ",
+      "info": "nodkey/v1/request",
+      "name": "request_generate_signed",
+      "plaintext": "{\"v\":1,\"request_id\":\"MgRcl3sckQTU_Z9kGoRGJA\",\"kind\":\"generate\",\"target\":\"accounts.example.com\",\"reason\":\"Sign up for Example Cloud, as you asked\",\"agent\":\"Agent · Horizon\",\"ts\":1791620000,\"generate\":{\"url\":\"https://accounts.example.com/signup\",\"username\":\"alex@example.com\",\"title\":\"Example Cloud\",\"rules\":{\"passwordrules\":\"minlength: 12; required: lower; required: upper; required: digit; allowed: [-_.!];\",\"min_length\":12,\"max_length\":64}},\"sig\":\"XLBP6D0FkjeISdyVLI5uMBQQDb2i_FDvfOrG8tJrMN3hoFrG5r4M7cJpmLmZuWhpwcPkSgPO3n2_6r6f1e5iDw\"}",
+      "plaintext_b64u": "eyJ2IjoxLCJyZXF1ZXN0X2lkIjoiTWdSY2wzc2NrUVRVX1o5a0dvUkdKQSIsImtpbmQiOiJnZW5lcmF0ZSIsInRhcmdldCI6ImFjY291bnRzLmV4YW1wbGUuY29tIiwicmVhc29uIjoiU2lnbiB1cCBmb3IgRXhhbXBsZSBDbG91ZCwgYXMgeW91IGFza2VkIiwiYWdlbnQiOiJBZ2VudCDCtyBIb3Jpem9uIiwidHMiOjE3OTE2MjAwMDAsImdlbmVyYXRlIjp7InVybCI6Imh0dHBzOi8vYWNjb3VudHMuZXhhbXBsZS5jb20vc2lnbnVwIiwidXNlcm5hbWUiOiJhbGV4QGV4YW1wbGUuY29tIiwidGl0bGUiOiJFeGFtcGxlIENsb3VkIiwicnVsZXMiOnsicGFzc3dvcmRydWxlcyI6Im1pbmxlbmd0aDogMTI7IHJlcXVpcmVkOiBsb3dlcjsgcmVxdWlyZWQ6IHVwcGVyOyByZXF1aXJlZDogZGlnaXQ7IGFsbG93ZWQ6IFstXy4hXTsiLCJtaW5fbGVuZ3RoIjoxMiwibWF4X2xlbmd0aCI6NjR9fSwic2lnIjoiWExCUDZEMEZramVJU2R5VkxJNXVNQlFRRGIyaV9GRHZmT3JHOHRKck1OM2hvRnJHNXI0TTdjSnBtTG1adVdocHdjUGtTZ1BPM24yXzZyNmYxZTVpRHcifQ",
+      "purpose": "request",
+      "recipient_kem_pk": "Td-3-HXWLqROvCB5uulMNssHXo3O2K_LQIby38T-z28",
+      "recipient_kem_sk": "vazvVwr6Ybz3fJM8Ey3EblV_Ow4P6yCovbNOvWY7IiI",
+      "sender": "agent"
+    },
+    {
+      "aad": "MgRcl3sckQTU_Z9kGoRGJA0g0Bt23Hxsm5z-wpZp2lpA",
+      "ct": "AO3GbbO8smJFIur507mxlPo4-Euf0BCrj1IuEZuPp2ZwuEyF7XVe6DKObOb7vzPe1xcOg1mzIsyOqEYgqwxESQeMFoBRpuUvPp_RnGAT5PTgPkGlEugqxv4ikgRnr9HkLCep9T4gavkcgGPqlOj6HR_HplMnIsAlgOIoz3OHDaqemf7fP1BhXuM8W1alG8SOWXTkZAYd2PST_5vWqs-VDZpKuB5_jhdGg2C9qOrWIZl0Jr91nU4HzAz3Q4GFr0L0xHOWgHD4cIn_8DHaluPIsxSn-2-dQ4HJ0nGEgANsBuoYT9795zyAxepTO8jynaOStranbvSuP6yv5rP_nqsBlg",
+      "enc": "GTWPxosIN-gQjzh4XXhHR_P-efkydQW61TSyIBdAU1E",
+      "ikm_e": "zDzIhZQx33SQ0JcYSpmAl-uxEX2t9tEf0neChwXrPnQ",
+      "info": "nodkey/v1/answer",
+      "name": "answer_generate_added",
+      "plaintext": "{\"v\":1,\"request_id\":\"MgRcl3sckQTU_Z9kGoRGJA\",\"decision\":\"approved\",\"account\":{\"issuer\":\"Example Cloud\",\"name\":\"alex@example.com\",\"site\":\"accounts.example.com\"},\"username\":\"alex@example.com\",\"password\":\"q7Hs-Tw2k.Xp9_mRv4!z\",\"saved\":\"added\"}",
+      "plaintext_b64u": "eyJ2IjoxLCJyZXF1ZXN0X2lkIjoiTWdSY2wzc2NrUVRVX1o5a0dvUkdKQSIsImRlY2lzaW9uIjoiYXBwcm92ZWQiLCJhY2NvdW50Ijp7Imlzc3VlciI6IkV4YW1wbGUgQ2xvdWQiLCJuYW1lIjoiYWxleEBleGFtcGxlLmNvbSIsInNpdGUiOiJhY2NvdW50cy5leGFtcGxlLmNvbSJ9LCJ1c2VybmFtZSI6ImFsZXhAZXhhbXBsZS5jb20iLCJwYXNzd29yZCI6InE3SHMtVHcyay5YcDlfbVJ2NCF6Iiwic2F2ZWQiOiJhZGRlZCJ9",
+      "purpose": "answer",
+      "recipient_kem_pk": "fE5zmodqNC-MJSk500yxJtz4i2vlbx3Hpg2qO712pTQ",
+      "recipient_kem_sk": "WVg29q7eTJuYsXMJkPAqAx2veoBDBCceAKKxCEs90KU",
+      "sender": "phone"
+    },
+    {
+      "aad": "wkTG9JvyhiUXAcAPLWcnXw0g0Bt23Hxsm5z-wpZp2lpA",
+      "ct": "B2qnj4OWoTA-iqpdVpDVwIRJSJGWJxJjxH57YWHvFvLiz8kOM30BzlehBEwmsndgp-Tb5vZbBP_U_hfnkUvCjociNiRY1kR_5uQj9msUmd8XmnSIFnEdvjaweUXPULElN0bQhfkhAdw0yfenJMugoc3k0VS3zpCMZqOwJXV__xgQKDYxFBsHxy1qvIP7y0X42dKx9FTvIWcYdlLzqJuRTKyLNw8oyoXb44vKdqr_uVPHjlHmyWz5me-NafRg3wTIf_CIMHUCZyhceChCnAlPVqaI6IuXBhMRm46uRDHAuuN6d24",
+      "enc": "e7Lij920rhpF5NR0hVYGH2YE0YnUQ4ro1TyfShO_D2U",
+      "ikm_e": "yuXMZCntYsGfBsX0vgG0JHXf5IJJUW7Ba90qDCpE_Vw",
+      "info": "nodkey/v1/answer",
+      "name": "answer_generate_updated",
+      "plaintext": "{\"v\":1,\"request_id\":\"wkTG9JvyhiUXAcAPLWcnXw\",\"decision\":\"approved\",\"account\":{\"issuer\":\"Example Org\",\"name\":\"alex.k\",\"site\":\"example.org\"},\"username\":\"alex.k\",\"password\":\"Vb3$kQ9.wz+Lr2@nTx7=\",\"saved\":\"updated\"}",
+      "plaintext_b64u": "eyJ2IjoxLCJyZXF1ZXN0X2lkIjoid2tURzlKdnloaVVYQWNBUExXY25YdyIsImRlY2lzaW9uIjoiYXBwcm92ZWQiLCJhY2NvdW50Ijp7Imlzc3VlciI6IkV4YW1wbGUgT3JnIiwibmFtZSI6ImFsZXguayIsInNpdGUiOiJleGFtcGxlLm9yZyJ9LCJ1c2VybmFtZSI6ImFsZXguayIsInBhc3N3b3JkIjoiVmIzJGtROS53eitMcjJAblR4Nz0iLCJzYXZlZCI6InVwZGF0ZWQifQ",
+      "purpose": "answer",
+      "recipient_kem_pk": "fE5zmodqNC-MJSk500yxJtz4i2vlbx3Hpg2qO712pTQ",
+      "recipient_kem_sk": "WVg29q7eTJuYsXMJkPAqAx2veoBDBCceAKKxCEs90KU",
+      "sender": "phone"
+    },
+    {
+      "aad": "MgRcl3sckQTU_Z9kGoRGJA0g0Bt23Hxsm5z-wpZp2lpA",
+      "ct": "KeNif3EW_d4ZJD9DLDhpQSrrkeW726Alp05JrlHOFnF6i6dAlOssNx7uWOX141JT_JCMu7gU9-nVRkAaHl8HbeR-ZBiBZuFmuOn64HosFQ6G_QweBAItO2kfQFHMpwEBUUJW_De8QQ",
+      "enc": "1gh_8dsxOH6sIvrKZI7k30smNvI6hxjWKF28tbBPqDA",
+      "ikm_e": "ssWqIeHj76ghhf_hacm-Ivn-aENFuaJQ8Ha8wXgYr3Y",
+      "info": "nodkey/v1/answer",
+      "name": "answer_generate_no_passcode",
+      "plaintext": "{\"v\":1,\"request_id\":\"MgRcl3sckQTU_Z9kGoRGJA\",\"decision\":\"denied\",\"error\":\"no_passcode\"}",
+      "plaintext_b64u": "eyJ2IjoxLCJyZXF1ZXN0X2lkIjoiTWdSY2wzc2NrUVRVX1o5a0dvUkdKQSIsImRlY2lzaW9uIjoiZGVuaWVkIiwiZXJyb3IiOiJub19wYXNzY29kZSJ9",
+      "purpose": "answer",
+      "recipient_kem_pk": "fE5zmodqNC-MJSk500yxJtz4i2vlbx3Hpg2qO712pTQ",
+      "recipient_kem_sk": "WVg29q7eTJuYsXMJkPAqAx2veoBDBCceAKKxCEs90KU",
+      "sender": "phone"
+    },
+    {
+      "aad": "MgRcl3sckQTU_Z9kGoRGJA0g0Bt23Hxsm5z-wpZp2lpA",
+      "ct": "ACQqxPsYiJ3O9jKUOOQ7wS_t8lfCAAwSJJ5cUK8wlswcK2PrhXmB7WZzDozhWhheGZqmxCmBv5N2cDZ6HOIkQqjU0WGdxzl4P-RA_4vV0Ne_YPQ6ZaSwqLllm-moBYo4ZqZepzzDSA",
+      "enc": "jxAxL7WOhlJtk0tIjqC3U4OsTY_mqgSIWAjgQ5whyAY",
+      "ikm_e": "h4bvxn5fV3KpoKPiETXRlqaATNajgXM2irndirIk8t0",
+      "info": "nodkey/v1/answer",
+      "name": "answer_generate_not_allowed",
+      "plaintext": "{\"v\":1,\"request_id\":\"MgRcl3sckQTU_Z9kGoRGJA\",\"decision\":\"denied\",\"error\":\"not_allowed\"}",
+      "plaintext_b64u": "eyJ2IjoxLCJyZXF1ZXN0X2lkIjoiTWdSY2wzc2NrUVRVX1o5a0dvUkdKQSIsImRlY2lzaW9uIjoiZGVuaWVkIiwiZXJyb3IiOiJub3RfYWxsb3dlZCJ9",
+      "purpose": "answer",
+      "recipient_kem_pk": "fE5zmodqNC-MJSk500yxJtz4i2vlbx3Hpg2qO712pTQ",
+      "recipient_kem_sk": "WVg29q7eTJuYsXMJkPAqAx2veoBDBCceAKKxCEs90KU",
+      "sender": "phone"
+    },
+    {
+      "aad": "MgRcl3sckQTU_Z9kGoRGJA0g0Bt23Hxsm5z-wpZp2lpA",
+      "ct": "qJOAGy5EfdxNkZDbuUQjKNEFA0IijCDnmMrLcY2_oVGVHbOC9x0Wbb2Mpxeby8X3_w-n5W-Suz7IDW6r2D3W5TflluQ9352uBv5wtEO1y0W_z5IZZn0e15JAg4gb59y7-ttbiOvUzRQ",
+      "enc": "qRr2ir1zfXtQR1SWDwupppPA_x55OBX7rn-zkWuYJVA",
+      "ikm_e": "5vvD1cnH5OSN7OSG_k1lXb8MNYJEy9Ud8FBvWfZH4-Q",
+      "info": "nodkey/v1/answer",
+      "name": "answer_generate_bad_generate",
+      "plaintext": "{\"v\":1,\"request_id\":\"MgRcl3sckQTU_Z9kGoRGJA\",\"decision\":\"denied\",\"error\":\"bad_generate\"}",
+      "plaintext_b64u": "eyJ2IjoxLCJyZXF1ZXN0X2lkIjoiTWdSY2wzc2NrUVRVX1o5a0dvUkdKQSIsImRlY2lzaW9uIjoiZGVuaWVkIiwiZXJyb3IiOiJiYWRfZ2VuZXJhdGUifQ",
+      "purpose": "answer",
+      "recipient_kem_pk": "fE5zmodqNC-MJSk500yxJtz4i2vlbx3Hpg2qO712pTQ",
+      "recipient_kem_sk": "WVg29q7eTJuYsXMJkPAqAx2veoBDBCceAKKxCEs90KU",
+      "sender": "phone"
+    },
+    {
+      "aad": "MgRcl3sckQTU_Z9kGoRGJA0g0Bt23Hxsm5z-wpZp2lpA",
+      "ct": "luy1w98jd4NuV9bmTmduTSx0lGrNK0fEZdXi2Rukx7ePflKGpr8xFhQjkezncT1FR5AnTLb42m2Ttdej6juB9DlVJ7tCLJQNCWS5TMkmFXgwcn2BK38qaLiFM_bMhYPnbytsrA8",
+      "enc": "eY8f9XOmBy7d4RuGSBXx69gv5qsD1Y8j24SaVD9Q_iE",
+      "ikm_e": "5slHARPTYIjW1dzHryHw9vJnMtzYbCl0_kAXudbzrDc",
+      "info": "nodkey/v1/answer",
+      "name": "answer_generate_bad_rules",
+      "plaintext": "{\"v\":1,\"request_id\":\"MgRcl3sckQTU_Z9kGoRGJA\",\"decision\":\"denied\",\"error\":\"bad_rules\"}",
+      "plaintext_b64u": "eyJ2IjoxLCJyZXF1ZXN0X2lkIjoiTWdSY2wzc2NrUVRVX1o5a0dvUkdKQSIsImRlY2lzaW9uIjoiZGVuaWVkIiwiZXJyb3IiOiJiYWRfcnVsZXMifQ",
+      "purpose": "answer",
+      "recipient_kem_pk": "fE5zmodqNC-MJSk500yxJtz4i2vlbx3Hpg2qO712pTQ",
+      "recipient_kem_sk": "WVg29q7eTJuYsXMJkPAqAx2veoBDBCceAKKxCEs90KU",
+      "sender": "phone"
+    },
+    {
+      "aad": "MgRcl3sckQTU_Z9kGoRGJA0g0Bt23Hxsm5z-wpZp2lpA",
+      "ct": "Ws2ACZMJzb2rPNL5C8iAkrOBIFfmnPJHy_lyiOgzulctfCygfaVX1u0j_JfMLh8LN-VcS9fAUG3fzwAV5AcV74CH9DQdnXOu_1lqenVmHUpim3jTjQvutCYI-YJx4bvmnGwnfP_Y1w",
+      "enc": "B7ywjCnxKT7BfUdzv5PiyhV3v54GQU8tEqUhWmgWbhA",
+      "ikm_e": "IWonIyOjp_ssmmQfKAhZCaOP8-rN9bln5OercOa31HQ",
+      "info": "nodkey/v1/answer",
+      "name": "answer_generate_save_failed",
+      "plaintext": "{\"v\":1,\"request_id\":\"MgRcl3sckQTU_Z9kGoRGJA\",\"decision\":\"denied\",\"error\":\"save_failed\"}",
+      "plaintext_b64u": "eyJ2IjoxLCJyZXF1ZXN0X2lkIjoiTWdSY2wzc2NrUVRVX1o5a0dvUkdKQSIsImRlY2lzaW9uIjoiZGVuaWVkIiwiZXJyb3IiOiJzYXZlX2ZhaWxlZCJ9",
+      "purpose": "answer",
+      "recipient_kem_pk": "fE5zmodqNC-MJSk500yxJtz4i2vlbx3Hpg2qO712pTQ",
+      "recipient_kem_sk": "WVg29q7eTJuYsXMJkPAqAx2veoBDBCceAKKxCEs90KU",
+      "sender": "phone"
     }
   ],
   "import": {
@@ -3768,6 +4836,18 @@
       "phone_id": "0g0Bt23Hxsm5z-wpZp2lpA",
       "plaintext": "{\"v\":1,\"request_id\":\"8bVEb4i0Es9Cf9YCcK5Btg\",\"kind\":\"import\",\"target\":\"\",\"reason\":\"Move the passwords saved in Chrome into Nodkey\",\"agent\":\"Agent · Horizon\",\"ts\":1791620000,\"import\":{\"file_name\":\"Chrome Passwords.csv\",\"size\":243,\"sha256\":\"fomLLc-QCrPoXSjLGMW5Zhy_S29QHbce4vLRxQfLMtU\",\"format_hint\":\"chrome_csv\",\"source\":\"Chrome, profile Default\"},\"sig\":\"JMNHl9fYCO5zlDamnmYR22mXc5qhJtD-DCdwUrypQBqzIQAJ0u-DijFxXC7DLt50qWOba9THTBgBBY5j62qFCw\"}",
       "sig": "JMNHl9fYCO5zlDamnmYR22mXc5qhJtD-DCdwUrypQBqzIQAJ0u-DijFxXC7DLt50qWOba9THTBgBBY5j62qFCw",
+      "sign_pk": "bOp7Vh4eecFjmSW9F1BoO_BAhHKC4mrGJXQb6K3A-j0"
+    },
+    {
+      "agent_id": "IdQP77UDyu6DAF-4aCs1-Q",
+      "body": "{\"v\":1,\"request_id\":\"MgRcl3sckQTU_Z9kGoRGJA\",\"kind\":\"generate\",\"target\":\"accounts.example.com\",\"reason\":\"Sign up for Example Cloud, as you asked\",\"agent\":\"Agent · Horizon\",\"ts\":1791620000,\"generate\":{\"url\":\"https://accounts.example.com/signup\",\"username\":\"alex@example.com\",\"title\":\"Example Cloud\",\"rules\":{\"passwordrules\":\"minlength: 12; required: lower; required: upper; required: digit; allowed: [-_.!];\",\"min_length\":12,\"max_length\":64}}}",
+      "direction": "request",
+      "hpke": "request_generate_signed",
+      "message": "nodkey/v1/signed\nrequest\nIdQP77UDyu6DAF-4aCs1-Q\n0g0Bt23Hxsm5z-wpZp2lpA\n{\"v\":1,\"request_id\":\"MgRcl3sckQTU_Z9kGoRGJA\",\"kind\":\"generate\",\"target\":\"accounts.example.com\",\"reason\":\"Sign up for Example Cloud, as you asked\",\"agent\":\"Agent · Horizon\",\"ts\":1791620000,\"generate\":{\"url\":\"https://accounts.example.com/signup\",\"username\":\"alex@example.com\",\"title\":\"Example Cloud\",\"rules\":{\"passwordrules\":\"minlength: 12; required: lower; required: upper; required: digit; allowed: [-_.!];\",\"min_length\":12,\"max_length\":64}}}",
+      "name": "request_generate_signed",
+      "phone_id": "0g0Bt23Hxsm5z-wpZp2lpA",
+      "plaintext": "{\"v\":1,\"request_id\":\"MgRcl3sckQTU_Z9kGoRGJA\",\"kind\":\"generate\",\"target\":\"accounts.example.com\",\"reason\":\"Sign up for Example Cloud, as you asked\",\"agent\":\"Agent · Horizon\",\"ts\":1791620000,\"generate\":{\"url\":\"https://accounts.example.com/signup\",\"username\":\"alex@example.com\",\"title\":\"Example Cloud\",\"rules\":{\"passwordrules\":\"minlength: 12; required: lower; required: upper; required: digit; allowed: [-_.!];\",\"min_length\":12,\"max_length\":64}},\"sig\":\"XLBP6D0FkjeISdyVLI5uMBQQDb2i_FDvfOrG8tJrMN3hoFrG5r4M7cJpmLmZuWhpwcPkSgPO3n2_6r6f1e5iDw\"}",
+      "sig": "XLBP6D0FkjeISdyVLI5uMBQQDb2i_FDvfOrG8tJrMN3hoFrG5r4M7cJpmLmZuWhpwcPkSgPO3n2_6r6f1e5iDw",
       "sign_pk": "bOp7Vh4eecFjmSW9F1BoO_BAhHKC4mrGJXQb6K3A-j0"
     }
   ],

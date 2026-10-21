@@ -16,6 +16,7 @@ pub mod client;
 mod client_info;
 pub mod code;
 pub mod dh;
+pub mod generate;
 pub mod import;
 pub mod keys;
 pub mod messages;
@@ -40,6 +41,7 @@ pub use bundle::{BundleItem, BundleItemAnswer, BundleRequest};
 pub use card::{
     CardAnswer, CardEntry, CardMode, CardPurpose, CardRequest, Money, SaveCard, TotalSource,
 };
+pub use generate::GenerateRequest;
 pub use import::{ImportCounts, ImportFormat, ImportRequest};
 pub use keys::{KeyPair, PublicKeys};
 pub use messages::*;
