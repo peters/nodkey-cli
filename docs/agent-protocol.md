@@ -231,7 +231,7 @@ grant.
 Request (agent → phone):
 
 ```json
-{"v":1, "request_id":"…", "kind":"code|login|list|insights|cleanup|save|passkey|bundle|card|session_end|suggest|sms_code|secret|save_secret|pairing_check|import", "target":"github.com/alex",
+{"v":1, "request_id":"…", "kind":"code|login|list|insights|cleanup|save|passkey|bundle|card|session_end|suggest|sms_code|secret|save_secret|pairing_check|import|generate", "target":"github.com/alex",
  "reason":"Merge PR #42", "agent":"Claude · Horizon", "ts":1791620000}
 ```
 
@@ -532,7 +532,7 @@ remember the site, which makes it an exact match).
 Such an answer carries `lease: {"kind":"session", "until":…}`. Anything else is asked as usual,
 with or without `session_id`: another site or account, a passkey create, a passkey get with PRF
 inputs or with `user_verification: required`, `save`, `save_card`, `save_secret`,
-`card`, `list`, `insights`, `cleanup` and `bundle`. A request with an unknown or ended `session_id`
+`generate`, `card`, `list`, `insights`, `cleanup` and `bundle`. A request with an unknown or ended `session_id`
 is also asked as usual; its answer carries `session_ended: true`, so the agent stops sending the id.
 
 A session ends when its time is up, when the agent ends it, when the user taps Stop on it, pauses
@@ -599,6 +599,181 @@ added. A save is **never covered by a lease**. The answer carries `saved`: `adde
 An agent must not keep the password in clear. When the user does not answer in time, it may keep
 the sealed password with the site and user name and offer to send it again. Vectors:
 `save_password`, `request_save`, `answer_save`.
+
+## Making a password
+
+`kind: generate` asks the phone to make a strong new password for a sign-up or a password change,
+to save it, and to give it to the agent or the browser, which fills it in (peters/nodkey#131). The
+phone makes the password and saves it **before** it answers, so a sign-up that fails half-way never
+loses it. `nodkey_proto::generate` implements this section.
+
+It is a kind of its own, not `save` with a flag. A `save` request carries a password to the phone
+and its answer carries none; a `generate` answer carries a password. So it follows the rules of a
+secret that leaves the phone (Face ID every time, `no_passcode`, scopes), not those of a save, and an
+app that does not know it refuses it with `unsupported_kind` instead of reading it as a save without
+a password.
+
+```json
+{"v":1, "request_id":"…", "kind":"generate", "target":"accounts.example.com",
+ "reason":"Sign up for Example Cloud, as you asked", "agent":"Claude Code @ my-laptop", "ts":1791620000,
+ "generate":{"url":"https://accounts.example.com/signup", "username":"alex@example.com", "title":"Example Cloud",
+             "rules":{"passwordrules":"minlength: 12; required: lower; required: upper; required: digit; allowed: [-_.!];",
+                      "min_length":12, "max_length":64}}}
+```
+
+| Field | Meaning |
+| --- | --- |
+| `target` | required: the host of the page, as `nodkey_proto::site::host` reads it (`accounts.example.com`): lower case, no scheme, port, path or `/account` |
+| `generate.url` | optional: the page's address, `https://` or `http://`, without query and fragment (they can hold tokens), at most 500 characters (`MAX_URL`); its host is `target` |
+| `generate.username` | optional: the user name the agent or the page knows, at most 200 characters (`MAX_USERNAME`). The user can type or correct it on the phone. |
+| `generate.title` | optional: a title for a new login (the service's name), at most 100 characters (`MAX_TITLE`) |
+| `generate.change` | optional: `true` when the page changes the password of an existing account; absent means `false` |
+| `generate.rules` | optional: what the page says about the password; every field optional |
+| `rules.passwordrules` | the field's `passwordrules` attribute as the page has it (Apple's syntax, below), at most 300 characters (`MAX_RULES`) |
+| `rules.min_length`, `rules.max_length` | the field's `minlength` and `maxlength`, whole numbers from 0 |
+| `rules.pattern` | the field's `pattern`, at most 300 characters (`MAX_PATTERN`): a JavaScript regular expression the whole password must match, as a browser checks it (`^(?:pattern)$`, `v` flag) |
+
+No text field holds a control character. Both sides check these rules
+(`GenerateRequest::check`); the agent tools send nothing that breaks them, and the phone refuses such
+a request at once with `bad_generate`. A `generate` request has no `session_id` and is never part of
+a bundle; it may carry a picture (`attachment`) like a login request.
+
+### The rules
+
+`passwordrules` is a list of properties separated by `;`, each `name: value`, with spaces allowed
+around every part and names in any case:
+
+| Property | Meaning |
+| --- | --- |
+| `required: CLASSES` | the password has at least one character of CLASSES; each `required` is a requirement of its own |
+| `allowed: CLASSES` | the password may use these characters |
+| `max-consecutive: N` | at most N of the same character in a row; the smallest N counts |
+| `minlength: N`, `maxlength: N` | the largest `minlength` and the smallest `maxlength` count |
+
+CLASSES is a list separated by commas of `upper` (`A` to `Z`), `lower` (`a` to `z`), `digit` (`0` to
+`9`), `special` (the ASCII characters from space to `~` that are not letters or digits, space
+included), `ascii-printable` (every ASCII character from space to `~`), `unicode` (any character; it
+reads as `ascii-printable`) and custom classes in brackets: the characters between `[` and `]`, of
+which only those from space to `~` count. In a custom class `-` counts only as the first character,
+and `]]` is a `]` that ends the class (`[-_.]]` is `-`, `_`, `.` and `]`). A part without `:`, an
+unknown property, an unknown class name and a value of `max-consecutive`, `minlength` or `maxlength`
+that is not a whole number are left out; the rest still counts.
+
+The allowed characters are those of every `required` and `allowed` class; with neither, every ASCII
+character from space to `~`. The field's attributes join in: the minimum length is the larger of
+`minlength` and `rules.min_length`, the maximum the smaller of `maxlength` and `rules.max_length`.
+`Rules::read` gives this reading and `Rules::fits` says whether a password meets it (all but
+`pattern`).
+
+**What the phone makes.** 20 characters (`DEFAULT_LENGTH`), raised to the minimum and lowered to the
+maximum, and at least one per `required` class. It uses the allowed characters, preferring letters,
+digits and the symbols `!#$%*+-.=?@_` (`SYMBOLS`); it never uses a space. Without a `required`
+property it puts in a lower case letter, an upper case letter, a digit and a symbol, each when the
+allowed characters have one. It keeps to `max-consecutive`. With `pattern` it makes passwords until
+one matches, at most 100 (`PATTERN_TRIES`); the phone may first narrow the characters and length from
+a simple pattern (one bracket class with a count, such as `[A-Za-z0-9]{8,16}`). A `pattern` that is
+not a valid expression is left out, as browsers do.
+
+**Rules no password can meet** (`bad_rules`, `Rules::check`), checked before the user is asked:
+
+- the minimum length is above the maximum, the maximum is 0, or the minimum is above 128
+  (`MAX_LENGTH`, the longest password Nodkey makes);
+- `max-consecutive` is 0;
+- a `required` class, or the allowed characters, have no character but a space;
+- the maximum length (128 when it is higher or absent) is below the number of `required` classes;
+- only one character may be used, and the length is above `max-consecutive`;
+- on the phone: no password of `PATTERN_TRIES` matched `pattern`.
+
+The `generate` vectors list rules with their reading, and passwords that do or do not fit them.
+
+### What the phone does
+
+It checks in this order and refuses at once (`decision: denied`, `error`), without asking:
+
+| Check | `error` |
+| --- | --- |
+| the request's `v` and `kind` | `unsupported_version`, `unsupported_kind` |
+| the agent is paused | `paused` |
+| the phone has no passcode, so it cannot verify who approves (#126) | `no_passcode` |
+| the agent's scope is `codes` | `not_allowed` |
+| the request breaks a rule of `GenerateRequest::check` | `bad_generate` |
+| the rules cannot be met (above) | `bad_rules` |
+
+Then it asks: "Make a new password for accounts.example.com?" (with `change`: "Change the password
+for accounts.example.com?"), with the agent, the reason, the picture, the title and the user name in
+a field the user can type in or correct. When a saved login has the same website (see "Websites") and
+user name (compared without regard to case), the sheet shows it and says that the new password
+replaces its password; with `change`, or when several logins of the website could be meant, the user
+picks the login (or a new one). The user approves with **Face ID or the passcode, every time**. A
+`generate` request is never answered by a lease, a task session, a follow-up window or a notification
+action without Face ID, and is never part of a bundle. Its notification (category
+`AGENT_REQUEST_GENERATE`) offers only Open Nodkey and Deny; the notification service extension
+answers only the refusals above.
+
+After the approval, and before it answers, the phone:
+
+1. makes the password by the rules (above);
+2. saves it. The login the sheet showed gets the new password (`saved: updated`); otherwise a new
+   login is added for `target` with the user name, the title (else the host) and `url`
+   (`saved: added`);
+3. keeps the replaced password of an updated login on this iPhone for 30 days (`KEEP_OLD_DAYS`),
+   never in the iCloud backup or an export, so the user can go back when the change fails on the
+   site;
+4. records "Made a password for accounts.example.com" ("Changed the password for ..." for an update)
+   with the agent and the time in the history, never the password.
+
+When it cannot save, it answers `denied` with `error: "save_failed"` and gives no password.
+
+```json
+{"v":1, "request_id":"…", "decision":"approved", "saved":"added",
+ "account":{"issuer":"Example Cloud", "name":"alex@example.com", "site":"accounts.example.com"},
+ "username":"alex@example.com", "password":"…"}
+{"v":1, "request_id":"…", "decision":"denied", "error":"bad_rules"}
+```
+
+- `password`: the new password.
+- `username`: the user name as the user confirmed it on the phone. It may differ from the request's,
+  and it is empty when the user left the field empty.
+- `account`: the saved login: `issuer` its title, `name` its user name, `site` its site (for an
+  update, the site the login had).
+- `saved`: `added` or `updated`, never `unchanged`.
+- No `lease`, `match`, `code`, `method` or `via`.
+
+`denied` without `error` means the user said no; `expired`, no answer in time. The agent tools use
+an approved answer only when it has `password` and `saved` (`added` or `updated`) and no lease other
+than `once`; otherwise they give nothing and say why. They add `fill_only_on`: the website of
+`target` (`site::site_key`); the password is filled only on a page of that website, and only into
+the new password field and its confirm field.
+
+Other rules: a `generate` request does not count against the agent limit (the password is new, and
+the user approves each one with Face ID), and the relay's 120 s and 20 requests per hour apply as
+for every request. Scopes: allowed for `selected`, `logins` and `all`. An older app answers
+`unsupported_kind`, and the agent tells the user to update Nodkey.
+
+**The browser extension** offers "Make a strong password" in a field for a new password
+(`autocomplete="new-password"`, a password field with a confirm field next to it, or a page text such
+as "create password" or "new password"). It sends `url`, the user name it knows (also from an
+earlier page of the same sign-up in this tab), and the field's rules. It fills the answer's password
+into the password field and the confirm field, and does not ask "Save this password?" afterwards:
+the phone saved it already.
+
+**The agent side.** `nodkey generate --site <url|host> [--user NAME] [--title TEXT] [--rules
+'<passwordrules>'] [--min N] [--max N] [--pattern RE] [--change] [--reason TEXT]` prints the
+password alone on stdout, with one line on stderr that names the login and where to fill it
+(`--json`: the whole result as JSON on stdout instead). The MCP tool is `create_login(site, username?,
+title?, rules?, change?, reason, image_path?)`, `rules` being `{passwordrules?, min_length?,
+max_length?, pattern?}`; it returns `decision`, `username`, `password`, `account`, `saved`,
+`fill_only_on` and a message. An agent uses it only when the user asked it to sign up or to change a
+password, fills the password only on that site, and never stores or repeats it. Exit codes: 0
+approved, 1 error (also `bad_generate`, `save_failed`), 2 denied (also `not_allowed`), 3 expired, 4
+paused, 10 `no_passcode`, 15 `bad_rules`, 64 bad arguments.
+
+Vectors: `request_generate`, `request_generate_change`, `request_generate_signed` (also in
+`signed`), `answer_generate_added`, `answer_generate_updated`, `answer_generate_no_passcode`,
+`answer_generate_not_allowed`, `answer_generate_bad_generate`, `answer_generate_bad_rules`,
+`answer_generate_save_failed`, and the `generate` section: the limits, the symbols, the classes, the
+errors in the phone's order, `checks` (requests and the `error` each gets, `null` when it passes),
+`rules` (rules with their reading and `error`) and `fits` (passwords against rules).
 
 ## Passkeys
 
@@ -1534,7 +1709,7 @@ does not tell the two apart.
 ## Leases
 
 A lease is `(agent_id, account_id, kind: code|login, until)` (for passkeys see "Passkeys"; cards,
-keys, `suggest`, `sms_code` and `import` never have one), kept only on the phone (keychain-backed
+keys, `suggest`, `sms_code`, `import` and `generate` never have one), kept only on the phone (keychain-backed
 store shared with the notification extensions). While a matching lease is valid the phone answers by
 itself and shows a quiet notification ("Claude got the password for vg.no"), but only for a target
 that is an exact match for the account (see "Websites"). Durations: once (no lease),
@@ -1558,7 +1733,7 @@ everything out of Nodkey. The phone counts and decides; the agent sees the limit
   `secret` item of a bundle (also a plan item without a value), and answers that a lease, a task
   session or the follow-up window gave. Passkey signatures (the key never leaves the phone), cards
   (they have their own limits), `sms_code`, `list`, `insights`, `cleanup`, `save`, `save_secret`,
-  `suggest` and `import` do not count.
+  `suggest`, `import` and `generate` do not count.
 - The count is per agent, over a rolling 24 hours.
 - The limit is per agent: 5, 10 or 25 (the user picks it under Agents; 10 when they did not).
 
@@ -1681,7 +1856,9 @@ answers".
   goes as `seen`, a `failed` one without `certainty`), `request_sms_code(target, reason,
   wait_seconds?)`, `request_secret(variable?, service?, project?, reason, image_path?)` and
   `save_secret(variable, service?, value, title?, notes?, expires?, projects?, reason)` (see "API
-  keys and secrets") and `import_file(path, source?, reason?, keep?, dry_run?)` (see "Moving in"). Every approved `request_code` and `request_login` result, and each approved
+  keys and secrets"), `import_file(path, source?, reason?, keep?, dry_run?)` (see "Moving in") and
+  `create_login(site, username?, title?, rules?, change?, reason, image_path?)` (see "Making a
+  password"). Every approved `request_code` and `request_login` result, and each approved
   login and code item of `request_credentials`, carries `fill_only_on` (see "Websites"). A
   `request_login` result shows `via` with its own `fill_only_on` (`via_sites`), and its
   message says what to do with `method`, `via` and `second_step`. `image_path` is an optional PNG/JPEG/GIF file (for example
@@ -1695,13 +1872,14 @@ answers".
 - The command line does the same in one process: `nodkey pair` shows the code and then the check
   number, and reads one line on stdin: `y` (or `yes`) when the iPhone shows the same number saves the
   pairing; anything else, or no line, saves nothing (exit code 2); `nodkey code`, `login`, `credentials`, `pay`, `suggest`, `sms-code`, `run`, `secret save`,
-  `accounts`, `insights`, `cleanup`, `phones`, `unpair`, `import`. `nodkey suggest SITE --kind KIND [--provider NAME] [--mailbox ADDR]
+  `accounts`, `insights`, `cleanup`, `phones`, `unpair`, `import`, `generate`. `nodkey suggest SITE --kind KIND [--provider NAME] [--mailbox ADDR]
   [--outcome failed] --reason TEXT`; `nodkey sms-code TARGET --reason TEXT [--wait SECS]`. Exit codes:
   0 approved (or queued), 1 error, 2 denied (or rejected), 3 expired, 4 paused (`error: paused`),
   64 bad arguments; for `pay` and `card-fill` also 5
   `over_limit`, 6 `reveal_off`, 7 `cards_off` or `no_card`, 8 `total_mismatch`, 10 `no_passcode`,
   and for `card-fill` 9 `setup_off`; for `import` 0 is `staged`, and 10 `no_passcode`, 11
-  `import_closed`, 12 `window_full`, 13 `import_unreadable`, 14 `too_large`. `nodkey pay MERCHANT
+  `import_closed`, 12 `window_full`, 13 `import_unreadable`, 14 `too_large`; for `generate` also 10
+  `no_passcode` and 15 `bad_rules`. `nodkey pay MERCHANT
   AMOUNT CURRENCY --reason TEXT --reveal` prints the full card, so it requires `--reveal`; without a
   host nothing can fill a card for it. A missing amount is refused before anything is sent.
   `nodkey run` passes on the exit code of the command it ran (126 or 127 when the command cannot
