@@ -200,6 +200,7 @@ nodkey login vg.no --reason "Check my subscription"
 nodkey pay shop.example.com 499 NOK --reveal --reason "Buy the cable I asked for"
 nodkey suggest example.com --kind federated --provider google --reason "Signed in with Google"
 nodkey sms-code account.example.com --reason "The site sent a code by SMS" --field code
+nodkey generate --site https://accounts.example.com/signup --user alex@example.com --rules 'minlength: 12; required: digit;'
 nodkey run -- npm test                       # the keys the .nodkey file lists
 nodkey run --secret OPENAI_API_KEY --reason "Run the API tests" -- npm test
 printf %s "$NEW_KEY" | nodkey secret save NEW_KEY --service example.com --reason "Save the key I made"
@@ -219,6 +220,13 @@ nodkey agents
 - `pay` spends money: it asks your iPhone for your card for one purchase, and your iPhone shows the
   shop and the amount. It works only if you turned on "full card number" for that agent in Nodkey,
   and never above the limit you set for it.
+- `generate` makes a strong new password on your iPhone for a sign-up or a password change and
+  prints only the password, so a script can fill it in. Your iPhone asks with Face ID every time
+  (you can correct the user name there), follows the page's rules (`--rules` takes the password
+  field's `passwordrules`, `--min` and `--max` its length), and saves the password before it
+  answers, so it is never lost when a sign-up fails half-way. A password change (`--change`) keeps
+  the old password on your iPhone for 30 days, so you can go back if the site did not take the new
+  one. This needs Nodkey 1.4 or later.
 - `suggest` only proposes. The method waits in your suggestion list in Nodkey until you accept it
   with one tap. `sms-code` waits for an SMS that your Shortcuts automation passes to Nodkey, and you
   approve it with Face ID.
@@ -246,7 +254,8 @@ nodkey agents
   5 above your limit, 6 full card numbers off, 7 cards off, 10 no passcode on your iPhone;
   `card-fill` also 8 for a page total above the amount and 9 for cards for later payments that
   are off. `import` also has 10 no passcode on your iPhone, 11 no import window open, 12 the
-  window is full, 13 a file Nodkey cannot read and 14 a file that is too large. `run` exits with
+  window is full, 13 a file Nodkey cannot read and 14 a file that is too large. `generate` also
+  has 10 no passcode on your iPhone and 15 rules that no password can meet. `run` exits with
   the code of the command it ran.
 - `nodkey webauthn` is for browser hosts such as Horizon: it reads one passkey request (sign in or
   create) as JSON on stdin and writes the result as JSON on stdout. Your iPhone shows the site and
@@ -281,6 +290,7 @@ nodkey agents
 | `cleanup_insights` | anonymous numbers to suggest clean-up rules from |
 | `cleanup_logins` | propose moving matching saved logins to Recently deleted |
 | `import_file` | send a password or code export to the import window you opened on your iPhone; deletes the file afterwards and returns counts only |
+| `create_login` | a strong new password for a sign-up or a password change you asked for: made and saved on your iPhone first, then given for that site only |
 | `pair`, `list_phones`, `unpair` | pair this agent, see its phones, leave a phone |
 
 ## Settings
@@ -330,9 +340,11 @@ they are.
   into the environment of the command it starts.
 - Cards are off for every agent until you turn them on. Each payment needs Face ID; there is no
   "always allow" for cards, and your iPhone refuses by itself above the limit you set.
-- An iPhone without a passcode gives no cards or keys to agents or browsers, no passkey sign-in
-  that needs a verified user, and no "always allow". Set a passcode in Settings, Face ID &
-  Passcode.
+- A new password (`generate`, `create_login`) is made on your iPhone and saved there before the
+  agent gets it, for that one site. It needs Face ID every time; there is no "always allow".
+- An iPhone without a passcode gives no cards, keys or new passwords to agents or browsers, no
+  passkey sign-in that needs a verified user, and no "always allow". Set a passcode in Settings,
+  Face ID & Passcode.
 - With card fill, the model does not see the card number only when it cannot run `nodkey` or read
   the agent folder (no shell, or a sandbox). An agent with a shell could run `nodkey card-fill`
   itself after you approve a payment. Turn cards on only for the browser host, and approve only

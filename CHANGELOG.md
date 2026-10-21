@@ -3,6 +3,29 @@
 What changed in each release of `nodkey`. The protocol is in
 [docs/agent-protocol.md](docs/agent-protocol.md).
 
+## Unreleased
+
+### What you can do
+
+- Sign up with a strong new password: `nodkey generate --site URL` and the MCP tool `create_login`
+  ask Nodkey on your iPhone to make a password that fits the page's rules, save it, and give it to
+  the agent for that sign-up only. It works for a password change too (`--change`): the new
+  password replaces the old one, which stays on your iPhone for 30 days. `nodkey generate` prints
+  only the password, so a script can fill it in. This needs Nodkey 1.4 or later on your iPhone.
+
+### Safety
+
+- Your iPhone saves the new password before the agent gets it, so a sign-up that fails half-way
+  never loses it.
+- Your iPhone asks with Face ID or your passcode for every new password: never "always allow", a
+  task session or a notification without Face ID. An iPhone without a passcode makes none.
+- The agent is told to fill the password only on that site and never to repeat it.
+
+### Good to know
+
+- Exit codes of `nodkey generate`: 10 no passcode on your iPhone, 15 rules that no password can
+  meet; the others are as for every command.
+
 ## 0.4.0 (2026-10-20)
 
 Move your passwords and codes into Nodkey from your computer. Moving in needs

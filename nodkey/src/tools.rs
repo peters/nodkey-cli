@@ -2,7 +2,7 @@
 
 use serde_json::{Value, json};
 
-pub const TOOL_NAMES: [&str; 16] = [
+pub const TOOL_NAMES: [&str; 17] = [
     "pair",
     "list_phones",
     "unpair",
@@ -19,6 +19,7 @@ pub const TOOL_NAMES: [&str; 16] = [
     "cleanup_insights",
     "cleanup_logins",
     "import_file",
+    "create_login",
 ];
 
 const APPROVAL: &str = "The user approves or denies every request on their iPhone, so this call can wait up to \
@@ -430,6 +431,44 @@ pub fn tools() -> Value {
                 "additionalProperties": false
             },
             "annotations": { "readOnlyHint": false, "destructiveHint": true, "idempotentHint": false, "openWorldHint": true }
+        },
+        {
+            "name": "create_login",
+            "title": "Make a new password on the user's iPhone for a sign-up or a password change",
+            "description": format!("Use it only when the user asked you to sign up for a service or to change a \
+                password. Nodkey on the user's iPhone makes a strong password that fits the page's rules, saves it \
+                as a login (or as the new password of the login with that user name) BEFORE it answers, and gives \
+                it to you for this sign-up only. The user approves with Face ID every time; there is never a lease. \
+                {APPROVAL} Returns JSON with decision and, when approved, username (as the user confirmed it on \
+                the phone; use this one), password, account, saved (added or updated) and fill_only_on. Fill the \
+                password only on that site: only into the new password field and its confirm field, on a page \
+                whose host is in fill_only_on or below one. Never store, log or repeat it; Nodkey keeps it, so do \
+                not save it again with another tool. Refusals: bad_rules (no password can meet the rules you \
+                sent), no_passcode, not_allowed, save_failed (nothing was made), paused."),
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "site": { "type": "string", "description": "The sign-up or change-password page: its address from the address bar (e.g. \"https://accounts.example.com/signup\"; the query and fragment are left out) or its host." },
+                    "username": { "type": "string", "description": "Optional: the user name or e-mail address you sign up with. The user can correct it on the phone." },
+                    "title": { "type": "string", "description": "Optional: a title for the new login, e.g. the service's name \"Example Cloud\"." },
+                    "rules": {
+                        "type": "object",
+                        "description": "Optional: what the page says about the password, from the new password field's attributes.",
+                        "properties": {
+                            "passwordrules": { "type": "string", "description": "The passwordrules attribute as the page has it, e.g. \"minlength: 12; required: lower; required: upper; required: digit;\"." },
+                            "min_length": { "type": "integer", "minimum": 0, "description": "The minlength attribute." },
+                            "max_length": { "type": "integer", "minimum": 0, "description": "The maxlength attribute." },
+                            "pattern": { "type": "string", "description": "The pattern attribute (a regular expression the whole password must match)." }
+                        },
+                        "additionalProperties": false
+                    },
+                    "change": { "type": "boolean", "description": "Optional: true when the page changes the password of an existing account." },
+                    "reason": reason, "image_path": image, "phone": phone, "model": model, "effort": effort
+                },
+                "required": ["site", "reason"],
+                "additionalProperties": false
+            },
+            "annotations": { "readOnlyHint": false, "destructiveHint": false, "idempotentHint": false, "openWorldHint": true }
         },
         {
             "name": "pair",

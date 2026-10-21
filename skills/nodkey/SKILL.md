@@ -1,6 +1,6 @@
 ---
 name: nodkey
-description: Use the user's logins, one-time codes and saved passwords from Nodkey on their iPhone, each request approved by them with Face ID; sign in to websites, fetch a two-step code, see which accounts exist, tidy up old saved logins, use API keys without seeing them, and pay a purchase the user asked for with their card. Use when a task needs a login, a two-step code or an API key (for example OPENAI_API_KEY), when you made a new API key, when asked to sign in to a site (for example in a Horizon browser panel), when the user asks which accounts they have, or when they ask to clean up, review or remove stale or old saved passwords, or when they ask you to buy something. Uses the nodkey MCP server (request_login, request_code, request_credentials, request_sms_code, request_secret, save_secret, suggest_sign_in_method, end_session, request_payment, cleanup_insights, list_accounts, cleanup_logins, import_file, pair, list_phones, unpair) or the nodkey command.
+description: Use the user's logins, one-time codes and saved passwords from Nodkey on their iPhone, each request approved by them with Face ID; sign in to websites, fetch a two-step code, see which accounts exist, tidy up old saved logins, use API keys without seeing them, and pay a purchase the user asked for with their card. Use when a task needs a login, a two-step code or an API key (for example OPENAI_API_KEY), when you made a new API key, when asked to sign in to a site (for example in a Horizon browser panel), when the user asks which accounts they have, or when they ask to clean up, review or remove stale or old saved passwords, when they ask you to sign up for a service or change a password (a strong new password made and saved on their iPhone), or when they ask you to buy something. Uses the nodkey MCP server (request_login, request_code, request_credentials, request_sms_code, request_secret, save_secret, create_login, suggest_sign_in_method, end_session, request_payment, cleanup_insights, list_accounts, cleanup_logins, import_file, pair, list_phones, unpair) or the nodkey command.
 ---
 
 # Nodkey
@@ -63,6 +63,31 @@ login saved for openai.com used on chatgpt.com); use it for this site as given. 
 the user checks it on the phone each time. `account.sites` lists more websites the account is used on. Two-step pages may split the code into one box per digit: fill them one by one. When a site offers an
 app prompt instead of a code (Google, Microsoft), choose "another way" and the authenticator code
 (see "Second step: passkey, then code").
+
+## Sign up or change a password
+
+Only when the user asked you to sign up for a service, or to change a password. Nodkey makes the
+new password on their iPhone, saves it there first, and gives it to you for that site only.
+
+1. Open the sign-up (or change password) page and find the new password field. Read its rules:
+   the `passwordrules`, `minlength`, `maxlength` and `pattern` attributes (`browser_evaluate`
+   or a snapshot). Take a screenshot for `image_path`.
+2. `create_login(site, username, rules, reason, image_path)`: `site` is the page's address from the
+   address bar, `username` the e-mail address or user name you sign up with, `rules`
+   `{"passwordrules": ..., "min_length": ..., "max_length": ..., "pattern": ...}` as the page has
+   them (leave out what it does not have). For a password change add `change: true`. Never
+   `request_login` first to look for a login: a sign-up has none.
+3. On `approved`: use `username` from the answer (the user may have corrected it on the phone),
+   check that the page's host is in `fill_only_on` or below one, fill the password into the new
+   password field and its confirm field, and submit. Do not save it again with another tool:
+   Nodkey has it already (`saved`: `added`, or `updated` for a login that had another password).
+4. `bad_rules`: no password can meet the rules you sent; check them against the page, and when
+   they are right, tell the user. `save_failed`: nothing was made. `no_passcode`, `not_allowed`,
+   denied or expired: stop and tell the user in one line.
+5. When the site refuses the new password, tell the user. The password is in Nodkey; after a
+   change, the old one stays on their iPhone for 30 days.
+
+Never make a password the user did not ask for, and never fill it on another site.
 
 ## How the user signs in: method and via
 
@@ -311,6 +336,7 @@ nodkey cleanup --query '*.old-company.example' --last-used-before 2022-01-01 --r
 nodkey pay shop.example.com 499 NOK --reveal --reason "Buy the cable you asked for"   # full card (JSON)
 nodkey suggest example.com --kind federated --provider google --reason "Signed in with Google"
 nodkey sms-code account.example.com --reason "The site sent a code by SMS" --field code
+nodkey generate --site https://accounts.example.com/signup --user alex@example.com --rules 'minlength: 12; required: digit;' --reason "Sign up as you asked"   # prints only the password
 nodkey run --secret OPENAI_API_KEY --reason "Run the API tests" -- npm test   # the key only in the command's environment
 printf %s "$NEW_KEY" | nodkey secret save NEW_KEY --service example.com --reason "Save the key I made"
 nodkey import ~/Downloads/"Chrome Passwords.csv" --source "Chrome, profile Default"   # see nodkey-move-in
@@ -318,7 +344,7 @@ nodkey phones; nodkey unpair PHONE
 ```
 
 Exit codes: 0 approved or queued, 2 denied or rejected, 3 expired, 4 paused, 1 error, 64 bad arguments; for `pay` also 5 over the
-user's limit, 6 full card numbers off, 7 cards off or no card, 10 no passcode on the iPhone (no cards or keys); for `import` 0 staged, 11 no import window, 12 window full, 13 not readable, 14 too large. `nodkey run` exits with the command's own code once it ran. Waiting notes go to stderr.
+user's limit, 6 full card numbers off, 7 cards off or no card, 10 no passcode on the iPhone (no cards or keys); for `import` 0 staged, 11 no import window, 12 window full, 13 not readable, 14 too large; for `generate` 10 no passcode, 15 rules no password can meet (stderr names the login and the site to fill it on). `nodkey run` exits with the command's own code once it ran. Waiting notes go to stderr.
 Never put a password on a command line, in a file or in a pipe you log; read it from the JSON and fill
 it straight into the field that needs it. `--image FILE`, `--model` and `--effort` work as in the tools.
 

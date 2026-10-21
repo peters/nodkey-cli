@@ -238,6 +238,7 @@ pub async fn run(command: &str, a: &Args, agent: &Agent) -> Result<u8, String> {
         }
         "agents" => agents(a, agent),
         "import" => crate::import::run_cli(a, agent, reported).await,
+        "generate" => crate::generate::run_cli(a, agent, reported).await,
         "suggest" | "sms-code" => {
             let (v, code) = crate::signin::run_cli(command, a, agent, reported).await?;
             if code != 0 {

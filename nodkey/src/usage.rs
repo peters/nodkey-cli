@@ -11,6 +11,11 @@ Usage:
                                            ITEM is login:TARGET, code:TARGET, secret:TARGET or
                                            passkey:SITE (passkey items need --session)
   nodkey end-session [--reason TEXT]       end this agent's task session (from --session)
+  nodkey generate --site URL [--user NAME] [--title TEXT] [--rules RULES] [--min N] [--max N]
+                  [--pattern RE] [--change] [--reason TEXT]
+                                           a new password for a sign-up or a password change,
+                                           made and saved by Nodkey on your iPhone; prints only
+                                           the password (--json: the whole result)
   nodkey sms-code TARGET --reason TEXT [--wait SECS] [--image FILE]
                                            a code the site sent by SMS, passed to Nodkey by your
                                            Shortcuts automation (wait 30-300 s, default 120)
@@ -73,6 +78,13 @@ Options for credentials: --reason, --image, --phone, --model, --effort as above,
   --follow-up SECS  without a session: how long a fresh code for an approved item follows
                     without asking (120-600)
 
+Options for generate: --site is the page's address (its query is left out) or host; --user the
+  user name you sign up with (you can correct it on the iPhone); --rules the password field's
+  passwordrules attribute, --min and --max its minlength and maxlength, --pattern its pattern;
+  --change for a password change; --reason (default: \"Make a password to sign up on SITE\"),
+  --image, --phone, --model, --effort as above. Your iPhone asks with Face ID every time and
+  saves the password before it answers; stderr names the login and the only site to fill it on.
+
 Options for pay: --reason, --image, --field (number, cvc, exp_month, ...), --phone, --model,
   --effort as above, and --reveal (required: the card number is printed). Without a browser
   host nothing can fill the card for you; the user decides on the iPhone every time.
@@ -102,7 +114,8 @@ Global options:
                    shell runs nodkey, Claude Code or Codex, else terminal)
   --relay URL      the relay (default: $NODKEY_RELAY, else relay in config.json, else
                    https://relay.nodkey.app)
-  --json           print JSON for accounts, cleanup, phones, agents, unpair, pair and import
+  --json           print JSON for accounts, cleanup, phones, agents, unpair, pair, import and
+                   generate
   -h, --help       -V, --version
 
 Exit codes: 0 approved, queued or done, 1 error, 2 denied or rejected, 3 expired (no answer),
@@ -113,6 +126,7 @@ phone has no passcode (no cards or keys). run: the command's exit code once it r
 127 when it cannot start); 2, 3, 4 or 1 as above when the phone did not give the keys.
 import: 0 staged, 10 no passcode, 11 no import window open for this agent, 12 the window is
 full, 13 the file cannot be read (also an archive or an encrypted export), 14 more than 1 MiB.
+generate: 10 no passcode, 15 no password can meet the page's rules.
 Environment: NODKEY_AGENT_DIR (default ~/.config/nodkey-agent), NODKEY_REQUEST_TIMEOUT (120 s),
 NODKEY_PAIR_TIMEOUT (300 s), NODKEY_KEYSTORE (auto: the private keys in the keychain of the
 system when there is one; file: in identity.json), NODKEY_DEBUG.

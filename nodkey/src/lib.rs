@@ -8,6 +8,7 @@ pub mod cardfill;
 pub mod cli;
 pub mod commands;
 pub mod filter;
+pub mod generate;
 pub mod host;
 pub mod image;
 pub mod import;

@@ -21,8 +21,14 @@ pub(crate) const EXPIRED: u8 = 3;
 pub(crate) const PAUSED: u8 = 4;
 const BAD_ARGS: u8 = 64;
 
-const VALUE_FLAGS: [&str; 29] = [
+const VALUE_FLAGS: [&str; 35] = [
     "source",
+    "site",
+    "user",
+    "rules",
+    "min",
+    "max",
+    "pattern",
     "service",
     "project",
     "title",
@@ -52,8 +58,9 @@ const VALUE_FLAGS: [&str; 29] = [
     "added-before",
     "password-changed-before",
 ];
-const BOOL_FLAGS: [&str; 7] = [
+const BOOL_FLAGS: [&str; 8] = [
     "keep",
+    "change",
     "json",
     "ip-only",
     "never-used",
@@ -200,6 +207,7 @@ pub fn main(raw: Vec<String>) -> ExitCode {
         | "phones" | "unpair" | "agents" | "end-session" => check(command, &args),
         "suggest" | "sms-code" => crate::signin::check_cli(command, &args),
         "import" => crate::import::check_cli(&args),
+        "generate" => crate::generate::check_cli(&args),
         other => Err(format!("unknown command {other:?}; see nodkey --help")),
     };
     if let Err(e) = result {

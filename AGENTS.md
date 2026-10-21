@@ -28,11 +28,12 @@ mcp`). The iOS app and the relay live in the private repository `peters/nodkey`;
   (the keychain of the system or the file), `profile.rs` which agent is asking, `signin.rs` sign-in methods, `suggest` and
   `sms_code`, `secret.rs` API keys (`secret/save.rs` `nodkey secret save`), `run.rs` `nodkey run`,
   `keyfile.rs` the `.nodkey` file, `import.rs` `nodkey import` and the `import_file` tool with
-  `import/file.rs`, which reads the export once and overwrites and deletes it), the
+  `import/file.rs`, which reads the export once and overwrites and deletes it), `generate.rs`
+  `nodkey generate` and the `create_login` tool, the
   MCP server (`mcp.rs`, `tools.rs`), the command line (`cli.rs`, `usage.rs`, `commands.rs`) and
   `setup.rs`. Tests: `tests/e2e.rs` (MCP),
   `tests/cli.rs`, `tests/signin.rs`, `tests/quota.rs`, `tests/secrets.rs`, `tests/projects.rs` and
-  `tests/import.rs` run the real binary against `nodkey-fake-relay`.
+  `tests/import.rs` and `tests/generate.rs` run the real binary against `nodkey-fake-relay`.
 - `skills/nodkey/SKILL.md` and `skills/nodkey-move-in/SKILL.md`: the skills `nodkey setup`
   installs (compiled into the binary). The move-in skill must keep its rule that an agent never
   reads an export file.
