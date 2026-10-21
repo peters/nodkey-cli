@@ -91,3 +91,27 @@ CI runs Linux, macOS and Windows on every push and pull request, and `cargo audi
 advisories for `Cargo.lock`) on every run and once a week. After a change to `Cargo.lock`, run
 `cargo audit` too. Workflows pin every action by commit (Dependabot proposes updates). Run
 `Release` by hand (workflow_dispatch) to build the archives as workflow artifacts without a release.
+
+## Pull requests
+
+Claude reviews each pull request, at most 2 rounds (the owner's decision,
+2026-10-21). Copilot does not review: do not request a Copilot review and do
+not wait for one. The `Claude Review` workflow
+(`.github/workflows/claude-review.yml`) does the review with the rules in
+`.github/review-instructions.md`.
+
+- Round 1 starts when a pull request from a branch of this repository opens,
+  reopens or leaves draft.
+- Round 2 starts when you add the `claude-review` label:
+  `gh pr edit <n> --add-label claude-review`. Push all fixes of round 1 first.
+  The workflow removes the label when it finishes; adding a label that is still
+  there starts nothing. The workflow refuses a third round.
+- A pull request from a fork or a bot gets a round only from the label, after
+  you have read its full diff.
+- A round is one summary comment from `github-actions[bot]` whose last line is
+  `<!-- claude-review head=<sha> findings=<n> -->`. A run that fails posts no
+  summary and uses no round: read its log, fix the cause and add the label
+  again.
+- Review the full diff yourself and run the checks before the pull request
+  opens and before round 2. The review on the pull request is the final gate,
+  not the place to iterate. Fix or answer each finding before the merge.
