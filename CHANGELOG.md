@@ -3,6 +3,20 @@
 What changed in each release of `nodkey`. The protocol is in
 [docs/agent-protocol.md](docs/agent-protocol.md).
 
+## 0.4.1 (2026-10-21)
+
+A small security update for the Linux builds. Nothing else changed.
+
+- Two advisories, RUSTSEC-2026-0382 (`rustls-webpki`) and RUSTSEC-2026-0383 (`webpki-root-certs`),
+  are about certificates from emSign intermediates that are no longer trusted. nodkey now uses
+  `rustls-webpki` 0.103.16 and `webpki-root-certs` 1.0.10, which turn such certificates away.
+- Only the Linux builds were affected. There, nodkey checks the relay's certificate itself, against
+  the certificates your system trusts. On macOS and Windows the system checks it, and no nodkey
+  build uses `webpki-root-certs`.
+- Your codes and passwords stayed protected: every request and answer is encrypted end to end
+  between your computer and your iPhone, and signed, so not even someone who poses as the relay can
+  read or change them.
+
 ## 0.4.0 (2026-10-20)
 
 Move your passwords and codes into Nodkey from your computer. Moving in needs
