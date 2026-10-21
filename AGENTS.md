@@ -65,6 +65,13 @@ stale). The app's tests keep a copy of that file; copy the new one there in the 
 The repository is public. Do not publish a release or announce an install link without the
 owner's explicit yes.
 
+Version numbers (the owner's decision, 2026-10-21): the iPhone app (peters/nodkey), nodkey-cli and the browser
+extension (peters/nodkey-browser) share MAJOR.MINOR. Version 1.4.x of each belongs together: the same features and
+protocol. The PATCH number is per repository: a fix in one part becomes X.Y.(Z+1) there only. A feature release
+raises MINOR in all three at the same time and goes out together with, or after, the App Store version. A CLI or
+extension X.Y needs the iPhone app X.Y or later (an older app answers `unsupported_kind`). The switch: nodkey-cli
+0.4.1 is the last 0.x; the next CLI and extension releases are 1.4.0, together with the app's 1.4.
+
 1. Raise `version` in `Cargo.toml`, add the release to `CHANGELOG.md` (plain words, for users), run
    the checks and the WebAssembly build
    (`cargo build -p nodkey-proto --target wasm32-unknown-unknown --features getrandom/wasm_js`; the
