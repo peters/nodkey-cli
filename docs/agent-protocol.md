@@ -208,8 +208,8 @@ computer (`localhost`, `127.0.0.1`, `[::1]`), and does not follow redirects.
 | `GET /v1/phones/{phone_id}/requests?wait=25` | phone | → `[{request_id, agent_id, enc, ct, created, has_attachment, ip?, country?}]` pending requests (the app polls while open and when a push arrives); `ip`/`country` are what Cloudflare saw of the agent; a `Nodkey-Push: none` header means the relay holds no push token (APNs refused it), and the phone registers again |
 | `POST /v1/requests/{request_id}/answer` | phone | `{enc, ct}` → `204` |
 | `GET /v1/requests/{request_id}?wait=60` | agent (the requester) | → `{enc, ct}` once answered, `204` on timeout, `410` after the request's `ttl` (120 s by default) |
-| `DELETE /v1/phones/{phone_id}/agents/{agent_id}` | phone | → `204`; the relay rejects that agent from then on |
-| `DELETE /v1/agents/{agent_id}/phones/{phone_id}` | agent | → `204`; the agent leaves: the relay forgets the pairing and the phone drops the agent the next time it lists pending requests (`GET …/requests` sends the ids of agents that left in a `Nodkey-Revoked: id1,id2` header, once) |
+| `DELETE /v1/phones/{phone_id}/agents/{agent_id}` | phone | → `204`; the relay rejects that agent from then on (also the phone's confirmation of an agent named in `Nodkey-Revoked`) |
+| `DELETE /v1/agents/{agent_id}/phones/{phone_id}` | agent | → `204`; the agent leaves: the relay forgets the pairing and the phone drops the agent the next time it lists pending requests (`GET …/requests` sends the ids of agents that left in a `Nodkey-Revoked: id1,id2` header on every list until the phone confirms each with its own `DELETE /v1/phones/{phone_id}/agents/{agent_id}`, at most 30 days; only an agent not named before ends a long poll early) |
 | `DELETE /v1/phones/{phone_id}` | phone | → `204`; forget the phone and all its agents |
 
 Errors: `{error: "<code>", message}` with 400 `bad_request`, 401 `bad_signature`, 403 `not_paired`,
