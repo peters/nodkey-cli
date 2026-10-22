@@ -80,7 +80,9 @@ deletes them with the request (after 2 minutes, up to 6 for an SMS code).
 ## What you need
 
 - An iPhone with iOS 18 or later and [Nodkey](https://apps.apple.com/app/id6820952672) 1.3 or later
-  from the App Store (free).
+  from the App Store (free). Making a password (`nodkey generate`) and moving in (`nodkey import`)
+  need Nodkey 1.4 or later. `nodkey` and the app share a version number: `nodkey` 1.4 belongs with
+  Nodkey 1.4.
 - Linux, macOS or Windows for `nodkey`.
 
 ## Install

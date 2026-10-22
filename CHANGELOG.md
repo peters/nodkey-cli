@@ -3,7 +3,13 @@
 What changed in each release of `nodkey`. The protocol is in
 [docs/agent-protocol.md](docs/agent-protocol.md).
 
-## Unreleased
+## 1.4.0 (2026-10-22)
+
+Let Nodkey make a strong new password when you sign up or change a password. From now on, `nodkey`
+has the same version number as the Nodkey app: `nodkey` 1.4 belongs with Nodkey 1.4. Making a
+password and moving in (`nodkey import`, from 0.4.0) need
+[Nodkey](https://apps.apple.com/app/id6820952672) 1.4 or later on your iPhone; everything else
+works with Nodkey 1.3 or later, as before.
 
 ### What you can do
 
@@ -11,7 +17,7 @@ What changed in each release of `nodkey`. The protocol is in
   ask Nodkey on your iPhone to make a password that fits the page's rules, save it, and give it to
   the agent for that sign-up only. It works for a password change too (`--change`): the new
   password replaces the old one, which stays on your iPhone for 30 days. `nodkey generate` prints
-  only the password, so a script can fill it in. This needs Nodkey 1.4 or later on your iPhone.
+  only the password, so a script can fill it in.
 
 ### Safety
 
@@ -23,6 +29,8 @@ What changed in each release of `nodkey`. The protocol is in
 
 ### Good to know
 
+- With an older Nodkey on your iPhone, `nodkey generate` and `create_login` stop with a short
+  message to update Nodkey; nothing is saved.
 - Exit codes of `nodkey generate`: 10 no passcode on your iPhone, 15 rules that no password can
   meet; the others are as for every command.
 
