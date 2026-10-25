@@ -148,6 +148,9 @@ jobs:
         uses: anthropics/claude-code-action@f27be6b65a4652f08a2ba3cff79114829b588967 # v1.0.252
         with:
           anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          # Upkeep reviews and merges the bot pull requests of this repository, and the action
+          # refuses a workflow that a bot started unless that bot is named here.
+          allowed_bots: 'upkeep-peters'
           # The Claude app token exchange rejects this event's OIDC token, so
           # Claude comments with the job's own token, as github-actions[bot].
           github_token: ${{ github.token }}
