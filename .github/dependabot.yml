@@ -1,6 +1,6 @@
 # The workflows pin every action by commit; Dependabot proposes new commits when an action has a
 # new release (one pull request a week for all of them). A new release waits 7 days first.
-# Crates: the audit job in ci.yml checks Cargo.lock against the RustSec advisories every week.
+# Crate and Docker updates run weekly and wait 3 days before a pull request.
 version: 2
 updates:
   - package-ecosystem: github-actions
@@ -12,3 +12,15 @@ updates:
     groups:
       actions:
         patterns: ['*']
+  - package-ecosystem: cargo
+    directory: /
+    schedule:
+      interval: weekly
+    cooldown:
+      default-days: 3
+  - package-ecosystem: docker
+    directory: /.horizon
+    schedule:
+      interval: weekly
+    cooldown:
+      default-days: 3
