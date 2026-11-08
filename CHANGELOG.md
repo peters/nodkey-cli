@@ -3,7 +3,7 @@
 What changed in each release of `nodkey`. The protocol is in
 [docs/agent-protocol.md](docs/agent-protocol.md).
 
-## 1.4.0 (2026-10-22)
+## 1.4.0 (2026-11-08)
 
 Let Nodkey make a strong new password when you sign up or change a password. From now on, `nodkey`
 has the same version number as the Nodkey app: `nodkey` 1.4 belongs with Nodkey 1.4. Making a
