@@ -39,6 +39,10 @@ for 1 day / 7 days / always"); then the phone answers by itself. You never keep 
 
 ## Sign in to a website
 
+Signing in only to get an API key or a token? Ask Nodkey for the key first (see "API keys and
+secrets"). A key Nodkey already holds costs the user one Face ID; a sign-in costs a login, often a
+second step, and leaves one more key to look after.
+
 1. Open the sign-in page (Horizon browser panel: `browser_navigate`, then `browser_snapshot` to find
    the user name, password and submit fields; Firefox backend for company and portal sites).
 2. Take a screenshot (`browser_screenshot`) so the user sees what you are signing in to; pass its path
@@ -212,6 +216,12 @@ Nodkey keeps API keys and tokens with a service (`openai.com`), an environment v
 global key with that name. The user approves every key with Face ID; there is no "always allow"
 for keys.
 
+**Ask for the key before you sign in anywhere.** When a task needs a service's API (a call with a
+token, a command that reads one), the first step is to ask Nodkey for the key: `nodkey run --secret
+NAME=SERVICE -- <command>`, or `request_secret` with only the `service` when you do not know the
+variable name. Open the service's dashboard to make a new key only after the phone answered
+`no_secret` and the user wants you to make one (item 5).
+
 1. **A repository that needs keys gets a `.nodkey` file** at its root, with names only (never a
    value), so it is safe to commit, also in a public repository:
 
@@ -252,7 +262,11 @@ for keys.
    `--project NAME` or `--project global`). A key with the same service, variable name and projects
    gets the new value.
 5. `no_secret`: the user says Nodkey has no such key. Ask them to add it under Passwords, Keys in
-   Nodkey (in the right project); do not ask them to paste it into the chat.
+   Nodkey (in the right project); do not ask them to paste it into the chat. When the user asks
+   you to make one instead: sign in to the service (see "Sign in to a website"), make a key with
+   the shortest life and the fewest rights that do the task, save it at once (item 4) and use it
+   with `nodkey run`. A key made for one task: revoke it in the dashboard when the task is done,
+   and tell the user what you made and whether it still exists.
 6. In a plan, add a key as `{"kind": "secret", "target": "sparrow/OPENAI_API_KEY"}` (or
    `openai.com/OPENAI_API_KEY`, `global/NAME`). With a session, the plan item carries no value,
    and later `nodkey run` calls for that key go through without asking.
